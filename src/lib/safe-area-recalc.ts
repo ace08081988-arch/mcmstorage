@@ -62,15 +62,22 @@ function apply(): boolean {
   const el = ensureProbe();
   const cs = getComputedStyle(el);
   const rawTop = Math.round(parseFloat(cs.paddingTop) || 0);
-  // Saat benar-benar layar penuh (bilah sistem disembunyikan), sebagian
-  // Android TETAP melaporkan inset atas sebesar status bar. Inset itu
-  // membuat pita kosong di puncak layar padahal ruangnya sudah dipakai
-  // aplikasi. Nolkan di mode fullscreen; notch nyata tetap aman karena
-  // konten di puncak hanya header dengan padding sendiri.
+  // Saat layar penuh, sebagian Android TETAP melaporkan inset atas sebesar
+  // status bar meski bilahnya sudah disembunyikan → muncul pita kosong.
+  // Tapi kalau perangkat punya notch/cutout nyata, inset itu WAJIB dipakai,
+  // kalau tidak header justru terpotong. Bedakan lewat pengukuran:
+  // hanya nolkan inset saat jendela BELUM setinggi layar fisik (artinya
+  // bilah sistem masih memakan ruang dan inset-nya dobel).
   const isFullscreen =
     document.documentElement.dataset["displayMode"] === "fullscreen" ||
     !!document.fullscreenElement;
-  const top = isFullscreen ? 0 : rawTop;
+  const screenH = Math.round(window.screen?.height || 0);
+  const occupiesFullScreen =
+    screenH > 0 && Math.round(window.innerHeight) >= screenH - 4;
+  // Cutout nyata: sisakan sebagian inset agar konten tidak masuk ke notch,
+  // tapi jangan lebih dari 44px supaya tidak ada pita kosong berlebihan.
+  const top =
+    isFullscreen && !occupiesFullScreen ? 0 : Math.min(rawTop, 44);
   const bottomInset = parseFloat(cs.paddingBottom) || 0;
   const left = Math.round(parseFloat(cs.paddingLeft) || 0);
   const right = Math.round(parseFloat(cs.paddingRight) || 0);

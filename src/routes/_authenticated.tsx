@@ -138,7 +138,7 @@ function AuthLock() {
       <div
         className={
           immersive
-            ? "flex h-app-vh w-full overflow-hidden"
+            ? "flex h-app-vh-visible w-full overflow-hidden"
             : "flex min-h-app-vh w-full"
         }
       >
