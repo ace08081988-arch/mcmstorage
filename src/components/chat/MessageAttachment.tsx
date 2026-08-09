@@ -41,7 +41,7 @@ function bytes(n: number | null | undefined): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function useSignedUrl(path: string | null | undefined) {
+function useSignedUrl(path: string | null | undefined, thumbWidth?: number) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
@@ -50,12 +50,12 @@ function useSignedUrl(path: string | null | undefined) {
     // H16: refresh signed URL sebelum kadaluarsa (TTL 1 jam, refresh ~50 mnt)
     // supaya tab yang lama terbuka tidak menampilkan gambar 403.
     const refresh = () => {
-      signedChatUrl(path, TTL_SEC).then((u) => { if (alive) setUrl(u); }).catch(() => {});
+      signedChatUrl(path, TTL_SEC, thumbWidth).then((u) => { if (alive) setUrl(u); }).catch(() => {});
     };
     refresh();
     const iv = setInterval(refresh, (TTL_SEC - 600) * 1000);
     return () => { alive = false; clearInterval(iv); };
-  }, [path]);
+  }, [path, thumbWidth]);
   return url;
 }
 
@@ -93,7 +93,9 @@ export function MessageAttachment(props: {
   /** attachment_duration_sec dari row pesan; wajib diteruskan agar VoiceNotePlayer konsisten saat remount. */
   durationSec?: number | null;
 }) {
-  const url = useSignedUrl(props.path);
+  const isImage = (props.mime ?? "").startsWith("image/");
+  // Bubble chat cukup ~480px; foto full-res hanya diambil saat dibuka.
+  const url = useSignedUrl(props.path, isImage ? 480 : undefined);
   const [broken, setBroken] = useState(false);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { setBroken(false); setLoaded(false); }, [props.path]);
@@ -111,12 +113,26 @@ export function MessageAttachment(props: {
       );
     }
     return (
-      <a href={url} target="_blank" rel="noreferrer" className="block">
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="block"
+        onClick={(e) => {
+          // Buka versi full-resolution, bukan thumbnail.
+          e.preventDefault();
+          void signedChatUrl(props.path, 3600).then((full) => {
+            window.open(full ?? url, "_blank", "noopener");
+          });
+        }}
+      >
         <MediaFrame className={loaded ? "" : "animate-pulse"}>
           <img
             src={url}
             alt={props.name ?? "foto"}
-            className={`h-full w-full object-cover transition-opacity duration-200 ${loaded ? "opacity-100" : "opacity-0"}`}
+            className={`h-full w-full object-cover ${loaded ? "opacity-100" : "opacity-0"}`}
+            width={480}
+            height={600}
             loading="lazy"
             decoding="async"
             onLoad={() => setLoaded(true)}

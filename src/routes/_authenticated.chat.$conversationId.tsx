@@ -410,10 +410,36 @@ function ChatRoomPage() {
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
   const selectionMode = selectedIds.size > 0;
 
+  // ---- Windowing daftar pesan -------------------------------------------
+  // Percakapan memuat sampai 500 pesan, tapi merender semuanya membuat tiap
+  // re-render (ketik, presence, realtime) menyentuh ratusan node — inilah
+  // penyebab utama scroll tersendat di HP. Kita hanya merender N pesan
+  // terakhir dan menambah jendela saat pengguna minta pesan lama.
+  const RENDER_STEP = 60;
+  const [renderCount, setRenderCount] = useState(RENDER_STEP);
+  const visibleRef = useRef<MessageRow[]>([]);
+  useEffect(() => { setRenderCount(RENDER_STEP); }, [conversationId]);
+
   // Jump-to-message helper (used by pinned banner)
   const jumpToMessage = useCallback((id: string) => {
     const el = document.getElementById(`msg-${id}`);
-    if (!el) return;
+    if (!el) {
+      // Pesan berada di luar jendela render → lebarkan jendela dulu,
+      // lalu coba lompat lagi setelah DOM ter-update.
+      const list = visibleRef.current;
+      const i = list.findIndex((m) => m.id === id);
+      if (i < 0) return;
+      const needed = list.length - i + 10;
+      setRenderCount((prev) => (needed > prev ? needed : prev));
+      requestAnimationFrame(() => {
+        const again = document.getElementById(`msg-${id}`);
+        if (!again) return;
+        again.scrollIntoView({ behavior: "smooth", block: "center" });
+        again.classList.add("ring-2", "ring-warning");
+        setTimeout(() => again.classList.remove("ring-2", "ring-warning"), 1500);
+      });
+      return;
+    }
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.classList.add("ring-2", "ring-warning");
     setTimeout(() => el.classList.remove("ring-2", "ring-warning"), 1500);
@@ -1350,14 +1376,20 @@ function ChatRoomPage() {
   // Group messages by day
   const grouped = useMemo(() => {
     const out: { day: string; items: MessageRow[] }[] = [];
-    for (const m of visibleMessages) {
+    const list =
+      visibleMessages.length > renderCount
+        ? visibleMessages.slice(visibleMessages.length - renderCount)
+        : visibleMessages;
+    for (const m of list) {
       const day = fmtDay(m.created_at);
       const last = out[out.length - 1];
       if (last && last.day === day) last.items.push(m);
       else out.push({ day, items: [m] });
     }
     return out;
-  }, [visibleMessages]);
+  }, [visibleMessages, renderCount]);
+  visibleRef.current = visibleMessages;
+  const hiddenOlderCount = Math.max(0, visibleMessages.length - renderCount);
 
   // Pinned messages (sorted by pinned_at desc, max 3)
   const pinnedMessages = useMemo(() => {
@@ -1989,7 +2021,19 @@ function ChatRoomPage() {
             Belum ada pesan. Sapa dulu yuk.
           </div>
         ) : (
-          grouped.map((g) => (
+          <>
+          {hiddenOlderCount > 0 ? (
+            <div className="mb-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setRenderCount((p) => p + 60)}
+                className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1.5 text-ms-2xs font-medium wa-muted ring-1 ring-[var(--wa-border)]"
+              >
+                Muat {Math.min(60, hiddenOlderCount)} pesan lama ({hiddenOlderCount} tersisa)
+              </button>
+            </div>
+          ) : null}
+          {grouped.map((g) => (
             <div key={g.day} className="flex flex-col gap-1.5">
               <div className="my-2.5 flex justify-center">
                 <span className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1 text-ms-2xs font-medium uppercase tracking-wide wa-muted shadow-sm ring-1 ring-[var(--wa-border)]">{g.day}</span>
@@ -2022,11 +2066,11 @@ function ChatRoomPage() {
                   <div
                     key={m.id}
                     id={`msg-${m.id}`}
-                    className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
+                    className={`flex ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
                      <div className={`group relative flex min-w-0 max-w-[86%] items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-md" : "rounded-bl-md"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
@@ -2383,7 +2427,8 @@ function ChatRoomPage() {
                 );
               })}
             </div>
-          ))
+          ))}
+          </>
         )}
 
         {outbox.length > 0 ? (

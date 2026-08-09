@@ -38,7 +38,25 @@ export async function uploadChatFile(opts: {
   return { path, mime, name: baseName, size };
 }
 
-export async function signedChatUrl(path: string, expiresInSec = 3600): Promise<string | null> {
+export async function signedChatUrl(
+  path: string,
+  expiresInSec = 3600,
+  /**
+   * Lebar thumbnail (px). Dipakai bubble chat supaya WebView tidak perlu
+   * men-decode foto full-resolution (struk 1080–2000px) saat scroll —
+   * penyebab utama frame tersendat. Jika transform tidak tersedia di
+   * backend, otomatis fallback ke URL asli.
+   */
+  thumbWidth?: number,
+): Promise<string | null> {
+  if (thumbWidth) {
+    const { data, error } = await supabase.storage
+      .from("chat-attachments")
+      .createSignedUrl(path, expiresInSec, {
+        transform: { width: thumbWidth, resize: "contain", quality: 60 },
+      });
+    if (!error && data?.signedUrl) return data.signedUrl;
+  }
   const { data, error } = await supabase.storage
     .from("chat-attachments")
     .createSignedUrl(path, expiresInSec);
