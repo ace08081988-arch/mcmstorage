@@ -20,6 +20,7 @@ import {
   Search,
   ShieldCheck,
   Smartphone,
+  Gauge,
   Sparkles,
   User,
   Wrench,
