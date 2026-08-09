@@ -749,6 +749,11 @@ function PublicPrepPage() {
   // closedReason setelah 2x kegagalan kategori sama agar transient error
   // (DB hiccup, koneksi seluler putus sekejap) tidak menendang user balik.
   const silentFailRef = useRef<{ kind: string | null; count: number }>({ kind: null, count: 0 });
+  // Koordinasi penyegaran: satu permintaan aktif pada satu waktu, plus jeda
+  // minimum agar realtime + heartbeat + visibilitychange tidak saling tumpuk.
+  const refreshInFlightRef = useRef(false);
+  const refreshQueuedRef = useRef(false);
+  const lastRefreshAtRef = useRef(0);
   // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
   // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
   // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
