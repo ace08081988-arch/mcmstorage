@@ -270,6 +270,15 @@ export function ScrollPerfLiveChart() {
     }
   }, []);
 
+  const chooseMethod = useCallback((v: SmoothMethod) => {
+    setMethod(v);
+    try {
+      localStorage.setItem(SMOOTH_METHOD_KEY, v);
+    } catch {
+      /* abaikan */
+    }
+  }, []);
+
   // Tandai fase gulir agar arsiran grafik sinkron dengan interaksi.
   useEffect(() => {
     return subscribeScrollPerf(() => {
@@ -338,9 +347,10 @@ export function ScrollPerfLiveChart() {
   const fpsNow = series.fps[POINTS - 1] ?? 0;
   const latMax = Math.max(40, ...series.lat);
   const latNow = [...series.lat].reverse().find((v) => v > 0) ?? 0;
-  const fpsSmooth = rolling(series.fps, smooth);
-  const latSmooth = rolling(series.lat, smooth);
+  const fpsSmooth = smoothSeries(series.fps, smooth, method);
+  const latSmooth = smoothSeries(series.lat, smooth, method);
   const smoothing = smooth > 1;
+  const methodCfg = METHOD_OPTIONS.find((o) => o.v === method) ?? METHOD_OPTIONS[0]!;
 
   // Deteksi spike selalu memakai garis tren sendiri (SPIKE_WINDOW) supaya
   // tetap bekerja meski tampilan grafik disetel "Mentah".
