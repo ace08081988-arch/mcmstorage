@@ -1112,7 +1112,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <IconPill onClick={rotate90} label="Putar 90°"><RotateCw className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipH} label="Flip horizontal" active={!!scene.flipH}><FlipHorizontal2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={flipV} label="Flip vertikal" active={!!scene.flipV}><FlipVertical2 className="h-5 w-5" /></IconPill>
-            <IconPill onClick={() => setTool("crop")} disabled label="Crop (segera)"><Crop className="h-5 w-5" /></IconPill>
+            {/* Kontrol crop belum berfungsi; menampilkannya sebagai tombol mati
+                hanya menjanjikan fitur yang tidak ada. Disembunyikan sampai
+                implementasinya siap. */}
           </div>
         </div>
 
