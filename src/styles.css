@@ -2447,9 +2447,35 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
   }
 }
 
-/* Toast Sonner selalu di atas bar bawah, dan menghormati safe area. */
+/* Toast Sonner selalu di atas bar bawah, dan menghormati safe area.
+   Offset bawah mengikuti tinggi bilah bawah + gesture bar supaya toast
+   tidak menutupi bilah navigasi maupun tombol aksi dialog di HP kecil. */
 [data-sonner-toaster] {
   z-index: var(--z-toast) !important;
+}
+[data-sonner-toaster][data-y-position="bottom"] {
+  --offset-bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 0.75rem
+  );
+}
+[data-sonner-toaster][data-y-position="top"] {
+  --offset-top: calc(
+    var(--app-safe-top, env(safe-area-inset-top, 0px)) + 0.75rem
+  );
+}
+/* Saat dialog/sheet terbuka, toast pindah ke atas layar: di HP kecil
+   toast bawah menutupi footer dialog (tombol Simpan/Batal). */
+body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
+  [data-sonner-toaster][data-y-position="bottom"] {
+  --offset-bottom: calc(
+    max(
+      var(--app-bottom-bar-space, 0px),
+      var(--app-safe-bottom, env(safe-area-inset-bottom, 0px))
+    ) + 5.5rem
+  );
 }
 
 /* ------------------------------------------------------------------
