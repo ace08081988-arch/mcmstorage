@@ -99,27 +99,26 @@ function PesananDetailPage() {
       return;
     }
     if (qtyBase > item.stock_base) { toast.error("Stok kurang"); return; }
-    const perBase = order.price_per_unit
-      ? (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size)
-      : 0;
-    if (!(await confirm({
-      title: "Catat penjualan?",
-      description: `${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}`,
-      confirmText: "Catat",
-    }))) return;
+    setPayOpen(true);
+  }
+
+  const perBase = order?.price_per_unit && item
+    ? (order.qty_mode === "base"
+        ? Number(order.price_per_unit)
+        : Number(order.price_per_unit) / item.package_size)
+    : 0;
+  const orderTotal = qtyBase * perBase;
+
+  async function confirmProses(method: PaymentMethod, paid: number | null) {
+    if (!order || busy) return;
     setBusy(true);
-    // H3: total_revenue & cost_at_sale diisi otomatis oleh trigger apply_sale
-    // (SSOT harga & modal). Klien hanya menyerahkan qty & harga per unit
-    // supaya tidak ada risiko drift kalau ke depan formula berubah.
-    const { error } = await supabase.from("sales").insert({
-      user_id: order.user_id, item_id: item.id, qty_base: qtyBase,
-      price_per_base: perBase, total_revenue: 0,
-      note: `Pesanan: ${order.note ?? "-"}`, customer_id: order.customer_id, payment_method: "kas",
-    });
-    if (error) { setBusy(false); toast.error("Gagal catat penjualan"); return; }
-    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", order.id);
+    const res = await processOrder(order.id, method, paid);
     setBusy(false);
-    toast.success("Pesanan diproses jadi penjualan");
+    if (!res.ok) { toast.error(res.message); return; }
+    setPayOpen(false);
+    toast.success(res.alreadyProcessed
+      ? "Pesanan ini sudah diproses sebelumnya."
+      : "Pesanan diproses jadi penjualan");
     load();
   }
 
