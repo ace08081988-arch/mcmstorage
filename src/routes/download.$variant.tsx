@@ -24,6 +24,7 @@ import {
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { RouteLoadError } from "@/components/RouteLoadError";
 import { canonical, socialMeta } from "@/lib/seo-meta";
 
 const VALID: ApkVariant[] = ["storage", "chat"];
@@ -48,10 +49,8 @@ export const Route = createFileRoute("/download/$variant")({
     };
   },
   component: DetailPage,
-  errorComponent: () => (
-    <div className="p-ms-6 text-center text-ms-sm text-red-600">
-      Gagal memuat detail rilis.
-    </div>
+  errorComponent: ({ error }: { error: unknown }) => (
+    <RouteLoadError error={error} message="Gagal memuat detail rilis." />
   ),
   notFoundComponent: () => (
     <div className="p-ms-6 text-center text-ms-sm">Varian tidak ditemukan.</div>

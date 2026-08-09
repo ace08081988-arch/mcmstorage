@@ -47,6 +47,27 @@ function recover(reason: string) {
   hardReload();
 }
 
+/** Apakah error ini akibat chunk/bundle basi (bukan bug aplikasi)? */
+export function isChunkLoadError(err: unknown): boolean {
+  const msg =
+    typeof err === "string"
+      ? err
+      : String((err as { message?: string } | undefined)?.message ?? "");
+  return CHUNK_RE.test(msg) || STALE_SERVERFN_RE.test(msg);
+}
+
+/**
+ * Coba pulihkan error chunk basi dengan hard reload (dibatasi anti-loop).
+ * Mengembalikan true bila reload dijalankan.
+ */
+export function recoverFromChunkError(err: unknown): boolean {
+  if (typeof window === "undefined") return false;
+  if (!isChunkLoadError(err)) return false;
+  if (!shouldReload()) return false;
+  hardReload();
+  return true;
+}
+
 function hardReload() {
   const url = new URL(window.location.href);
   url.searchParams.set("__r", String(Date.now()));
