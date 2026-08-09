@@ -27,6 +27,7 @@ import {
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { Input } from "@/components/ui/input";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import { isHiddenMenuUrl } from "@/lib/hidden-menu-routes";
 import { cn } from "@/lib/utils";
 import type { ComponentType, SVGProps } from "react";
 
@@ -274,6 +275,8 @@ function PengaturanHub() {
     const needle = q.trim().toLowerCase();
     return CATEGORIES.map((cat) => {
       const entries = cat.entries.filter((e) => {
+        // Rute teknis tidak pernah tampil di hub Pengaturan.
+        if (isHiddenMenuUrl(e.to)) return false;
         if (e.adminOnly && !isAdmin) return false;
         if (!needle) return true;
         const hay = `${e.title} ${e.description} ${e.keywords ?? ""} ${cat.label}`.toLowerCase();
@@ -286,7 +289,11 @@ function PengaturanHub() {
   const totalCount = useMemo(
     () =>
       CATEGORIES.reduce(
-        (n, c) => n + c.entries.filter((e) => !e.adminOnly || isAdmin).length,
+        (n, c) =>
+          n
+          + c.entries.filter(
+            (e) => !isHiddenMenuUrl(e.to) && (!e.adminOnly || isAdmin),
+          ).length,
         0,
       ),
     [isAdmin],
