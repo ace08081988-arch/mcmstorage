@@ -3229,6 +3229,7 @@ function ItemCard({
       setUploads([]);
       void clearDraftPhotos(draftKey);
       onSubmitted(item.id);
+      clearSubmitKey(`prep:${item.id}`);
     } catch (e) {
       const msg = (e as Error).message || "Gagal kirim";
       try { navigator.vibrate?.([120, 80, 120]); } catch { /* ignore */ }
