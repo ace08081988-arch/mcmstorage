@@ -93,6 +93,8 @@ export function ScrollPerfLiveChart() {
     marks: Array.from({ length: POINTS }, () => [] as ScrollPerfEventKind[]),
   });
   const [paused, setPaused] = useState(false);
+  /** Lebar rolling average aktif (1 = mentah). */
+  const [smooth, setSmooth] = useState(1);
   /** Titik yang sedang ditunjuk (indeks sampel); null = tidak menunjuk. */
   const [hover, setHover] = useState<number | null>(null);
   const frames = useRef(0);
@@ -103,6 +105,25 @@ export function ScrollPerfLiveChart() {
   // tidak bergerak di bawah jari/kursor.
   const hoverRef = useRef<number | null>(null);
   hoverRef.current = hover;
+
+  // Pulihkan preferensi penghalusan.
+  useEffect(() => {
+    try {
+      const raw = Number(localStorage.getItem(SMOOTH_KEY));
+      if (SMOOTH_OPTIONS.some((o) => o.v === raw)) setSmooth(raw);
+    } catch {
+      /* mode privat → pakai default */
+    }
+  }, []);
+
+  const chooseSmooth = useCallback((v: number) => {
+    setSmooth(v);
+    try {
+      localStorage.setItem(SMOOTH_KEY, String(v));
+    } catch {
+      /* abaikan */
+    }
+  }, []);
 
   // Tandai fase gulir agar arsiran grafik sinkron dengan interaksi.
   useEffect(() => {
@@ -172,6 +193,9 @@ export function ScrollPerfLiveChart() {
   const fpsNow = series.fps[POINTS - 1] ?? 0;
   const latMax = Math.max(40, ...series.lat);
   const latNow = [...series.lat].reverse().find((v) => v > 0) ?? 0;
+  const fpsSmooth = rolling(series.fps, smooth);
+  const latSmooth = rolling(series.lat, smooth);
+  const smoothing = smooth > 1;
 
   const bands: { x: number; w: number }[] = [];
   const step = W / (POINTS - 1);
@@ -201,6 +225,8 @@ export function ScrollPerfLiveChart() {
   const hoverLat = hover !== null ? (series.lat[hover] ?? 0) : 0;
   const hoverScroll = hover !== null ? (series.scroll[hover] ?? false) : false;
   const hoverMarks = hover !== null ? (series.marks[hover] ?? []) : [];
+  const hoverFpsTrend = hover !== null ? (fpsSmooth[hover] ?? 0) : 0;
+  const hoverLatTrend = hover !== null ? (latSmooth[hover] ?? 0) : 0;
   /** Posisi kotak tooltip dalam persen lebar, dijaga agar tidak keluar kartu. */
   const hoverLeft = hover !== null ? Math.min(88, Math.max(2, (hover / (POINTS - 1)) * 100)) : 0;
 
