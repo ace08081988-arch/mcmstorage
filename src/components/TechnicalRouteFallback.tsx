@@ -25,9 +25,14 @@ function isUnlocked(): boolean {
   }
 }
 
-export function TechnicalRouteNotice({ pathname }: { pathname: string }) {
+export function TechnicalRouteNotice({
+  pathname,
+  onUnlock,
+}: {
+  pathname: string;
+  onUnlock?: () => void;
+}) {
   const navigate = useNavigate();
-  const [, force] = useState(0);
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-4 px-4 py-10 text-center">
       <div className="depth-3d flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
@@ -64,7 +69,7 @@ export function TechnicalRouteNotice({ pathname }: { pathname: string }) {
           try {
             sessionStorage.setItem(SESSION_KEY, "1");
           } catch { /* ignore */ }
-          force((v) => v + 1);
+          onUnlock?.();
         }}
       >
         <Wrench className="size-3.5" aria-hidden="true" />
@@ -83,33 +88,7 @@ export function TechnicalRouteGate({ children }: { children: ReactNode }) {
   }, [pathname]);
   const hidden = isHiddenMenuUrl(pathname);
   if (hidden && !unlocked) {
-    return (
-      <TechnicalRouteNoticeWrapper
-        pathname={pathname}
-        onUnlock={() => setUnlocked(true)}
-      />
-    );
+    return <TechnicalRouteNotice pathname={pathname} onUnlock={() => setUnlocked(true)} />;
   }
   return <>{children}</>;
-}
-
-function TechnicalRouteNoticeWrapper({
-  pathname,
-  onUnlock,
-}: {
-  pathname: string;
-  onUnlock: () => void;
-}) {
-  useEffect(() => {
-    const onStorage = () => {
-      if (isUnlocked()) onUnlock();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [onUnlock]);
-  return (
-    <div onClickCapture={() => { if (isUnlocked()) onUnlock(); }}>
-      <TechnicalRouteNotice pathname={pathname} />
-    </div>
-  );
 }
