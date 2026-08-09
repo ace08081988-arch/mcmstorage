@@ -2390,6 +2390,16 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
   /* Ruang spacer otomatis: 0px selama tidak ada bar bawah terpasang.
      Diisi tinggi nyata oleh use-bottom-nav-height.ts saat bar mount. */
   --app-bottom-bar-space: 0px;
+  /* Jarak baku elemen mengambang (FAB, action bar) ke tepi layar / bilah
+     bawah. Sedikit lebih lega di HP kecil supaya tidak menabrak gesture
+     bar dan lebih mudah disentuh dengan ibu jari. */
+  --app-fab-gap: 1rem;
+}
+
+@media (max-width: 400px) {
+  :root {
+    --app-fab-gap: 1.125rem;
+  }
 }
 
 /* Spacer otomatis untuk konten halaman: menyesuaikan sendiri dengan ada /
