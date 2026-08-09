@@ -438,11 +438,19 @@ export function ScrollPerfLiveChart() {
               12 detik terakhir. Area berarsir = saat Anda menggulir. Sentuh atau
               arahkan kursor ke grafik untuk membaca nilai persis di titik itu.
               Penghalusan membantu memisahkan tren dari spike sesaat.
+              Titik yang menyimpang jauh dari tren otomatis disorot merah.
             </CardDescription>
           </div>
-          <Badge variant="outline" className="shrink-0 text-muted-foreground">
-            {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
-          </Badge>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <Badge variant="outline" className="text-muted-foreground">
+              {hover !== null ? "Baca titik" : paused ? "Jeda" : "Live"}
+            </Badge>
+            {spikeCount > 0 ? (
+              <Badge variant="outline" className="border-red-500/40 text-red-500">
+                {spikeCount} spike
+              </Badge>
+            ) : null}
+          </div>
         </div>
         <div className="mt-ms-2 flex flex-wrap items-center justify-between gap-ms-2">
           <div
@@ -467,18 +475,40 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Sensitivitas sorotan spike"
+          >
+            {SPIKE_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseSpike(o.v)}
+                aria-pressed={spikeLevel === o.v}
+                title={o.hint}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  spikeLevel === o.v
+                    ? "bg-red-500 text-white"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
               const rows = [
-                "at,seconds_ago,fps,fps_trend,latency_ms,latency_trend,scrolling,events",
+                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events",
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${series.scroll[i] ? 1 : 0},${ev}`;
+                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev}`;
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
