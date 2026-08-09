@@ -22,7 +22,7 @@ export function PublicHeader({ compact = false }: { compact?: boolean }) {
     >
       <SkipToContent />
       <div
-        className={`mx-auto flex max-w-3xl items-center gap-ms-2 px-ms-4 ${
+        className={`mx-auto flex max-w-6xl items-center gap-ms-2 px-ms-4 ${
           compact ? "py-ms-2" : "py-ms-3"
         }`}
       >
