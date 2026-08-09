@@ -25,6 +25,7 @@ import { CallHost } from "@/components/chat/CallHost";
 import { LiveNotificationHost } from "@/components/LiveNotificationHost";
 import { ChatPresenceHost } from "@/components/chat/ChatPresenceHost";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
+import { TechnicalRouteGate } from "@/components/TechnicalRouteFallback";
 import { withPlainTimeout } from "@/lib/supabase-timeout";
 
 function AuthLock() {
@@ -155,7 +156,9 @@ function AuthLock() {
                 : "app-safe-x app-content-scrim min-w-0 flex-1 scroll-mt-16 app-bottom-spacer focus:outline-none"
             }
           >
-            <Outlet />
+            <TechnicalRouteGate>
+              <Outlet />
+            </TechnicalRouteGate>
           </div>
         </SidebarInset>
       </div>
