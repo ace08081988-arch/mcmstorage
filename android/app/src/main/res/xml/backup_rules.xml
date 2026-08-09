@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 11 ke bawah (allowBackup / fullBackupContent).
+  allowBackup sudah false, file ini jaring pengaman kalau suatu saat
+  allowBackup dinyalakan lagi: SEMUA penyimpanan sensitif dikecualikan.
+-->
+<full-backup-content>
+    <!-- Sesi Supabase, AppLock, dan Preferences Capacitor -->
+    <exclude domain="sharedpref" path="CapacitorStorage.xml" />
+    <exclude domain="sharedpref" path="io.aparajita.capacitor.biometricauth.xml" />
+    <!-- Semua storage WebView (localStorage/IndexedDB/cookies) -->
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="app_webview" />
+    <exclude domain="file" path="webview" />
+    <exclude domain="file" path="Default" />
+    <exclude domain="external" path="." />
+</full-backup-content>
