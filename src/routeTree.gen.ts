@@ -69,6 +69,7 @@ import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_auth
 import { Route as AuthenticatedPengaturanNotifikasiWaRouteImport } from './routes/_authenticated.pengaturan-notifikasi-wa'
 import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
 import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
+import { Route as AuthenticatedPengaturanPerformaRouteImport } from './routes/_authenticated.pengaturan-performa'
 import { Route as AuthenticatedPengaturanPesanWaRouteImport } from './routes/_authenticated.pengaturan-pesan-wa'
 import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
@@ -501,6 +502,12 @@ const AuthenticatedPengaturanPenyimpananRoute =
   AuthenticatedPengaturanPenyimpananRouteImport.update({
     id: '/pengaturan-penyimpanan',
     path: '/pengaturan-penyimpanan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPerformaRoute =
+  AuthenticatedPengaturanPerformaRouteImport.update({
+    id: '/pengaturan-performa',
+    path: '/pengaturan-performa',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanPesanWaRoute =
@@ -1189,6 +1196,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
@@ -1356,6 +1364,7 @@ export interface FileRoutesByTo {
   '/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
@@ -1529,6 +1538,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-notifikasi-wa': typeof AuthenticatedPengaturanNotifikasiWaRoute
   '/_authenticated/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/_authenticated/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/_authenticated/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/_authenticated/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
@@ -1703,6 +1713,7 @@ export interface FileRouteTypes {
     | '/pengaturan-notifikasi-wa'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
+    | '/pengaturan-performa'
     | '/pengaturan-pesan-wa'
     | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
@@ -1870,6 +1881,7 @@ export interface FileRouteTypes {
     | '/pengaturan-notifikasi-wa'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
+    | '/pengaturan-performa'
     | '/pengaturan-pesan-wa'
     | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
@@ -2042,6 +2054,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-notifikasi-wa'
     | '/_authenticated/pengaturan-oauth-google'
     | '/_authenticated/pengaturan-penyimpanan'
+    | '/_authenticated/pengaturan-performa'
     | '/_authenticated/pengaturan-pesan-wa'
     | '/_authenticated/pengaturan-privasi'
     | '/_authenticated/pengaturan-scroll-guard'
@@ -2666,6 +2679,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-penyimpanan'
       fullPath: '/pengaturan-penyimpanan'
       preLoaderRoute: typeof AuthenticatedPengaturanPenyimpananRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-performa': {
+      id: '/_authenticated/pengaturan-performa'
+      path: '/pengaturan-performa'
+      fullPath: '/pengaturan-performa'
+      preLoaderRoute: typeof AuthenticatedPengaturanPerformaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-pesan-wa': {
@@ -3562,6 +3582,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanNotifikasiWaRoute: typeof AuthenticatedPengaturanNotifikasiWaRoute
   AuthenticatedPengaturanOauthGoogleRoute: typeof AuthenticatedPengaturanOauthGoogleRoute
   AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
+  AuthenticatedPengaturanPerformaRoute: typeof AuthenticatedPengaturanPerformaRoute
   AuthenticatedPengaturanPesanWaRoute: typeof AuthenticatedPengaturanPesanWaRoute
   AuthenticatedPengaturanPrivasiRoute: typeof AuthenticatedPengaturanPrivasiRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
@@ -3642,6 +3663,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPengaturanOauthGoogleRoute,
   AuthenticatedPengaturanPenyimpananRoute:
     AuthenticatedPengaturanPenyimpananRoute,
+  AuthenticatedPengaturanPerformaRoute: AuthenticatedPengaturanPerformaRoute,
   AuthenticatedPengaturanPesanWaRoute: AuthenticatedPengaturanPesanWaRoute,
   AuthenticatedPengaturanPrivasiRoute: AuthenticatedPengaturanPrivasiRoute,
   AuthenticatedPengaturanScrollGuardRoute:
