@@ -58,7 +58,7 @@ export function TechnicalRouteNotice({
   }, [pathname]);
   const goBack = () => {
     if (backTarget) {
-      void navigate({ to: backTarget, replace: true });
+      void navigate({ to: backTarget as never, replace: true });
       return;
     }
     void navigate({ to: "/", replace: true });
