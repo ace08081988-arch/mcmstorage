@@ -64,40 +64,54 @@ export function TechnicalRouteNotice({
     void navigate({ to: "/", replace: true });
   };
   return (
-    <div className="mx-auto flex min-h-[60vh] w-full max-w-lg flex-col items-center justify-center gap-4 px-4 py-10 text-center">
-      <div className="depth-3d flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-        <ShieldAlert className="size-7" aria-hidden="true" />
-      </div>
-      <div className="space-y-1.5">
-        <h1 className="text-lg font-semibold tracking-tight">Halaman internal</h1>
-        <p className="text-sm text-muted-foreground">
-          Alamat <span className="font-mono text-xs">{pathname}</span> adalah alat internal
-          (diagnostik &amp; pemeliharaan) dan tidak dipakai dalam penggunaan sehari-hari.
+    <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center px-ms-4 py-ms-6 sm:px-ms-6">
+      <section className="depth-3d w-full rounded-2xl border bg-card px-ms-5 py-ms-6 text-center shadow-sm">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+          <ShieldAlert className="size-6" aria-hidden="true" />
+        </div>
+
+        <h1 className="mt-ms-4 text-ms-lg font-semibold tracking-tight text-foreground">
+          Halaman internal
+        </h1>
+        <p className="mt-ms-2 text-ms-sm leading-relaxed text-muted-foreground">
+          Halaman ini adalah alat internal untuk diagnostik dan pemeliharaan, bukan
+          bagian dari penggunaan sehari-hari.
         </p>
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-        <Button variant="default" className="depth-tap" onClick={goBack}>
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali
-        </Button>
-        <Button variant="outline" className="depth-tap" onClick={() => void navigate({ to: "/" })}>
-          <Home className="size-4" aria-hidden="true" />
-          Beranda
-        </Button>
-      </div>
-      <button
-        type="button"
-        className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:underline"
-        onClick={() => {
-          try {
-            sessionStorage.setItem(SESSION_KEY, "1");
-          } catch { /* ignore */ }
-          onUnlock?.();
-        }}
-      >
-        <Wrench className="size-3.5" aria-hidden="true" />
-        Buka halaman teknis
-      </button>
+        <p className="mt-ms-3 inline-block max-w-full truncate rounded-md border bg-muted/60 px-ms-2 py-1 font-mono text-ms-2xs text-muted-foreground">
+          {pathname}
+        </p>
+
+        <div className="mt-ms-5 flex flex-col gap-ms-2 sm:flex-row sm:justify-center">
+          <Button variant="default" className="depth-tap w-full sm:w-auto" onClick={goBack}>
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            Kembali
+          </Button>
+          <Button
+            variant="outline"
+            className="depth-tap w-full sm:w-auto"
+            onClick={() => void navigate({ to: "/" })}
+          >
+            <Home className="size-4" aria-hidden="true" />
+            Beranda
+          </Button>
+        </div>
+
+        <div className="mt-ms-5 border-t pt-ms-4">
+          <button
+            type="button"
+            className="inline-flex items-center gap-ms-1 text-ms-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            onClick={() => {
+              try {
+                sessionStorage.setItem(SESSION_KEY, "1");
+              } catch { /* ignore */ }
+              onUnlock?.();
+            }}
+          >
+            <Wrench className="size-3.5" aria-hidden="true" />
+            Buka halaman teknis
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
