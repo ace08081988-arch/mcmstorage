@@ -2290,9 +2290,9 @@ html[data-reduce-motion="on"] .skeleton-a11y {
   top: 0;
   z-index: 30;
   border-bottom: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
-  background-color: color-mix(in oklab, var(--background) 85%, transparent);
-  backdrop-filter: blur(24px) saturate(140%);
-  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  /* Solid: header transparan membuat konten yang menggulir "tembus" dan
+     terlihat seperti judul dobel di perangkat tanpa backdrop-filter. */
+  background-color: var(--background);
 }
 
 .app-static-bottom-bar {
