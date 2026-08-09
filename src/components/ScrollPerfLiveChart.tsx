@@ -556,18 +556,70 @@ export function ScrollPerfLiveChart() {
               </button>
             ))}
           </div>
+          <div
+            className="inline-flex rounded-md border p-0.5"
+            role="group"
+            aria-label="Kolom yang diekspor ke CSV"
+          >
+            {CSV_COLUMN_OPTIONS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => chooseCsvColumns(o.v)}
+                aria-pressed={csvColumns === o.v}
+                title={`CSV: ${o.hint}`}
+                className={`rounded-[5px] px-ms-2 py-1 text-ms-2xs transition-colors ${
+                  csvColumns === o.v
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               const now = Date.now();
+              const withRaw = csvColumns !== "trend";
+              const withTrend = csvColumns !== "raw";
+              const header = [
+                "at",
+                "seconds_ago",
+                ...(withRaw ? ["fps", "latency_ms"] : []),
+                ...(withTrend
+                  ? ["fps_trend", "latency_trend", "trend_method", "trend_window"]
+                  : []),
+                "fps_spike",
+                "latency_spike",
+                "scrolling",
+                "events",
+              ].join(",");
               const rows = [
-                "at,seconds_ago,fps,fps_trend,fps_spike,latency_ms,latency_trend,latency_spike,scrolling,events,trend_method,trend_window",
+                header,
                 ...series.fps.map((f, i) => {
                   const ago = ((POINTS - 1 - i) * SAMPLE_MS) / 1000;
                   const at = new Date(now - ago * 1000).toISOString();
                   const ev = (series.marks[i] ?? []).join("|");
-                  return `${at},${ago.toFixed(1)},${f},${fpsSmooth[i] ?? f},${fpsSpikes[i] ? 1 : 0},${series.lat[i] ?? 0},${latSmooth[i] ?? 0},${latSpikes[i] ? 1 : 0},${series.scroll[i] ? 1 : 0},${ev},${smoothing ? methodCfg.short : "raw"},${smooth}`;
+                  return [
+                    at,
+                    ago.toFixed(1),
+                    ...(withRaw ? [f, series.lat[i] ?? 0] : []),
+                    ...(withTrend
+                      ? [
+                          fpsSmooth[i] ?? f,
+                          latSmooth[i] ?? (series.lat[i] ?? 0),
+                          smoothing ? methodCfg.short : "raw",
+                          smooth,
+                        ]
+                      : []),
+                    fpsSpikes[i] ? 1 : 0,
+                    latSpikes[i] ? 1 : 0,
+                    series.scroll[i] ? 1 : 0,
+                    ev,
+                  ].join(",");
                 }),
               ].join("\r\n");
               downloadCsv(scrollPerfCsvFilename("live"), rows);
