@@ -4425,6 +4425,14 @@ export type Database = {
       normalize_email: { Args: { _e: string }; Returns: string }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
+      order_process_v1: {
+        Args: {
+          _order_id: string
+          _paid_amount?: number
+          _payment_method: string
+        }
+        Returns: Json
+      }
       party_balance_events_v1: {
         Args: { p_key?: string; p_limit?: number }
         Returns: Json
@@ -4535,6 +4543,16 @@ export type Database = {
           _token: string
         }
         Returns: Json
+      }
+      request_title_save_v1: {
+        Args: {
+          _items: Json
+          _name: string
+          _note: string
+          _position: number
+          _title_id: string
+        }
+        Returns: string
       }
       resolve_invite_code: {
         Args: { _code: string }
