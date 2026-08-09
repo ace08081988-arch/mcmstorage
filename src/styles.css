@@ -4911,3 +4911,26 @@ html[data-scrolling="1"] [class*="backdrop-blur"] {
   content-visibility: auto;
   contain-intrinsic-size: auto 240px;
 }
+
+/* ── Chat di perangkat sentuh: paint semurah mungkin ────────────────── */
+@media (pointer: coarse) {
+  /* Blur permanen di bilah atas/bawah memaksa GPU membaca ulang backdrop
+     tiap frame scroll. Ganti dengan latar solid. */
+  .wa-chat-bg ~ [class*="backdrop-blur"],
+  .chat-field-scope[class*="backdrop-blur"],
+  .chat-bar-solid {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: var(--background) !important;
+  }
+  /* Bayangan per-bubble × puluhan bubble = biaya paint besar. */
+  .wa-bubble-in,
+  .wa-bubble-out {
+    box-shadow: none;
+  }
+}
+
+.chat-scroller {
+  contain: layout paint style;
+  overscroll-behavior: contain;
+}
