@@ -4881,7 +4881,10 @@ html[data-scroll-smooth="1"] {
 /* ── Respons scroll: matikan efek berat selama menggulir ──────────────
    Atribut ditulis oleh src/lib/scroll-perf.ts. Tujuannya menghindari
    repaint mahal (blur, kilau, bayangan besar) di tengah gesture. */
-html[data-scrolling="1"] * {
+/* Hindari selector universal: `*` memaksa recalc gaya seluruh dokumen tiap
+   kali scroll mulai/berhenti. Cukup targetkan elemen yang memang beranimasi. */
+html[data-scrolling="1"] [class*="animate-"],
+html[data-scrolling="1"] [class*="transition"] {
   animation-play-state: paused !important;
   transition-duration: 0s !important;
 }
@@ -4896,14 +4899,15 @@ html[data-scrolling="1"] [class*="backdrop-blur"] {
   -webkit-backdrop-filter: none !important;
 }
 
-html[data-scrolling="1"] .depth-3d,
-html[data-scrolling="1"] .depth-lift {
-  will-change: transform;
-}
-
 @media (hover: none) {
   html[data-scrolling="1"] .depth-3d,
   html[data-scrolling="1"] .depth-lift {
     box-shadow: 0 1px 2px hsl(0 0% 0% / 0.28) !important;
   }
+}
+
+/* Lewati paint untuk grup pesan di luar layar. */
+.chat-day-group {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 240px;
 }
