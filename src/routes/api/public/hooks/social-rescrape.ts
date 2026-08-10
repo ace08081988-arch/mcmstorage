@@ -15,6 +15,14 @@ import {
   urlsFromSitemapXml,
 } from "@/lib/social-rescrape";
 import { SITE_URL } from "@/lib/seo-meta";
+import { filterRescrapeUrls } from "@/lib/ssrf-guard";
+import {
+  clientKeyFromRequest,
+  rateLimit,
+  rateLimitedResponse,
+  readBoundedJson,
+  timingSafeEqualStr,
+} from "@/lib/edge-guard";
 
 const BodySchema = z
   .object({
@@ -23,24 +31,44 @@ const BodySchema = z
   })
   .strict();
 
-function authorized(request: Request): boolean {
-  const apikey = request.headers.get("apikey");
-  const token = request.headers.get("x-rescrape-token");
-  const expectedKey = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+/**
+ * Otorisasi: hanya secret server (`SOCIAL_RESCRAPE_TOKEN`), dibandingkan
+ * konstan-waktu. Anon/publishable key TIDAK lagi diterima — kunci itu ada di
+ * bundel browser sehingga siapa pun bisa memicu rescrape. Bila secret belum
+ * dipasang, endpoint fail-closed (503).
+ */
+function authorize(request: Request): "ok" | "unauthorized" | "not_configured" {
   const expectedToken = process.env["SOCIAL_RESCRAPE_TOKEN"];
-  if (expectedToken && token && token === expectedToken) return true;
-  if (expectedKey && apikey && apikey === expectedKey) return true;
-  return false;
+  if (!expectedToken) return "not_configured";
+  const token = request.headers.get("x-rescrape-token") ?? "";
+  return token && timingSafeEqualStr(token, expectedToken) ? "ok" : "unauthorized";
 }
 
 export const Route = createFileRoute("/api/public/hooks/social-rescrape")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!authorized(request)) {
+        const rl = rateLimit(clientKeyFromRequest(request, "rescrape"), {
+          limit: 5,
+          windowMs: 60_000,
+        });
+        if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSeconds);
+
+        const auth = authorize(request);
+        if (auth === "not_configured") {
+          return Response.json(
+            { error: "rescrape_secret_not_configured" },
+            { status: 503 },
+          );
+        }
+        if (auth === "unauthorized") {
           return Response.json({ error: "unauthorized" }, { status: 401 });
         }
-        const raw = await request.json().catch(() => ({}));
+        const body = await readBoundedJson(request, 16 * 1024);
+        if (!body.ok) {
+          return Response.json({ error: body.error }, { status: body.error === "too_large" ? 413 : 400 });
+        }
+        const raw = body.value;
         const parsed = BodySchema.safeParse(raw ?? {});
         if (!parsed.success) {
           return Response.json({ error: "invalid body" }, { status: 400 });
@@ -56,10 +84,20 @@ export const Route = createFileRoute("/api/public/hooks/social-rescrape")({
           urls = selectRescrapeUrls(urlsFromSitemapXml(await res.text()), limit);
         }
 
+        // SSRF guard: hanya URL https milik situs sendiri dengan path allowlist.
+        const { safe, rejected } = filterRescrapeUrls(urls);
+        if (!safe.length) {
+          return Response.json({ error: "no_allowed_urls", rejected }, { status: 400 });
+        }
+        urls = safe;
+
         const report = await rescrapeUrls(urls.slice(0, limit), {
           facebookToken: process.env["FACEBOOK_GRAPH_TOKEN"],
         });
-        return Response.json(report, { status: report.ok ? 200 : 207 });
+        return Response.json(
+          { ...report, rejected },
+          { status: report.ok && rejected.length === 0 ? 200 : 207 },
+        );
       },
     },
   },
