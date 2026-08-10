@@ -981,7 +981,10 @@ function PublicPrepPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  // Jam khusus layar PIN (belum authed / daftar item belum ter-mount).
+  // TIDAK dipakai lagi untuk countdown sesi supaya portal tidak rerender
+  // tiap detik.
+  const [lockNow, setLockNow] = useState(() => Date.now());
   // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
   // sebelum re-login. Dipasang di writeSession dan rehydrate.
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
@@ -1142,7 +1145,7 @@ function PublicPrepPage() {
     if (lockedUntil == null) return;
     const id = setInterval(() => {
       const t = Date.now();
-      setNow(t);
+      setLockNow(t);
       if (lockedUntil <= t) {
         setLockedUntil(null);
         setAttempts(0);
@@ -1155,48 +1158,16 @@ function PublicPrepPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedUntil]);
 
-  const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
+  const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - lockNow) / 1000)) : 0;
   const isLocked = lockedSecondsLeft > 0;
   const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
-  // Countdown sisa waktu sesi PIN (hanya saat authed). Tick 1 detik agar
-  // operator tahu kapan akan dimintai PIN lagi. Saat 0, paksa kembali ke
-  // layar PIN — sejalan dgn TTL yang dipakai readSession().
-  useEffect(() => {
-    if (!authed || !sessionStartedAt) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [authed, sessionStartedAt]);
+  // Sesi PIN: parent hanya menyimpan waktu expiry absolut + SATU timeout
+  // tepat pada saat expiry. Hitung mundur per detik dirender komponen
+  // <SessionCountdown /> agar tidak menyeret seluruh portal ikut rerender.
   const sessionExpiresAt = sessionStartedAt ? sessionStartedAt + SESSION_TTL_MS : null;
-  const sessionSecondsLeft = sessionExpiresAt
-    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
-    : 0;
-  const sessionClock = `${String(Math.floor(sessionSecondsLeft / 60)).padStart(2, "0")}:${String(sessionSecondsLeft % 60).padStart(2, "0")}`;
-  useEffect(() => {
-    if (!authed || !sessionExpiresAt) return;
-    if (sessionSecondsLeft > 0) return;
-    // Jangan cabut sesi di tengah proses ambil/edit/upload foto — draft
-    // foto & PIN hilang. Tandai sebagai pending; setWorkerOperationActive
-    // akan menjalankannya begitu counter turun ke 0.
-    if (isWorkerOperationActive()) {
-      if (!pendingSessionExpiryRef.current) {
-        pendingSessionExpiryRef.current = true;
-        idleQueueRef.current.push(() => {
-          pendingSessionExpiryRef.current = false;
-          clearSession();
-          setAuthed(false);
-          setPin("");
-          pinRef.current = "";
-          setSessionJustExpired(true);
-          toast.info("Sesi PIN berakhir — silakan masuk ulang.");
-          focusPinInput();
-        });
-        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
-      }
-      return;
-    }
-    // TTL habis → lepas sesi & kembalikan ke layar PIN.
+  const expireSessionNow = useCallback(() => {
     clearSession();
     setAuthed(false);
     setPin("");
@@ -1205,7 +1176,31 @@ function PublicPrepPage() {
     toast.info("Sesi PIN berakhir — silakan masuk ulang.");
     focusPinInput();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, sessionExpiresAt, sessionSecondsLeft]);
+  }, []);
+  const sessionTimerRef = useRef<ReturnType<typeof createSessionExpiryTimer> | null>(null);
+  if (!sessionTimerRef.current) {
+    sessionTimerRef.current = createSessionExpiryTimer({
+      isBusy: () => activeWorkerOpsRef.current > 0,
+      onExpire: () => {
+        pendingSessionExpiryRef.current = false;
+        expireSessionNow();
+      },
+      onDefer: () => {
+        // Jangan cabut sesi di tengah ambil/edit/upload foto — draft foto &
+        // PIN bisa hilang. Dieksekusi tepat sekali setelah operasi selesai.
+        pendingSessionExpiryRef.current = true;
+        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
+      },
+    });
+  }
+  useEffect(() => {
+    const timer = sessionTimerRef.current;
+    if (!timer) return;
+    timer.arm(authed ? sessionExpiresAt : null);
+    return () => {
+      if (!authed) timer.dispose();
+    };
+  }, [authed, sessionExpiresAt]);
 
   async function fetchTask(p: string) {
     if (isLocked) return false;
