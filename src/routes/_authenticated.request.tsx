@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { NumericTextField } from "@/components/NumericDraftInput";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { validateSubmitGate } from "@/lib/prep-submit-gate";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import { displayUnit } from "@/lib/unit-label";
@@ -3411,7 +3412,7 @@ function PrepEditorDialog({
   ];
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [initialRows, setInitialRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
-  const [photo, setPhoto] = useState<{ blob: Blob; dataUrl: string } | null>(null);
+  const [photo, setPhoto] = useState<{ blob: Blob; dataUrl: string; edited?: boolean } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [locUrl, setLocUrl] = useState("");
@@ -3540,13 +3541,10 @@ function PrepEditorDialog({
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
     const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    // Langsung set `photo` dari file mentah sebelum membuka editor.
-    // Alasan: jika PhotoEditorV2 gagal memanggil onSave (mis. engine paused,
-    // WebView Android me-recreate, atau user tap Batal), foto asli tetap
-    // terlampir sehingga tombol Simpan tidak lagi mengeluh
-    // "Wajib lampirkan foto". onSave editor akan overwrite dengan versi
-    // beranotasi bila user menyelesaikan editor.
-    setPhoto({ blob: f, dataUrl });
+    // Foto mentah tetap distage (supaya tidak hilang bila WebView Android
+    // me-recreate editor), TAPI ditandai `edited: false` sehingga gate simpan
+    // menolaknya sampai user benar-benar menyelesaikan editor.
+    setPhoto({ blob: f, dataUrl, edited: false });
     setEditorSrc(dataUrl); setEditorOpen(true);
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -3591,6 +3589,12 @@ function PrepEditorDialog({
   }
 
   async function save(opts?: { sendWa?: boolean; sendChat?: boolean }) {
+    const gate = validateSubmitGate({
+      photos: photo ? [photo] : [],
+      locUrl,
+      gps,
+    });
+    if (!gate.ok) { toast.error(gate.message); return; }
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
     if (Object.keys(qtyErrors).length > 0 || rows.some((r) => r.actual_grams !== "" && Number(r.actual_grams) < 0)) {
       toast.error("Jumlah tidak boleh negatif. Perbaiki dulu."); return;
@@ -3978,8 +3982,11 @@ function PrepEditorDialog({
     {editorOpen && editorSrc && (
       <PhotoEditor
         src={editorSrc}
-        onCancel={() => setEditorOpen(false)}
-        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+        onCancel={() => {
+          setEditorOpen(false);
+          toast.warning("Foto belum diedit. Ketuk foto untuk mengedit sebelum simpan.");
+        }}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl, edited: true }); setEditorOpen(false); }}
       />
     )}
     </>

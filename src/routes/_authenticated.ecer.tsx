@@ -2980,7 +2980,7 @@ function PrepEditDialog({
 function PrepFormDialog({ item, title, onClose, onSaved }: {
   item: WarehouseItem; title: EcerTitle; onClose: () => void; onSaved: () => void;
 }) {
-  const [photo, setPhoto] = useState<{ dataUrl: string; blob: Blob } | null>(null);
+  const [photo, setPhoto] = useState<{ dataUrl: string; blob: Blob; edited?: boolean } | null>(null);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -3686,7 +3686,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
       <PhotoEditor
         src={editorSrc}
         onCancel={() => setEditorOpen(false)}
-        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl, edited: true }); setEditorOpen(false); }}
       />
     )}
     </>
