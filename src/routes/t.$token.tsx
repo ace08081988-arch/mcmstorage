@@ -877,7 +877,16 @@ function PublicPrepPage() {
   }, [runIdleQueue]);
   // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
   // tanpa menciptakan siklus dependensi.
-  const silentRefreshRef = useRef<null | (() => Promise<void>)>(null);
+  const silentRefreshRef = useRef<null | (() => Promise<RefreshResult>)>(null);
+  // Snapshot terakhir yang sudah dipakai render — dipakai untuk melewati
+  // setState ketika server mengirim payload yang identik secara semantik.
+  const lastSnapshotRef = useRef<{ task: unknown; items: unknown } | null>(null);
+  // Nilai terkini untuk logika auto-resync tanpa membuat efek bergantung
+  // pada state (yang akan merender ulang seluruh portal).
+  const lastSyncAtRef = useRef<number | null>(null);
+  const rtStatusRef = useRef<"connecting" | "connected" | "error">("connecting");
+  const resyncingRef = useRef(false);
+  const authedRefForSync = useRef(false);
   const keepWorkerSessionAlive = useCallback(() => {
     const now = Date.now();
     if (now - lastKeepAliveAtRef.current < 30_000) return;
@@ -935,32 +944,38 @@ function PublicPrepPage() {
   // "Tidak sinkron" (>90 dtk / channel error). Dibatasi cooldown agar
   // tidak membanjiri server saat koneksi memang sedang bermasalah.
   useEffect(() => {
-    if (!authed || resyncing) return;
-    const age = lastSyncAt ? (Date.now() - lastSyncAt) / 1000 : null;
-    const isStale = rtStatus === "error" || (age != null && age > cfg.staleThresholdSec);
-    const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
-    if (!isStale && !isLag) {
-      autoResyncRef.current.failCount = 0;
-      return;
-    }
-    // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
-    const fc = autoResyncRef.current.failCount;
-    const cooldownMs = isStale
-      ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
-      : cfg.lagCooldownMs;
-    if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
-    autoResyncRef.current.lastAt = Date.now();
-    const prevSync = lastSyncAt;
-    void (async () => {
-      await silentRefresh();
-      // Bila silentRefresh tidak memperbarui lastSyncAt (gagal/diam), naikkan
-      // counter agar interval coba ulang merenggang.
-      if (lastSyncAt === prevSync) autoResyncRef.current.failCount = fc + 1;
-      else autoResyncRef.current.failCount = 0;
-    })();
-    // syncTick memicu evaluasi ulang tiap 5 dtk.
+    if (!authed) return;
+    // Interval murni ref-based: tidak ada state yang berubah tiap detak,
+    // jadi portal & kartu tidak ikut rerender.
+    const evaluate = () => {
+      if (!authedRefForSync.current || resyncingRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      const syncAt = lastSyncAtRef.current;
+      const age = syncAt ? (Date.now() - syncAt) / 1000 : null;
+      const isStale = rtStatusRef.current === "error" || (age != null && age > cfg.staleThresholdSec);
+      const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
+      if (!isStale && !isLag) {
+        autoResyncRef.current.failCount = 0;
+        return;
+      }
+      // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
+      const fc = autoResyncRef.current.failCount;
+      const cooldownMs = isStale
+        ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
+        : cfg.lagCooldownMs;
+      if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
+      autoResyncRef.current.lastAt = Date.now();
+      void (async () => {
+        // Pakai hasil aktual dari refresh, bukan closure lastSyncAt lama.
+        const res = await (silentRefreshRef.current?.() ?? Promise.resolve({ ok: false, at: null }));
+        if (res.ok) autoResyncRef.current.failCount = 0;
+        else autoResyncRef.current.failCount = fc + 1;
+      })();
+    };
+    const id = window.setInterval(evaluate, 5000);
+    return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, rtStatus, lastSyncAt, syncTick, resyncing]);
+  }, [authed]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
