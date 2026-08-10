@@ -40,7 +40,11 @@ on:
         default: ""
 
   # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
+  # Selain itu: push ke branch "Mcmstorage.biz" memicu build-only otomatis,
+  # tapi HANYA bila file workflow ini yang berubah (lihat guard `if` di job).
   push:
+    branches:
+      - "Mcmstorage.biz"
     tags:
       - "v*"
 
@@ -52,6 +56,13 @@ jobs:
   build-and-release:
     name: aab:release (${{ github.event.inputs.variant || 'full' }} → ${{ github.event.inputs.track || 'internal' }})
     runs-on: ubuntu-latest
+    # Push ke branch hanya jalan kalau commit menyentuh file workflow ini.
+    # Tag v* dan workflow_dispatch tidak terpengaruh.
+    if: >-
+      github.event_name != 'push'
+      || startsWith(github.ref, 'refs/tags/v')
+      || contains(toJSON(github.event.commits.*.modified), '.github/workflows/aab-release.yml')
+      || contains(toJSON(github.event.commits.*.added), '.github/workflows/aab-release.yml')
     timeout-minutes: 45
     env:
       # Kredensial keystore — dibaca oleh scripts/validate-keystore.mjs
