@@ -50,7 +50,7 @@ import { mergeStagedPhotos } from "@/lib/prep-photo-merge";
 import { validateSubmitGate } from "@/lib/prep-submit-gate";
 import {
   saveDraftPhotos,
-  loadDraftPhotos,
+  loadDraftPhotoEntries,
   clearDraftPhotos,
   itemDraftKey,
   requestDraftKey,
