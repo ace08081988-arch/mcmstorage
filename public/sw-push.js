@@ -414,6 +414,15 @@ async function resubscribePush(oldSubscription) {
   });
   const oldEndpoint = oldSubscription && oldSubscription.endpoint;
   if (!oldEndpoint) return;
+  // Token kepemilikan bertanda tangan disimpan aplikasi saat login; tanpa itu
+  // server menolak rotasi (fail-closed) dan klien akan memperbaiki saat dibuka.
+  let ownershipToken = null;
+  try {
+    const cache = await caches.open("mcm-push-owner");
+    const res = await cache.match("https://push-owner.local/token");
+    if (res) ownershipToken = (await res.json()).token || null;
+  } catch (_) {}
+  if (!ownershipToken) return;
   await fetch("/api/public/push-resubscribe", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -422,6 +431,7 @@ async function resubscribePush(oldSubscription) {
       endpoint: fresh.endpoint,
       p256dh: swKeyToBase64(fresh.getKey("p256dh")),
       auth: swKeyToBase64(fresh.getKey("auth")),
+      ownershipToken,
     }),
   });
 }

@@ -102,6 +102,7 @@ import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[
 import { Route as AuthenticatedAdminDependensiRouteImport } from './routes/_authenticated.admin.dependensi'
 import { Route as AuthenticatedAdminEmailStatusRouteImport } from './routes/_authenticated.admin.email-status'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
+import { Route as AuthenticatedAdminRekonsiliasiRouteImport } from './routes/_authenticated.admin.rekonsiliasi'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminWebVitalsRouteImport } from './routes/_authenticated.admin.web-vitals'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
@@ -684,6 +685,12 @@ const AuthenticatedAdminPortalErrorLogRoute =
     path: '/admin/portal-error-log',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminRekonsiliasiRoute =
+  AuthenticatedAdminRekonsiliasiRouteImport.update({
+    id: '/admin/rekonsiliasi',
+    path: '/admin/rekonsiliasi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSignupAttemptsRoute =
   AuthenticatedAdminSignupAttemptsRouteImport.update({
     id: '/admin/signup-attempts',
@@ -1236,6 +1243,7 @@ export interface FileRoutesByFullPath {
   '/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
+  '/admin/rekonsiliasi': typeof AuthenticatedAdminRekonsiliasiRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -1406,6 +1414,7 @@ export interface FileRoutesByTo {
   '/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
+  '/admin/rekonsiliasi': typeof AuthenticatedAdminRekonsiliasiRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -1581,6 +1590,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/dependensi': typeof AuthenticatedAdminDependensiRoute
   '/_authenticated/admin/email-status': typeof AuthenticatedAdminEmailStatusRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
+  '/_authenticated/admin/rekonsiliasi': typeof AuthenticatedAdminRekonsiliasiRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/_authenticated/admin/web-vitals': typeof AuthenticatedAdminWebVitalsRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -1756,6 +1766,7 @@ export interface FileRouteTypes {
     | '/admin/dependensi'
     | '/admin/email-status'
     | '/admin/portal-error-log'
+    | '/admin/rekonsiliasi'
     | '/admin/signup-attempts'
     | '/admin/web-vitals'
     | '/admin/worker-portal'
@@ -1926,6 +1937,7 @@ export interface FileRouteTypes {
     | '/admin/dependensi'
     | '/admin/email-status'
     | '/admin/portal-error-log'
+    | '/admin/rekonsiliasi'
     | '/admin/signup-attempts'
     | '/admin/web-vitals'
     | '/admin/worker-portal'
@@ -2100,6 +2112,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/dependensi'
     | '/_authenticated/admin/email-status'
     | '/_authenticated/admin/portal-error-log'
+    | '/_authenticated/admin/rekonsiliasi'
     | '/_authenticated/admin/signup-attempts'
     | '/_authenticated/admin/web-vitals'
     | '/_authenticated/admin/worker-portal'
@@ -2926,6 +2939,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/rekonsiliasi': {
+      id: '/_authenticated/admin/rekonsiliasi'
+      path: '/admin/rekonsiliasi'
+      fullPath: '/admin/rekonsiliasi'
+      preLoaderRoute: typeof AuthenticatedAdminRekonsiliasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/signup-attempts': {
       id: '/_authenticated/admin/signup-attempts'
       path: '/admin/signup-attempts'
@@ -3626,6 +3646,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminDependensiRoute: typeof AuthenticatedAdminDependensiRoute
   AuthenticatedAdminEmailStatusRoute: typeof AuthenticatedAdminEmailStatusRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
+  AuthenticatedAdminRekonsiliasiRoute: typeof AuthenticatedAdminRekonsiliasiRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
   AuthenticatedAdminWebVitalsRoute: typeof AuthenticatedAdminWebVitalsRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
@@ -3708,6 +3729,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminDependensiRoute: AuthenticatedAdminDependensiRoute,
   AuthenticatedAdminEmailStatusRoute: AuthenticatedAdminEmailStatusRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
+  AuthenticatedAdminRekonsiliasiRoute: AuthenticatedAdminRekonsiliasiRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
   AuthenticatedAdminWebVitalsRoute: AuthenticatedAdminWebVitalsRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,

@@ -1,6 +1,31 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { uploadPrepPhoto } from "./prep";
 
+
+// Byte header gambar asli — guard magic-byte menolak buffer nol.
+function imgBytes(type: string, size: number): Uint8Array {
+  const b = new Uint8Array(Math.max(size, 64));
+  if (type === "image/png") {
+    b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    new DataView(b.buffer).setUint32(16, 1200);
+    new DataView(b.buffer).setUint32(20, 800);
+  } else if (type === "image/webp") {
+    b.set([0x52, 0x49, 0x46, 0x46], 0);
+    b.set([0x57, 0x45, 0x42, 0x50], 8);
+  } else if (type === "image/heic" || type === "image/heif") {
+    b.set([0x00, 0x00, 0x00, 0x18], 0);
+    b.set([0x66, 0x74, 0x79, 0x70], 4);
+    b.set([0x68, 0x65, 0x69, 0x63], 8);
+  } else {
+    b.set([0xff, 0xd8, 0xff, 0xe0], 0);
+  }
+  return b;
+}
+
+function imgBlob(type: string, size: number): Blob {
+  return new Blob([imgBytes(type, size)], { type });
+}
+
 type StorageClientArg = Parameters<typeof uploadPrepPhoto>[4];
 
 // -----------------------------------------------------------------------
@@ -59,7 +84,7 @@ function installFakeImageStack(outSize: number, outType = "image/jpeg") {
     constructor(w: number, h: number) { this.width = w; this.height = h; }
     getContext() { return { drawImage: () => {} }; }
     async convertToBlob(opts?: { type?: string }) {
-      return new Blob([new Uint8Array(outSize)], { type: opts?.type ?? outType });
+      return new Blob([imgBytes(opts?.type ?? outType, outSize)], { type: opts?.type ?? outType });
     }
   };
 }
@@ -71,7 +96,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
 
   it("JPEG kecil: MIME image/jpeg, path .jpg, tidak re-encode", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(10 * 1024)], { type: "image/jpeg" });
+    const blob = imgBlob("image/jpeg", 10 * 1024);
     const path = await uploadPrepPhoto("tok", "item-1", blob, {}, client);
     expect(path).toMatch(/^tok\/item-1\/\d+-[a-z0-9]+\.jpg$/);
     expect(calls).toHaveLength(1);
@@ -88,7 +113,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
     // stageFile SEHARUSNYA sudah mengonversi, tapi kalau ada jalur lain
     // yang lolos, uploadPrepPhoto harus menolak Content-Type HEIC.
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(10 * 1024)], { type: "image/heic" });
+    const blob = imgBlob("image/heic", 10 * 1024);
     const path = await uploadPrepPhoto("t", "i", blob, {}, client);
     expect(path).toMatch(/\.jpg$/);
     expect(calls[0].options.contentType).toBe("image/jpeg");
@@ -97,7 +122,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
 
   it("PNG: extensi & MIME .png dipertahankan", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(10 * 1024)], { type: "image/png" });
+    const blob = imgBlob("image/png", 10 * 1024);
     const path = await uploadPrepPhoto("t", "i", blob, {}, client);
     expect(path).toMatch(/\.png$/);
     expect(calls[0].options.contentType).toBe("image/png");
@@ -106,7 +131,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
 
   it("ext override lewat argument string tetap didukung (backward compat)", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(10 * 1024)], { type: "image/webp" });
+    const blob = imgBlob("image/jpeg", 10 * 1024);
     const path = await uploadPrepPhoto("t", "i", blob, "jpg", client);
     expect(path).toMatch(/\.jpg$/);
     expect(calls[0].options.contentType).toBe("image/jpeg");
@@ -114,7 +139,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
 
   it("fileName kustom dipakai untuk nama File (Content-Disposition)", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(10 * 1024)], { type: "image/jpeg" });
+    const blob = imgBlob("image/jpeg", 10 * 1024);
     await uploadPrepPhoto("t", "i", blob, { fileName: "bukti-timbang.jpg" }, client);
     expect((calls[0].body as File).name).toBe("bukti-timbang.jpg");
   });
@@ -122,7 +147,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
   it("blob > 1.5 MB memicu re-kompresi ke JPEG q=0.8 (safety-net)", async () => {
     installFakeImageStack(300 * 1024, "image/jpeg"); // hasil 300 KB
     const { client, calls } = makeStorage();
-    const big = new Blob([new Uint8Array(2 * 1024 * 1024)], { type: "image/jpeg" });
+    const big = imgBlob("image/jpeg", 2 * 1024 * 1024);
     await uploadPrepPhoto("t", "i", big, {}, client);
     const body = calls[0].body as File;
     expect(body.type).toBe("image/jpeg");
@@ -134,7 +159,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
   it("safety-net TIDAK dipakai bila hasil kompresi lebih besar dari asli", async () => {
     installFakeImageStack(3 * 1024 * 1024, "image/jpeg"); // 3 MB > input
     const { client, calls } = makeStorage();
-    const input = new Blob([new Uint8Array(2 * 1024 * 1024)], { type: "image/jpeg" });
+    const input = imgBlob("image/jpeg", 2 * 1024 * 1024);
     await uploadPrepPhoto("t", "i", input, {}, client);
     expect((calls[0].body as File).size).toBe(input.size);
   });
@@ -143,21 +168,21 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
     const spy = vi.fn(async () => ({ width: 100, height: 100, close() {} }));
     g.createImageBitmap = spy;
     const { client } = makeStorage();
-    const big = new Blob([new Uint8Array(2 * 1024 * 1024)], { type: "image/jpeg" });
+    const big = imgBlob("image/jpeg", 2 * 1024 * 1024);
     await uploadPrepPhoto("t", "i", big, { skipCompress: true }, client);
     expect(spy).not.toHaveBeenCalled();
   });
 
   it("mengembalikan null saat storage.upload error, tanpa melempar", async () => {
     const { client } = makeStorage({ message: "boom" } as unknown);
-    const blob = new Blob([new Uint8Array(1024)], { type: "image/jpeg" });
+    const blob = imgBlob("image/jpeg", 1024);
     const path = await uploadPrepPhoto("t", "i", blob, { skipCompress: true }, client);
     expect(path).toBeNull();
   });
 
   it("path selalu di bawah prefix `<token>/<itemId>/`", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(1024)], { type: "image/jpeg" });
+    const blob = imgBlob("image/jpeg", 1024);
     await uploadPrepPhoto("TOK-abc", "item-xyz", blob, { skipCompress: true }, client);
     expect(calls[0].path.startsWith("TOK-abc/item-xyz/")).toBe(true);
   });
@@ -174,7 +199,7 @@ describe("uploadPrepPhoto — pagar MIME & ukuran", () => {
 
   it("menerima image/heic karena dinormalisasi ke jpg", async () => {
     const { client, calls } = makeStorage();
-    const blob = new Blob([new Uint8Array(1024)], { type: "image/heic" });
+    const blob = imgBlob("image/heic", 1024);
     const path = await uploadPrepPhoto("t", "i", blob, { skipCompress: true }, client);
     expect(path).toMatch(/\.jpg$/);
     expect(calls).toHaveLength(1);
@@ -182,7 +207,7 @@ describe("uploadPrepPhoto — pagar MIME & ukuran", () => {
 
   it("menolak gambar > 12 MB yang tidak bisa dikompres", async () => {
     const { client, calls } = makeStorage();
-    const big = new Blob([new Uint8Array(13 * 1024 * 1024)], { type: "image/jpeg" });
+    const big = imgBlob("image/jpeg", 13 * 1024 * 1024);
     const path = await uploadPrepPhoto("t", "i", big, { skipCompress: true }, client);
     expect(path).toBeNull();
     expect(calls).toHaveLength(0);

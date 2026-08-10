@@ -7,6 +7,12 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import {
+  clientKeyFromRequest,
+  rateLimit,
+  rateLimitedResponse,
+  readBoundedJson,
+} from "@/lib/edge-guard";
 
 const schema = z.object({
   page: z.enum(["katalog_list", "katalog_detail"]),
@@ -24,8 +30,20 @@ export const Route = createFileRoute("/api/public/web-vitals")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const raw = await request.json().catch(() => null);
-          const parsed = schema.safeParse(raw);
+          const rl = rateLimit(clientKeyFromRequest(request, "web-vitals"), {
+            limit: 60,
+            windowMs: 60_000,
+          });
+          if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSeconds);
+
+          const body = await readBoundedJson(request, 4 * 1024);
+          if (!body.ok) {
+            return Response.json(
+              { ok: false, error: body.error },
+              { status: body.error === "too_large" ? 413 : 400 },
+            );
+          }
+          const parsed = schema.strict().safeParse(body.value);
           if (!parsed.success) {
             return Response.json({ ok: false, error: "bad_payload" }, { status: 400 });
           }

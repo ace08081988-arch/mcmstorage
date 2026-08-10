@@ -1,3 +1,4 @@
+import { inspectImageBlob } from "./upload-image-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { compressImage } from "@/lib/prep-image-compress";
@@ -141,6 +142,19 @@ export async function uploadPrepPhoto(
   //    file `.jpg` diupload dengan Content-Type `image/heic`).
   const ext = (opts.ext ?? extFromMime(out.type)).toLowerCase().replace(/^\./, "");
   const contentType = mimeFromExt(ext);
+
+  // 2b) Validasi isi file (magic byte + dimensi). MIME klien tidak dipercaya.
+  const guard = await inspectImageBlob(out, {
+    declaredMime: contentType,
+    maxBytes: UPLOAD_HARD_MAX_BYTES,
+  });
+  if (!guard.ok) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(magic-byte)", source: "uploadPrepPhoto" },
+      new Error(`file ditolak: ${guard.reason}`),
+    );
+    return null;
+  }
 
   if (out.size > UPLOAD_HARD_MAX_BYTES) {
     logStorageError(

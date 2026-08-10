@@ -1,5 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import {
+  clientKeyFromRequest,
+  rateLimit,
+  rateLimitedResponse,
+  readBoundedJson,
+} from "@/lib/edge-guard";
 
 // Public tracking endpoint for APK download button clicks on /download.
 // Fire-and-forget (fetch keepalive / sendBeacon). Never returns PII.
@@ -8,7 +14,20 @@ export const Route = createFileRoute("/api/public/apk-download-track")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = (await request.json().catch(() => null)) as
+          const rl = rateLimit(clientKeyFromRequest(request, "apk-track"), {
+            limit: 30,
+            windowMs: 60_000,
+          });
+          if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSeconds);
+
+          const parsedBody = await readBoundedJson(request, 2 * 1024);
+          if (!parsedBody.ok) {
+            return Response.json(
+              { ok: false, error: parsedBody.error },
+              { status: parsedBody.error === "too_large" ? 413 : 400 },
+            );
+          }
+          const body = parsedBody.value as
             | { variant?: unknown; source?: unknown }
             | null;
           const variant =
