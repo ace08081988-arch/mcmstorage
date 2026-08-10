@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import React, {
   Component,
   Fragment,
+  memo,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -13,6 +14,16 @@ import React, {
   type RefObject,
 } from "react";
 import { toast } from "sonner";
+import { mapWithConcurrency } from "@/lib/async-pool";
+import { createTrailingThrottle } from "@/lib/trailing-throttle";
+import { createSessionExpiryTimer } from "@/lib/session-expiry";
+import { sameSnapshotValue } from "@/lib/prep-snapshot";
+import {
+  DeferredHoldSeconds,
+  SessionCountdown,
+  SyncAgeLabel,
+  useSecondsTicker,
+} from "@/components/prep/PrepTimeTickers";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import {
   signedUrl,
@@ -390,6 +401,16 @@ async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
   }
 }
 
+/**
+ * Batas paralel decode/compress foto (galeri multi-pilih). Nilai kecil
+ * menjaga memori puncak WebView Android tetap rendah.
+ */
+const PHOTO_DECODE_CONCURRENCY = 2;
+
+/** Hasil satu putaran silentRefresh — dipakai pemanggil agar tidak
+ *  bergantung pada closure `lastSyncAt` yang bisa basi setelah await. */
+type RefreshResult = { ok: boolean; at: number | null };
+
 async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   if (typeof window === "undefined") return "fallback";
   const { Capacitor } = await import("@capacitor/core");
@@ -408,8 +429,10 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
       limit: 20,
     });
     const photos = Array.isArray(result.results) ? result.results : [];
-    const files = await Promise.all(
-      photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
+    // Konkurensi dibatasi 2: decode 20 foto sekaligus memicu OOM/jank berat
+    // di Android WebView. Urutan hasil tetap sesuai urutan pilihan user.
+    const files = await mapWithConcurrency(photos, PHOTO_DECODE_CONCURRENCY, (photo) =>
+      cameraPhotoToFile(photo, "pegawai-galeri"),
     );
     return files.filter((file): file is File => !!file);
   } catch (err) {
@@ -821,22 +844,12 @@ function PublicPrepPage() {
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
-  const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
   // Status "reload versi baru sedang ditahan" dari build-cache-buster.
   const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
     pending: false, reason: null, serverBuildId: null, since: null,
   });
-  const [deferredTick, setDeferredTick] = useState(0);
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
-  useEffect(() => {
-    if (!deferredReload.pending || !deferredReload.since) return;
-    const since = deferredReload.since;
-    const update = () => setDeferredTick(Math.max(0, Math.round((Date.now() - since) / 1000)));
-    update();
-    const id = window.setInterval(update, 1000);
-    return () => window.clearInterval(id);
-  }, [deferredReload.pending, deferredReload.since]);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
@@ -865,6 +878,8 @@ function PublicPrepPage() {
     // sempat dilewati saat busy).
     if (activeWorkerOpsRef.current === 0) {
       runIdleQueue();
+      // Expiry sesi yang tadi ditunda dijalankan tepat sekali di sini.
+      try { sessionTimerRef.current?.flushPending(); } catch { /* noop */ }
       // Refresh ringan sekali setelah idle supaya data pasti terkini.
       try { void silentRefreshRef.current?.(); } catch { /* noop */ }
       // Cek versi sekali lagi: bila deploy baru sudah live sementara
@@ -874,7 +889,17 @@ function PublicPrepPage() {
   }, [runIdleQueue]);
   // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
   // tanpa menciptakan siklus dependensi.
-  const silentRefreshRef = useRef<null | (() => Promise<void>)>(null);
+  const silentRefreshRef = useRef<null | (() => Promise<RefreshResult>)>(null);
+  const sessionTimerRef = useRef<ReturnType<typeof createSessionExpiryTimer> | null>(null);
+  // Snapshot terakhir yang sudah dipakai render — dipakai untuk melewati
+  // setState ketika server mengirim payload yang identik secara semantik.
+  const lastSnapshotRef = useRef<{ task: unknown; items: unknown } | null>(null);
+  // Nilai terkini untuk logika auto-resync tanpa membuat efek bergantung
+  // pada state (yang akan merender ulang seluruh portal).
+  const lastSyncAtRef = useRef<number | null>(null);
+  const rtStatusRef = useRef<"connecting" | "connected" | "error">("connecting");
+  const resyncingRef = useRef(false);
+  const authedRefForSync = useRef(false);
   const keepWorkerSessionAlive = useCallback(() => {
     const now = Date.now();
     if (now - lastKeepAliveAtRef.current < 30_000) return;
@@ -932,34 +957,43 @@ function PublicPrepPage() {
   // "Tidak sinkron" (>90 dtk / channel error). Dibatasi cooldown agar
   // tidak membanjiri server saat koneksi memang sedang bermasalah.
   useEffect(() => {
-    if (!authed || resyncing) return;
-    const age = lastSyncAt ? (Date.now() - lastSyncAt) / 1000 : null;
-    const isStale = rtStatus === "error" || (age != null && age > cfg.staleThresholdSec);
-    const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
-    if (!isStale && !isLag) {
-      autoResyncRef.current.failCount = 0;
-      return;
-    }
-    // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
-    const fc = autoResyncRef.current.failCount;
-    const cooldownMs = isStale
-      ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
-      : cfg.lagCooldownMs;
-    if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
-    autoResyncRef.current.lastAt = Date.now();
-    const prevSync = lastSyncAt;
-    void (async () => {
-      await silentRefresh();
-      // Bila silentRefresh tidak memperbarui lastSyncAt (gagal/diam), naikkan
-      // counter agar interval coba ulang merenggang.
-      if (lastSyncAt === prevSync) autoResyncRef.current.failCount = fc + 1;
-      else autoResyncRef.current.failCount = 0;
-    })();
-    // syncTick memicu evaluasi ulang tiap 5 dtk.
+    if (!authed) return;
+    // Interval murni ref-based: tidak ada state yang berubah tiap detak,
+    // jadi portal & kartu tidak ikut rerender.
+    const evaluate = () => {
+      if (!authedRefForSync.current || resyncingRef.current) return;
+      if (document.visibilityState !== "visible") return;
+      const syncAt = lastSyncAtRef.current;
+      const age = syncAt ? (Date.now() - syncAt) / 1000 : null;
+      const isStale = rtStatusRef.current === "error" || (age != null && age > cfg.staleThresholdSec);
+      const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
+      if (!isStale && !isLag) {
+        autoResyncRef.current.failCount = 0;
+        return;
+      }
+      // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
+      const fc = autoResyncRef.current.failCount;
+      const cooldownMs = isStale
+        ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
+        : cfg.lagCooldownMs;
+      if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
+      autoResyncRef.current.lastAt = Date.now();
+      void (async () => {
+        // Pakai hasil aktual dari refresh, bukan closure lastSyncAt lama.
+        const res = await (silentRefreshRef.current?.() ?? Promise.resolve({ ok: false, at: null }));
+        if (res.ok) autoResyncRef.current.failCount = 0;
+        else autoResyncRef.current.failCount = fc + 1;
+      })();
+    };
+    const id = window.setInterval(evaluate, 5000);
+    return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, rtStatus, lastSyncAt, syncTick, resyncing]);
+  }, [authed]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  // Jam khusus layar PIN (belum authed / daftar item belum ter-mount).
+  // TIDAK dipakai lagi untuk countdown sesi supaya portal tidak rerender
+  // tiap detik.
+  const [lockNow, setLockNow] = useState(() => Date.now());
   // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
   // sebelum re-login. Dipasang di writeSession dan rehydrate.
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
@@ -1120,7 +1154,7 @@ function PublicPrepPage() {
     if (lockedUntil == null) return;
     const id = setInterval(() => {
       const t = Date.now();
-      setNow(t);
+      setLockNow(t);
       if (lockedUntil <= t) {
         setLockedUntil(null);
         setAttempts(0);
@@ -1133,48 +1167,16 @@ function PublicPrepPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedUntil]);
 
-  const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
+  const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - lockNow) / 1000)) : 0;
   const isLocked = lockedSecondsLeft > 0;
   const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
-  // Countdown sisa waktu sesi PIN (hanya saat authed). Tick 1 detik agar
-  // operator tahu kapan akan dimintai PIN lagi. Saat 0, paksa kembali ke
-  // layar PIN — sejalan dgn TTL yang dipakai readSession().
-  useEffect(() => {
-    if (!authed || !sessionStartedAt) return;
-    const id = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [authed, sessionStartedAt]);
+  // Sesi PIN: parent hanya menyimpan waktu expiry absolut + SATU timeout
+  // tepat pada saat expiry. Hitung mundur per detik dirender komponen
+  // <SessionCountdown /> agar tidak menyeret seluruh portal ikut rerender.
   const sessionExpiresAt = sessionStartedAt ? sessionStartedAt + SESSION_TTL_MS : null;
-  const sessionSecondsLeft = sessionExpiresAt
-    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
-    : 0;
-  const sessionClock = `${String(Math.floor(sessionSecondsLeft / 60)).padStart(2, "0")}:${String(sessionSecondsLeft % 60).padStart(2, "0")}`;
-  useEffect(() => {
-    if (!authed || !sessionExpiresAt) return;
-    if (sessionSecondsLeft > 0) return;
-    // Jangan cabut sesi di tengah proses ambil/edit/upload foto — draft
-    // foto & PIN hilang. Tandai sebagai pending; setWorkerOperationActive
-    // akan menjalankannya begitu counter turun ke 0.
-    if (isWorkerOperationActive()) {
-      if (!pendingSessionExpiryRef.current) {
-        pendingSessionExpiryRef.current = true;
-        idleQueueRef.current.push(() => {
-          pendingSessionExpiryRef.current = false;
-          clearSession();
-          setAuthed(false);
-          setPin("");
-          pinRef.current = "";
-          setSessionJustExpired(true);
-          toast.info("Sesi PIN berakhir — silakan masuk ulang.");
-          focusPinInput();
-        });
-        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
-      }
-      return;
-    }
-    // TTL habis → lepas sesi & kembalikan ke layar PIN.
+  const expireSessionNow = useCallback(() => {
     clearSession();
     setAuthed(false);
     setPin("");
@@ -1183,7 +1185,30 @@ function PublicPrepPage() {
     toast.info("Sesi PIN berakhir — silakan masuk ulang.");
     focusPinInput();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authed, sessionExpiresAt, sessionSecondsLeft]);
+  }, []);
+  if (!sessionTimerRef.current) {
+    sessionTimerRef.current = createSessionExpiryTimer({
+      isBusy: () => activeWorkerOpsRef.current > 0,
+      onExpire: () => {
+        pendingSessionExpiryRef.current = false;
+        expireSessionNow();
+      },
+      onDefer: () => {
+        // Jangan cabut sesi di tengah ambil/edit/upload foto — draft foto &
+        // PIN bisa hilang. Dieksekusi tepat sekali setelah operasi selesai.
+        pendingSessionExpiryRef.current = true;
+        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
+      },
+    });
+  }
+  useEffect(() => {
+    const timer = sessionTimerRef.current;
+    if (!timer) return;
+    timer.arm(authed ? sessionExpiresAt : null);
+    return () => {
+      if (!authed) timer.dispose();
+    };
+  }, [authed, sessionExpiresAt]);
 
   async function fetchTask(p: string) {
     if (isLocked) return false;
@@ -1415,20 +1440,20 @@ function PublicPrepPage() {
   // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
   // Bedanya: bila PIN telah diubah admin atau tugas ditutup, langsung pindah
   // ke layar yang sesuai tanpa menghapus state percobaan.
-  async function silentRefresh() {
-    if (!pinRef.current || !authed) return;
-    if (isWorkerOperationActive()) return;
+  async function silentRefresh(): Promise<RefreshResult> {
+    if (!pinRef.current || !authed) return { ok: false, at: null };
+    if (isWorkerOperationActive()) return { ok: false, at: null };
     // Guard in-flight: realtime broadcast, heartbeat 15 dtk, dan
     // visibilitychange bisa memicu bersamaan pada sinyal lemah. Tanpa guard,
     // beberapa permintaan identik berjalan paralel dan hasil lama bisa
     // menimpa hasil baru (last-write-wins yang salah).
     if (refreshInFlightRef.current) {
       refreshQueuedRef.current = true;
-      return;
+      return { ok: false, at: null };
     }
     refreshInFlightRef.current = true;
     try {
-      await silentRefreshInner();
+      return await silentRefreshInner();
     } finally {
       refreshInFlightRef.current = false;
       if (refreshQueuedRef.current) {
@@ -1439,8 +1464,9 @@ function PublicPrepPage() {
     }
   }
 
-  async function silentRefreshInner() {
+  async function silentRefreshInner(): Promise<RefreshResult> {
     lastRefreshAtRef.current = Date.now();
+    refreshThrottleRef.current?.markRan(lastRefreshAtRef.current);
     let data: unknown = null;
     try {
       const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
@@ -1449,13 +1475,13 @@ function PublicPrepPage() {
         // realtime/sync badge yang memberi tahu user.
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh transport error", r.error);
-        return;
+        return { ok: false, at: null };
       }
       data = r.data;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh threw", e);
-      return;
+      return { ok: false, at: null };
     }
     const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
@@ -1468,7 +1494,7 @@ function PublicPrepPage() {
       if (silentFailRef.current.count < cfg.silentFailTolerance) {
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
-        return;
+        return { ok: false, at: null };
       }
       if (kind === "bad_pin") setClosedReason("pin_changed");
       else if (kind === "expired") setClosedReason("expired");
@@ -1479,7 +1505,7 @@ function PublicPrepPage() {
       clearSession();
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh non-ok (kicked)", res);
-      return;
+      return { ok: false, at: null };
     }
     // Reset counter saat sukses.
     silentFailRef.current = { kind: null, count: 0 };
@@ -1490,21 +1516,39 @@ function PublicPrepPage() {
       // user ke PIN; pertahankan data terakhir yang masih valid.
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh missing/malformed task", res);
-      return;
+      return { ok: false, at: null };
     }
     const normalizedItems = normalizePrepItems(res.items);
+    const at = Date.now();
+    // Payload identik secara semantik → jangan set state object/array baru,
+    // supaya burst realtime tidak memicu rerender seluruh daftar kartu.
+    const prevSnapshot = lastSnapshotRef.current;
+    if (
+      prevSnapshot &&
+      sameSnapshotValue(prevSnapshot.task, normalizedTask) &&
+      sameSnapshotValue(prevSnapshot.items, normalizedItems)
+    ) {
+      lastSyncAtRef.current = at;
+      setLastSyncAt(at);
+      return { ok: true, at };
+    }
     const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
     const nextStale: Record<string, true> = { ...staleItemIds };
+    let staleChanged = false;
     for (const it of normalizedItems) {
       const before = prev.get(it.id);
       if (before && it.updated_at && before !== it.updated_at) {
+        if (!nextStale[it.id]) staleChanged = true;
         nextStale[it.id] = true;
       }
     }
-    setStaleItemIds(nextStale);
+    if (staleChanged) setStaleItemIds(nextStale);
+    lastSnapshotRef.current = { task: normalizedTask, items: normalizedItems };
     setTask(normalizedTask);
     setItems(normalizedItems);
-    setLastSyncAt(Date.now());
+    lastSyncAtRef.current = at;
+    setLastSyncAt(at);
+    return { ok: true, at };
   }
 
   // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
@@ -1533,12 +1577,45 @@ function PublicPrepPage() {
     });
   }
 
+  // ---- Callback stabil untuk anak yang di-memo -----------------------
+  // ItemCard dibungkus React.memo; kalau prop fungsi berganti identitas tiap
+  // render parent, memo tidak ada gunanya. Simpan versi terbaru di ref lalu
+  // ekspos wrapper ber-identitas tetap (tidak pernah stale).
+  const latestHandlersRef = useRef({
+    clearStale,
+    handleItemSubmitted,
+    manualResync,
+    reloginNow,
+  });
+  latestHandlersRef.current = { clearStale, handleItemSubmitted, manualResync, reloginNow };
+  const stableClearStale = useCallback((id: string) => latestHandlersRef.current.clearStale(id), []);
+  const stableItemSubmitted = useCallback(
+    (id: string) => latestHandlersRef.current.handleItemSubmitted(id),
+    [],
+  );
+  const stableManualResync = useCallback(() => {
+    void latestHandlersRef.current.manualResync();
+  }, []);
+  const stableRelogin = useCallback(() => latestHandlersRef.current.reloginNow(), []);
+
+  // Cermin state ke ref untuk interval auto-resync (tanpa rerender).
+  lastSyncAtRef.current = lastSyncAt;
+  rtStatusRef.current = rtStatus;
+  resyncingRef.current = resyncing;
+  authedRefForSync.current = authed;
+
   // Penjadwal tunggal: semua pemicu (realtime, heartbeat, visibility) lewat
   // sini supaya ada jeda minimum dan tidak ada permintaan bertumpuk.
+  // Trailing edge: event yang datang saat jeda belum lewat TIDAK dibuang,
+  // melainkan dijadwalkan satu kali tepat setelah jeda selesai.
+  const refreshThrottleRef = useRef<ReturnType<typeof createTrailingThrottle> | null>(null);
+  if (!refreshThrottleRef.current) {
+    refreshThrottleRef.current = createTrailingThrottle(() => {
+      void silentRefreshRef.current?.();
+    });
+  }
   function scheduleRefresh(minGapMs = 3000) {
-    const since = Date.now() - lastRefreshAtRef.current;
-    if (since < minGapMs) return;
-    void silentRefresh();
+    refreshThrottleRef.current?.request(minGapMs);
   }
 
   // Realtime broadcast + fallback heartbeat & visibility refresh.
@@ -1563,16 +1640,10 @@ function PublicPrepPage() {
     const hb = window.setInterval(() => {
       if (document.visibilityState === "visible") scheduleRefresh(12000);
     }, 15000);
-    // Timer tampilan saja (label "x dtk lalu") — tidak pernah mengambil data,
-    // dan berhenti bekerja saat layar tidak terlihat agar hemat baterai.
-    const tick = window.setInterval(() => {
-      if (document.visibilityState === "visible") setSyncTick((n) => n + 1);
-    }, 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(hb);
-      window.clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, token]);
@@ -2091,49 +2162,11 @@ function PublicPrepPage() {
           <SyncBadge
             status={rtStatus}
             lastSyncAt={lastSyncAt}
-            tick={syncTick}
-            onRefresh={() => {
-              void manualResync();
-            }}
+            onRefresh={stableManualResync}
           />
         </div>
         {sessionExpiresAt && (
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 pb-2 text-ms-2xs">
-            <span
-              className={
-                "inline-flex items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium tabular-nums " +
-                (sessionSecondsLeft <= 60
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : sessionSecondsLeft <= 300
-                    ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
-                    : "border-border bg-muted/60 text-muted-foreground")
-              }
-              title={`Sesi PIN aktif sampai ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-            >
-              <Clock className="h-3 w-3" />
-              Sesi {sessionClock}
-            </span>
-            {sessionSecondsLeft <= 300 ? (
-              <button
-                type="button"
-                onClick={reloginNow}
-                className={
-                  "inline-flex items-center gap-ms-1 rounded-full px-ms-2.5 py-0.5 text-ms-2xs font-semibold text-white shadow-sm transition " +
-                  (sessionSecondsLeft <= 60
-                    ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-warning hover:bg-warning")
-                }
-                title="Masuk ulang dengan PIN sekarang"
-              >
-                <Lock className="h-3 w-3" />
-                Re-login sekarang
-              </button>
-            ) : (
-              <span className="text-muted-foreground">
-                {`Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-              </span>
-            )}
-          </div>
+          <SessionCountdown expiresAt={sessionExpiresAt} onRelogin={stableRelogin} />
         )}
         {deferredReload.pending && (
           <div
@@ -2153,7 +2186,7 @@ function PublicPrepPage() {
                       : "Anda sedang mengetik: refresh akan berjalan otomatis setelah selesai."}
                   {deferredReload.since && (
                     <span className="ml-1 opacity-70">
-                      · ditahan {deferredTick} dtk
+                      · ditahan <DeferredHoldSeconds since={deferredReload.since} /> dtk
                     </span>
                   )}
                 </div>
@@ -2209,7 +2242,7 @@ function PublicPrepPage() {
             <div className="text-ms-2xs text-muted-foreground">
               {lastSyncAt ? (
                 <>
-                  Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu
+                  Diperbarui <SyncAgeLabel lastSyncAt={lastSyncAt} /> dtk lalu
                   <span className="hidden sm:inline">
                     {" "}
                     · {new Date(lastSyncAt).toLocaleTimeString("id-ID")}
@@ -2461,8 +2494,8 @@ function PublicPrepPage() {
                                   token={token}
                                   pin={pinRef.current}
                                   isStale={!!staleItemIds[it.id]}
-                                  onAcknowledgeStale={() => clearStale(it.id)}
-                                  onSubmitted={handleItemSubmitted}
+                                  onAcknowledgeStale={stableClearStale}
+                                  onSubmitted={stableItemSubmitted}
                                   autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
                                   onActivityChange={setWorkerOperationActive}
                                   onKeepAlive={keepWorkerSessionAlive}
@@ -2646,7 +2679,16 @@ function PublicPrepPage() {
   );
 }
 
-function ItemCard({
+/**
+ * Kartu satu item penyiapan.
+ *
+ * Di-memo: label waktu (countdown sesi / "x dtk lalu") kini punya timer
+ * sendiri, dan semua prop fungsi dari parent ber-identitas stabil, sehingga
+ * kartu ini TIDAK ikut rerender saat portal berdetak. Perbandingan memakai
+ * shallow-compare bawaan React (bukan comparator custom) supaya tidak ada
+ * risiko UI stale seperti bug VirtualizedList.
+ */
+function ItemCardImpl({
   item,
   index,
   token,
@@ -2663,7 +2705,7 @@ function ItemCard({
   token: string;
   pin: string;
   isStale?: boolean;
-  onAcknowledgeStale?: () => void;
+  onAcknowledgeStale?: (itemId: string) => void;
   onSubmitted: (justDoneId: string) => void;
   /** Berubah (tick > 0) ketika parent minta kartu ini otomatis terbuka. */
   autoOpen?: number;
@@ -2876,7 +2918,7 @@ function ItemCard({
         const blobs = await loadDraftPhotos(draftKey);
         if (cancelled) return;
         if (blobs.length > 0) {
-          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          const staged = await mapWithConcurrency(blobs, PHOTO_DECODE_CONCURRENCY, (b) => stageFile(b));
           if (!cancelled) {
             setPhotos(staged);
             // Buka sekali saat draft tersimpan dimuat, supaya user langsung
@@ -3086,7 +3128,7 @@ function ItemCard({
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const beforeLen = photosRef.current.length;
-    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await mapWithConcurrency(files, PHOTO_DECODE_CONCURRENCY, (f) => stageOne(f, false));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
@@ -3324,7 +3366,7 @@ function ItemCard({
           </div>
           <button
             type="button"
-            onClick={onAcknowledgeStale}
+            onClick={() => onAcknowledgeStale?.(item.id)}
             className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-warning/40 bg-background px-ms-2 text-ms-2xs font-semibold text-warning hover:bg-warning/10 dark:text-warning"
           >
             <RefreshCw className="h-3 w-3" /> Lanjutkan
@@ -3799,6 +3841,8 @@ function ItemCard({
   );
 }
 
+const ItemCard = memo(ItemCardImpl);
+
 function SubmissionThumb({ path }: { path: string | null }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -4102,15 +4146,14 @@ function PhotoTileGrid({
 function SyncBadge({
   status,
   lastSyncAt,
-  tick,
   onRefresh,
 }: {
   status: "connecting" | "connected" | "error";
   lastSyncAt: number | null;
-  tick: number;
   onRefresh: () => void;
 }) {
-  void tick; // memaksa re-render tiap detak
+  // Timer internal (5 dtk) — hanya badge ini yang rerender, bukan portal.
+  useSecondsTicker(5000, lastSyncAt != null || status !== "connected");
   const ageSec = lastSyncAt ? Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000)) : null;
   let kind: "connecting" | "connected" | "lag" | "stale";
   if (status === "connecting" && lastSyncAt == null) kind = "connecting";
@@ -4537,7 +4580,7 @@ function RequestForm({
         const blobs = await loadDraftPhotos(draftKey);
         if (cancelled) return;
         if (blobs.length > 0) {
-          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          const staged = await mapWithConcurrency(blobs, PHOTO_DECODE_CONCURRENCY, (b) => stageFile(b));
           if (!cancelled) setPhotos(staged);
         }
       } catch {
@@ -4745,7 +4788,7 @@ function RequestForm({
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const beforeLen = photosRef.current.length;
-    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await mapWithConcurrency(files, PHOTO_DECODE_CONCURRENCY, (f) => stageOne(f, false));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
