@@ -23,7 +23,7 @@ function imgBytes(type: string, size: number): Uint8Array {
 }
 
 function imgBlob(type: string, size: number): Blob {
-  return new Blob([imgBytes(type, size)], { type });
+  return new Blob([imgBytes(type, size).buffer as ArrayBuffer], { type });
 }
 
 type StorageClientArg = Parameters<typeof uploadPrepPhoto>[4];
@@ -84,7 +84,7 @@ function installFakeImageStack(outSize: number, outType = "image/jpeg") {
     constructor(w: number, h: number) { this.width = w; this.height = h; }
     getContext() { return { drawImage: () => {} }; }
     async convertToBlob(opts?: { type?: string }) {
-      return new Blob([imgBytes(opts?.type ?? outType, outSize)], { type: opts?.type ?? outType });
+      return new Blob([imgBytes(opts?.type ?? outType, outSize).buffer as ArrayBuffer], { type: opts?.type ?? outType });
     }
   };
 }
