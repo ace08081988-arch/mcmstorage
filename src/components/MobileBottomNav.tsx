@@ -60,7 +60,9 @@ export function MobileBottomNav() {
     path.startsWith("/pembaruan/") ||
     path === "/fitur" ||
     path.startsWith("/fitur/");
-  useBottomNavHeightSync(navRef, !hideOnChatFamily);
+  // Saat keyboard terbuka bar disembunyikan total; spacer WAJIB ikut nol
+  // supaya tidak ada dead-space bekas nav di bawah composer.
+  useBottomNavHeightSync(navRef, !hideOnChatFamily && !keyboardOpen);
   if (hideOnChatFamily) return null;
 
   const items: Item[] = [
