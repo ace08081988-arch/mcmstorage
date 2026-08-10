@@ -18,6 +18,12 @@ import { mapWithConcurrency } from "@/lib/async-pool";
 import { createTrailingThrottle } from "@/lib/trailing-throttle";
 import { createSessionExpiryTimer } from "@/lib/session-expiry";
 import { sameSnapshotValue } from "@/lib/prep-snapshot";
+import {
+  DeferredHoldSeconds,
+  SessionCountdown,
+  SyncAgeLabel,
+  useSecondsTicker,
+} from "@/components/prep/PrepTimeTickers";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import {
   signedUrl,
