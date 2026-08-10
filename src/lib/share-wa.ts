@@ -236,7 +236,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
         dialogTitle: "Kirim ke WhatsApp",
       });
       if (captionCopied) {
-        toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+        toast.message("Share dibuka — foto disiapkan & keterangan + lokasi sudah disalin. Pastikan pesan benar-benar terkirim di WhatsApp, lalu konfirmasi.", { duration: 9000 });
       } else if (captionCopyError) {
         toast.error(
           "Keterangan pembayaran & lokasi belum tersalin otomatis. Tekan \u201cSalin keterangan\u201d untuk menyalin ulang sebelum menempel di WhatsApp.",
@@ -291,7 +291,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       try {
         await nav.share({ files: filesPayload, text: fullText, title });
         if (captionCopied) {
-          toast.message("Foto terkirim. Keterangan + lokasi sudah disalin — tempel di kolom pesan WhatsApp bila caption tidak muncul.", { duration: 9000 });
+          toast.message("Share dibuka — foto disiapkan & keterangan + lokasi sudah disalin. Pastikan pesan benar-benar terkirim di WhatsApp, lalu konfirmasi.", { duration: 9000 });
         }
         return { status: "shared", withFiles: true };
       } catch (err) {
@@ -363,9 +363,9 @@ export function notifyShareResult(result: ShareResult) {
   switch (result.status) {
     case "shared":
       if (result.withFiles) {
-        toast.success("Dibagikan — pilih WhatsApp di share sheet agar foto + teks terkirim bersamaan.");
+        toast.message("Share dibuka — pilih WhatsApp agar foto + teks ikut. Pesan belum dianggap terkirim sampai Anda konfirmasi.", { duration: 8000 });
       } else {
-        toast.success("Dibagikan ke WhatsApp.");
+        toast.message("Share dibuka ke WhatsApp — pastikan pesan benar-benar terkirim, lalu konfirmasi.", { duration: 8000 });
       }
       return;
     case "cancelled":
@@ -380,10 +380,10 @@ export function notifyShareResult(result: ShareResult) {
           { duration: 8000 },
         );
       } else {
-        toast.success(
+        toast.message(
           result.reason === "share-failed"
-            ? "Share sheet gagal — WhatsApp dibuka di tab baru sebagai gantinya."
-            : "Browser ini belum mendukung tombol Bagikan langsung. WhatsApp dibuka di tab baru — tempel pesan lalu kirim.",
+            ? "Share sheet gagal — WhatsApp dibuka di tab baru. Pastikan pesan benar-benar terkirim, lalu konfirmasi."
+            : "Browser ini belum mendukung tombol Bagikan langsung. WhatsApp dibuka di tab baru — tempel pesan lalu kirim, kemudian konfirmasi.",
           { duration: 7000 },
         );
       }
