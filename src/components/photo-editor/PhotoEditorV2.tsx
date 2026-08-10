@@ -1097,7 +1097,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 <button
                   type="button"
                   aria-label="Menu lainnya"
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95"
+                  className="grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95"
                 >
                   <MoreHorizontal className="h-5 w-5" />
                 </button>
@@ -1128,7 +1128,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Kolom kiri-tengah: transform (rotate/flip). Vertikal supaya tidak menutupi foto. */}
         <div
-          className="pointer-events-none absolute left-ms-2 top-1/2 z-20 -translate-y-1/2"
+          className="pointer-events-none absolute left-2 top-1/2 z-20 -translate-y-1/2"
           style={{ paddingTop: "var(--app-safe-top,env(safe-area-inset-top,0px))" }}
         >
           <div className="pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
@@ -1142,7 +1142,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         </div>
 
         {/* Kanan-tengah: zoom badge vertikal. */}
-        <div className="pointer-events-none absolute right-ms-2 top-1/2 z-20 -translate-y-1/2">
+        <div className="pointer-events-none absolute right-2 top-1/2 z-20 -translate-y-1/2">
           <div className="pointer-events-auto flex flex-col items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
             <IconPill onClick={() => setZoom((z) => Math.min(4, z + 0.25))} label="Zoom in"><ZoomIn className="h-5 w-5" /></IconPill>
             <span className="min-w-10 text-center text-ms-2xs font-medium tabular-nums text-[#f0d78c]/85">{Math.round(zoom * 100)}%</span>
@@ -1684,7 +1684,7 @@ function IconPill(props: {
       aria-pressed={active}
       disabled={disabled}
       className={cn(
-        "grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
+        "grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
         !disabled && "hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95",
         active && "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]",
         tone === "danger" && "text-destructive-foreground hover:bg-destructive/30",
