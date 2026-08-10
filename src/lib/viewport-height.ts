@@ -12,6 +12,8 @@
  * `use-visual-viewport-inset`), jadi tidak ada pengurangan ganda.
  */
 
+import { keyboardInsetFromGap, measureViewportGap } from "./keyboard-gap";
+
 export const APP_VH_VAR = "--app-vh";
 export const APP_VH_VISIBLE_VAR = "--app-vh-visible";
 /** Tinggi area bawah yang tertutup soft-keyboard (px). 0 bila tertutup. */
@@ -46,10 +48,7 @@ function measureVisible(): number {
  * beberapa puluh piksel, supaya bilah aksi tidak "melompat" saat scroll.
  */
 function measureKeyboard(): number {
-  const vv = window.visualViewport;
-  if (!vv) return 0;
-  const gap = Math.round(window.innerHeight - vv.height - (vv.offsetTop || 0));
-  return gap > 120 ? gap : 0;
+  return keyboardInsetFromGap(measureViewportGap());
 }
 
 /** Pasang sinkronisasi `--app-vh`; kembalikan fungsi pembersih. */
