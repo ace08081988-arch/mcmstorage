@@ -2236,7 +2236,7 @@ function PublicPrepPage() {
             <div className="text-ms-2xs text-muted-foreground">
               {lastSyncAt ? (
                 <>
-                  Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu
+                  Diperbarui <SyncAgeLabel lastSyncAt={lastSyncAt} /> dtk lalu
                   <span className="hidden sm:inline">
                     {" "}
                     · {new Date(lastSyncAt).toLocaleTimeString("id-ID")}
