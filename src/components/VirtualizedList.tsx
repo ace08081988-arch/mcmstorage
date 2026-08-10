@@ -53,13 +53,31 @@ export function clearRowHeightCache(namespace?: string) {
   else measureCaches.clear();
 }
 
-/** Baris yang hanya re-render saat key/konten baris itu sendiri berubah. */
-const Row = React.memo(
-  function Row({ children }: { children: React.ReactNode; deps?: unknown }) {
+/**
+ * Baris yang hanya re-render saat konten baris ATAU state visual eksternal
+ * (`version`) berubah. Tanpa `version`, toggle seleksi/highlight yang tidak
+ * mengubah identitas item akan menghasilkan baris basi (stale UI + handler
+ * lama). Bila `version` tidak diberikan, comparator dilepas total (aman:
+ * selalu ikut render induk).
+ */
+type RowProps = { children: React.ReactNode; deps?: unknown; version?: unknown };
+
+const RowMemo = React.memo(
+  function Row({ children }: RowProps) {
     return <>{children}</>;
   },
-  (prev, next) => prev.deps === next.deps,
+  (prev, next) => prev.deps === next.deps && prev.version === next.version,
 );
+
+function Row({ children, deps, version }: RowProps) {
+  // Fallback aman: tanpa rowVersion, jangan pakai custom comparator sama sekali.
+  if (version === undefined) return <>{children}</>;
+  return (
+    <RowMemo deps={deps} version={version}>
+      {children}
+    </RowMemo>
+  );
+}
 
 /**
  * Overscan adaptif: jumlah baris ekstra dihitung dari tinggi viewport
@@ -117,6 +135,7 @@ export function VirtualizedList<T>({
   gap = 8,
   className,
   cacheKey = "default",
+  rowVersion,
 }: {
   items: readonly T[];
   getKey: (item: T, index: number) => string;
@@ -133,6 +152,12 @@ export function VirtualizedList<T>({
   className?: string;
   /** Namespace cache tinggi baris; pakai nilai unik per daftar. */
   cacheKey?: string;
+  /**
+   * Sidik jari state visual eksternal yang dipakai `renderItem`
+   * (mis. `selecting` + daftar id terpilih). Wajib diisi bila `renderItem`
+   * membaca state di luar `item`, supaya baris tidak basi.
+   */
+  rowVersion?: unknown;
 }) {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const [offset, setOffset] = React.useState(0);
@@ -205,7 +230,7 @@ export function VirtualizedList<T>({
               containIntrinsicSize: `auto ${cache.get(keys[i]) ?? estimateSize}px`,
             }}
           >
-            <Row deps={item}>{renderItem(item, i)}</Row>
+            <Row deps={item} version={rowVersion}>{renderItem(item, i)}</Row>
           </div>
         ))}
       </div>
@@ -240,7 +265,7 @@ export function VirtualizedList<T>({
                 contain: "layout paint style",
               }}
             >
-              <Row deps={item}>{renderItem(item, v.index)}</Row>
+              <Row deps={item} version={rowVersion}>{renderItem(item, v.index)}</Row>
             </div>
           );
         })}
