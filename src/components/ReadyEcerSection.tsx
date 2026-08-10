@@ -652,7 +652,7 @@ export function ReadyEcerSection() {
           </p>
           <RealtimeBadge status={realtimeStatus} syncing={syncing || refreshing} />
         </div>
-        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="inline-flex items-center gap-0.5 text-ms-2xs font-medium text-primary hover:underline">
+        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined , ch: undefined}} className="inline-flex items-center gap-0.5 text-ms-2xs font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
@@ -840,7 +840,7 @@ export function ReadyEcerSection() {
             setSelectMode(false);
             void navigate({
               to: "/ecer",
-              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1", ch: "wa" },
             });
           }}
           onBulkChatPick={() => {
@@ -856,7 +856,7 @@ export function ReadyEcerSection() {
             setSelectMode(false);
             void navigate({
               to: "/ecer",
-              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1", ch: "chat" },
             });
           }}
           onBulkDelete={() => setBulkConfirm("delete")}
@@ -925,7 +925,7 @@ export function ReadyEcerSection() {
       ) : rows.length === 0 ? (
         <Link
           to="/ecer"
-          search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }}
+          search={{ item: undefined, title: undefined, highlight: undefined, send: undefined , ch: undefined}}
           className="flex flex-col items-center gap-ms-1.5 rounded-md border border-dashed bg-card/50 p-ms-5 text-center text-ms-2xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
@@ -1674,7 +1674,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ) : (
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined , ch: undefined}}
           aria-label={`Buka foto ${r.name} — ${shots.length} foto${thumbs[0]?.location_url ? ", dengan lokasi GPS" : ""}`}
           className="relative block aspect-[4/3] overflow-hidden bg-muted"
         >
@@ -1707,7 +1707,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       <div className="flex flex-col gap-ms-1.5 p-ms-2">
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined , ch: undefined}}
           data-testid={`ready-ecer-card-${r.id}`}
           aria-label={view === "sent" ? `${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name}` : `Buka detail ${r.name} di halaman Ecer`}
           aria-expanded={view === "sent" ? expanded : undefined}
@@ -1844,7 +1844,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             ) : (
               <Link
                 to="/ecer"
-                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined , ch: undefined}}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 aria-label={`Siapkan minimal 1 kotak untuk ${r.name} sebelum bisa dikirim`}

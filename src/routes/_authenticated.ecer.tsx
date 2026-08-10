@@ -83,7 +83,7 @@ import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · Ace Storage" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { item?: string; title?: string; highlight?: string; send?: string; ch?: "wa" | "chat" } => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
@@ -91,6 +91,9 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     // kotak aktif pada judul yang dituju. Dipakai oleh shortcut di dashboard
     // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
     send: typeof s.send === "string" ? s.send : undefined,
+    // Intent kanal dari tombol pemanggil ("wa" | "chat"). Dipakai untuk
+    // preselect kanal di dialog kirim supaya tombol Chat tidak berakhir di WA.
+    ch: s.ch === "wa" || s.ch === "chat" ? (s.ch as "wa" | "chat") : undefined,
   }),
   component: EcerRoute,
 });
@@ -246,6 +249,7 @@ function EcerPage() {
   // menghapus flag dari URL setelah render pertama, jadi kita simpan di
   // state agar TitleDetailView bisa mengonsumsinya walau URL sudah bersih.
   const [pendingAutoSend, setPendingAutoSend] = useState(search.send === "1");
+  const [pendingSendChannel] = useState<"wa" | "chat">(search.ch === "chat" ? "chat" : "wa");
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
   // Membuat judul lain untuk item tertentu langsung dari halaman detail.
@@ -387,7 +391,7 @@ function EcerPage() {
   useEffect(() => {
     void router.navigate({
       to: "/ecer",
-      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined, send: undefined },
+      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined, send: undefined, ch: undefined },
       replace: true,
     });
     // M11: `router` sengaja tidak masuk deps. Instance `router` bisa
@@ -515,6 +519,7 @@ function EcerPage() {
           onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
           onCreateProduct={() => setCreatingProduct(true)}
           autoSend={pendingAutoSend}
+          sendChannel={pendingSendChannel}
           onAutoSendConsumed={() => setPendingAutoSend(false)}
         />
         {creatingTitleForItem && (
@@ -1495,10 +1500,10 @@ function MiniStat({ icon, label, value, mono }: {
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct, autoSend, onAutoSendConsumed }: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct, autoSend, sendChannel = "wa", onAutoSendConsumed }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
-  autoSend?: boolean; onAutoSendConsumed?: () => void;
+  autoSend?: boolean; sendChannel?: "wa" | "chat"; onAutoSendConsumed?: () => void;
 }) {
   void onBack;
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
@@ -2055,6 +2060,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          initialChannel={sendChannel}
           onLocationSaved={() => { void load(); }}
           onClose={() => {
             setSendOpen(false);
@@ -2114,6 +2120,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
+          initialChannel={sendChannel}
           onLocationSaved={() => { void load(); }}
           onClose={() => setQuickSendPrep(null)}
           onSent={() => {
@@ -4434,8 +4441,11 @@ function EcerSendHistorySection({ titleId }: { titleId: string }) {
 // ---- Send ecer preps batch to customer ----
 function SendEcerPrepsDialog({
   open, onClose, preps, title, itemName, customers, onSent, onLocationSaved,
+  initialChannel = "wa",
 }: {
   open: boolean;
+  /** Kanal yang dipreselect saat dialog dibuka (dari intent tombol pemanggil). */
+  initialChannel?: "wa" | "chat";
   onClose: () => void;
   preps: EcerPreparation[];
   title: EcerTitle;
@@ -4465,6 +4475,12 @@ function SendEcerPrepsDialog({
   // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Kanal kirim aktual di langkah 3. WA butuh konfirmasi manual pasca-share;
+  // Ace Chat punya bukti pesan di DB sehingga commit boleh otomatis setelah
+  // `shareToChat` benar-benar sukses.
+  const [channel, setChannel] = useState<"wa" | "chat">(initialChannel);
+  const [chatPickerOpen, setChatPickerOpen] = useState(false);
+  const [chatConv, setChatConv] = useState<{ id: string; title: string } | null>(null);
   const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
   const waTpl = useWaTemplate();
 
@@ -4479,7 +4495,10 @@ function SendEcerPrepsDialog({
     setNote("");
     setStep(1);
     setPreviewOpen(false);
-  }, [open, customers, title.id, prepIdsKey]);
+    setChannel(initialChannel);
+    setChatPickerOpen(false);
+    setChatConv(null);
+  }, [open, customers, title.id, prepIdsKey, initialChannel]);
 
   const totalAmount = useMemo(() => {
     return parsePaymentAmountInput(totalStr);
@@ -4563,11 +4582,21 @@ function SendEcerPrepsDialog({
   // satu frame render.
   const sendLock = useRef(createReentryLock());
 
-  async function handleSend() {
+  /**
+   * Satu jalur kirim untuk DUA kanal (WhatsApp & Ace Chat).
+   * Urutan kanonik identik: payment gate -> kirim di kanal terpilih ->
+   * bukti kanal sukses -> RPC finansial (tepat satu commit).
+   *  - WA  : share sheet terbuka BUKAN bukti; wajib konfirmasi eksplisit.
+   *  - Chat: `shareToChat` menulis pesan ke DB; status "shared" = bukti,
+   *          jadi tidak perlu konfirmasi manual.
+   */
+  async function handleSend(chosenConv?: { id: string; title: string }) {
     if (!canSend) return;
     if (!party.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
     if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
     if (!sendLock.current.acquire()) return;
+    const activeChannel = channel;
+    const conv = activeChannel === "chat" ? (chosenConv ?? chatConv) : null;
 
     const methodLabel =
       payment.method === "hutang" ? `Hutang — sisa ${formatPaymentRupiah(payment.remaining)} piutang`
@@ -4580,15 +4609,24 @@ function SendEcerPrepsDialog({
       `Metode: ${methodLabel}`,
       note.trim() ? `Catatan: ${note.trim()}` : null,
       "",
-      "Foto & caption dibagikan dulu ke pembeli via WA. Penjualan, stok, dan piutang baru dicatat setelah Anda mengonfirmasi bahwa pesan benar-benar terkirim.",
+      activeChannel === "chat"
+        ? "Foto & caption dikirim dulu ke Ace Chat. Penjualan, stok, dan piutang baru dicatat setelah pesan benar-benar masuk ke percakapan."
+        : "Foto & caption dibagikan dulu ke pembeli via WA. Penjualan, stok, dan piutang baru dicatat setelah Anda mengonfirmasi bahwa pesan benar-benar terkirim.",
     ].filter(Boolean).join("\n");
     const ok = await confirm({
       title: "Konfirmasi pembayaran",
       description: summary,
-      confirmText: "Lanjut kirim WA",
+      confirmText: activeChannel === "chat" ? "Lanjut kirim Ace Chat" : "Lanjut kirim WA",
       cancelText: "Periksa lagi",
     });
     if (!ok) { sendLock.current.release(); return; }
+
+    // Kanal Chat wajib punya percakapan tujuan sebelum apa pun dikirim.
+    if (activeChannel === "chat" && !conv) {
+      sendLock.current.release();
+      setChatPickerOpen(true);
+      return;
+    }
 
     const captionPreview = (() => {
       try { return buildCaption(); } catch { return null; }
@@ -4614,7 +4652,7 @@ function SendEcerPrepsDialog({
           customer_id: party.id ?? null,
           party_name: party.name || null,
           party_contact: party.contact || null,
-          channel: "wa",
+          channel: activeChannel,
           outcome,
           total_amount: payment.total,
           paid_amount: payment.method === "partial" ? payment.paid : (payment.method === "kas" ? payment.total : 0),
@@ -4658,24 +4696,42 @@ function SendEcerPrepsDialog({
         const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
         if (f) files.push(f);
       }
-      const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
-      notifyShareResult(res);
-      if (!isShareOpened(res.status)) {
-        const failed = res.status === "failed";
-        await logSendEvent(failed ? "failed" : "cancelled", files.length,
-          failed ? (res as { error?: string }).error ?? null : null);
-        toast.info("Belum dikirim — paket tetap di daftar Siap Dikirim.");
-        return;
-      }
+      if (activeChannel === "chat") {
+        // Kanal Ace Chat: bukti kirim = pesan benar-benar tertulis di DB.
+        const shots = files.map((f, i) => ({ id: `${preps[i]?.id ?? title.id}:${i}`, file: f }));
+        const firstLoc = preps.find((pp) => (pp.location_url ?? "").trim())?.location_url?.trim() || null;
+        const chatRes = await shareToChat({
+          conversationId: conv!.id,
+          caption: buildCaption(),
+          locationUrl: firstLoc,
+          shots,
+        });
+        if (chatRes.status !== "shared") {
+          await logSendEvent("failed", files.length,
+            (chatRes as { error?: string }).error ?? "Gagal kirim ke Ace Chat");
+          toast.error("Gagal kirim ke Ace Chat — tidak ada penjualan/piutang yang dicatat.");
+          return;
+        }
+      } else {
+        const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
+        notifyShareResult(res);
+        if (!isShareOpened(res.status)) {
+          const failed = res.status === "failed";
+          await logSendEvent(failed ? "failed" : "cancelled", files.length,
+            failed ? (res as { error?: string }).error ?? null : null);
+          toast.info("Belum dikirim — paket tetap di daftar Siap Dikirim.");
+          return;
+        }
 
-      // 2) Konfirmasi eksplisit: share sheet terbuka BUKAN bukti terkirim.
-      const delivered = await confirmWhatsAppDelivered(
-        `${preps.length} kotak · ${title.name} · ${rupiah(totalAmount)} · ${methodLabel}`,
-      );
-      if (!delivered) {
-        await logSendEvent("cancelled", files.length, "Owner memilih: belum terkirim");
-        toast.info("Ditandai belum terkirim — tidak ada penjualan/piutang yang dicatat.");
-        return;
+        // 2) Konfirmasi eksplisit: share sheet terbuka BUKAN bukti terkirim.
+        const delivered = await confirmWhatsAppDelivered(
+          `${preps.length} kotak · ${title.name} · ${rupiah(totalAmount)} · ${methodLabel}`,
+        );
+        if (!delivered) {
+          await logSendEvent("cancelled", files.length, "Owner memilih: belum terkirim");
+          toast.info("Ditandai belum terkirim — tidak ada penjualan/piutang yang dicatat.");
+          return;
+        }
       }
 
       // 3) Baru sekarang RPC finansial (sold_at + sales + debts).
@@ -4956,6 +5012,36 @@ function SendEcerPrepsDialog({
               </span>
             </div>
           </div>
+          {/* Pilih kanal kirim — dua aksi nyata, bukan satu tombol yang
+              selalu berakhir di WhatsApp. */}
+          <div>
+            <label className="mb-1 block text-ms-2xs font-medium">Kirim lewat</label>
+            <div className="flex gap-ms-1">
+              <button
+                type="button"
+                onClick={() => setChannel("wa")}
+                aria-pressed={channel === "wa"}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${channel === "wa" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+              >
+                <Send className="h-3.5 w-3.5" /> WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={() => setChannel("chat")}
+                aria-pressed={channel === "chat"}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${channel === "chat" ? "border-primary bg-primary/10 font-semibold text-primary" : "hover:bg-accent"}`}
+              >
+                <MessageCircle className="h-3.5 w-3.5" /> Ace Chat
+              </button>
+            </div>
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
+              {channel === "chat"
+                ? chatConv
+                  ? <>Tujuan: <b>{chatConv.title}</b>. Penjualan dicatat otomatis setelah pesan masuk ke percakapan.</>
+                  : "Anda akan memilih percakapan tujuan setelah verifikasi pembayaran."
+                : "Setelah share sheet ditutup, Anda harus mengonfirmasi bahwa pesan benar-benar terkirim."}
+            </div>
+          </div>
           <div>
             <label className="mb-1 block text-ms-2xs font-medium">Catatan (opsional)</label>
             <Textarea
@@ -5022,11 +5108,12 @@ function SendEcerPrepsDialog({
             {step === 3 && (
               <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
                 {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-                {payment.method === "hutang"
-                  ? "Kirim ke pembeli & catat piutang"
-                  : payment.method === "partial"
-                    ? "Kirim ke pembeli & catat sebagian"
-                    : "Kirim ke pembeli & catat lunas"}
+                {(channel === "chat" ? "Kirim Ace Chat & " : "Kirim WhatsApp & ") +
+                  (payment.method === "hutang"
+                    ? "catat piutang"
+                    : payment.method === "partial"
+                      ? "catat sebagian"
+                      : "catat lunas")}
               </Button>
             )}
           </div>
@@ -5037,7 +5124,7 @@ function SendEcerPrepsDialog({
       open={previewOpen}
       onOpenChange={setPreviewOpen}
       caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
-      channel="wa"
+      channel={channel}
       photoCount={preps.length}
       busy={busy}
       locationMissing={!preps.some((p) => (p.location_url ?? "").trim())}
@@ -5055,14 +5142,30 @@ function SendEcerPrepsDialog({
         await Promise.resolve(onLocationSaved?.());
       }}
       confirmLabel={
-        payment.method === "hutang"
-          ? "Kirim WA & catat piutang"
+        (channel === "chat" ? "Kirim Ace Chat & " : "Kirim WA & ") +
+        (payment.method === "hutang"
+          ? "catat piutang"
           : payment.method === "partial"
-            ? "Kirim WA & catat sebagian"
-            : "Kirim WA & catat lunas"
+            ? "catat sebagian"
+            : "catat lunas")
       }
       onConfirm={() => { setPreviewOpen(false); void handleSend(); }}
     />
+    {channel === "chat" && (
+      <PickChatConversationDialog
+        open={chatPickerOpen}
+        onOpenChange={setChatPickerOpen}
+        title="Pilih percakapan tujuan"
+        onPick={(id, dispTitle) => {
+          const picked = { id, title: dispTitle };
+          setChatConv(picked);
+          setChatPickerOpen(false);
+          // Lanjutkan alur kirim dengan tujuan yang baru dipilih. Payment gate
+          // diulang (murah) supaya tetap satu jalur kanonik.
+          void handleSend(picked);
+        }}
+      />
+    )}
     </>
   );
 }
