@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
+import { openFilePickerWithLock } from "@/lib/app-lock";
 import { assertStorageAccess } from "@/lib/storage-access";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import { TaskQrCode } from "@/components/TaskQrCode";
@@ -3378,10 +3379,10 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
                   <Edit3 className="h-3 w-3" /> Edit lagi
                 </Button>
-                <Button size="sm" variant="outline" type="button" onClick={() => galleryRef.current?.click()}>
+                <Button size="sm" variant="outline" type="button" onClick={() => openFilePickerWithLock(galleryRef.current)}>
                   <ImageIcon className="h-3 w-3" /> Ganti dari galeri
                 </Button>
-                <Button size="sm" variant="outline" type="button" onClick={() => cameraRef.current?.click()}>
+                <Button size="sm" variant="outline" type="button" onClick={() => openFilePickerWithLock(cameraRef.current)}>
                   <Camera className="h-3 w-3" /> Foto ulang
                 </Button>
                 <Button size="sm" variant="outline" type="button" onClick={() => void pasteFromClipboard()}>
@@ -3392,8 +3393,8 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-ms-2">
-              <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
-              <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
+              <Button type="button" variant="outline" onClick={() => openFilePickerWithLock(cameraRef.current)}><Camera className="h-4 w-4" /> Kamera</Button>
+              <Button type="button" variant="outline" onClick={() => openFilePickerWithLock(galleryRef.current)}><ImageIcon className="h-4 w-4" /> Galeri</Button>
               <Button type="button" variant="outline" onClick={() => void pasteFromClipboard()}>📋 Tempel</Button>
             </div>
           )}

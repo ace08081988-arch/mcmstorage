@@ -1,3 +1,4 @@
+import { isNativeApp } from "./is-native";
 import { registerPushSubscription, unregisterPushSubscription, sendTestPush } from "./push.functions";
 
 export const VAPID_PUBLIC_KEY =
@@ -174,6 +175,8 @@ let pushKeepAliveStarted = false;
  * terlihat/online (dibatasi maksimal sekali per 6 jam agar hemat).
  */
 export function startPushKeepAlive(): void {
+  // Di APK memakai native push (FCM), bukan Web Push berbasis SW.
+  if (isNativeApp()) return;
   if (typeof window === "undefined" || pushKeepAliveStarted) return;
   pushKeepAliveStarted = true;
   let lastRun = 0;

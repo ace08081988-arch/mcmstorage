@@ -53,6 +53,7 @@ import { Capacitor } from "@capacitor/core";
 import { pickWhatsAppTarget, type WaTarget } from "./wa-target";
 import { confirmWaShare } from "./wa-preview";
 import { normalizeWaNumber } from "./phone";
+import { armExternalShareLock } from "./app-lock";
 
 /**
  * Bangun URL wa.me. Bila `countryCode` diisi, nomor dinormalisasi via
@@ -113,6 +114,8 @@ export function openWhatsAppPreferBusiness(
   target: WaTarget | "auto" = "auto",
   countryCode?: string | null,
 ): Window | null {
+  // Membuka WA membuat aplikasi hidden — suppress app-lock sampai kembali.
+  armExternalShareLock();
   let url: string;
   let isIntent = false;
   if (target === "business") {
@@ -178,6 +181,9 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       : null);
   const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey, peer: effectivePeer });
   if (!approved.ok) return { status: "cancelled" };
+  // App keluar ke WhatsApp / share sheet: jangan sambut user dengan PIN saat
+  // kembali. Suppression dilepas begitu app kembali fokus (atau kedaluwarsa).
+  armExternalShareLock();
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);
 
