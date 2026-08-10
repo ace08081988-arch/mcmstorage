@@ -2,8 +2,58 @@
 // Methods: "pin" | "pattern" | "biometric". Multiple methods can be enabled,
 // but only ONE primary credential (pin or pattern) is stored at a time;
 // biometric is an additional unlock shortcut on supported devices.
+//
+// ─────────────────────────────────────────────────────────────
+// M24 — Storage & threat model (audit): the PIN/pattern secret is
+// NEVER stored in plaintext. What is stored is a SHA-256 hash + random
+// per-user salt in the following backends:
+//
+//   1) `localStorage` — read/written synchronously for UI paths that
+//      cannot await Capacitor (e.g. lock screen render, migrations).
+//   2) `@capacitor/preferences` — mirrored on native (Android APK) so
+//      the config survives app-kill even if WebView storage is cleared.
+//
+// Neither backend is Android Keystore / iOS Keychain-backed encrypted
+// storage. This project does NOT currently ship a Keystore-backed
+// secure-storage Capacitor plugin, so we don't pretend to have one.
+//
+// Threat implications, made explicit:
+//   - On-device attacker with root/JB access can read the SHA-256 hash
+//     + salt out of SharedPreferences / UserDefaults / localStorage and
+//     mount an offline brute-force. A 4-digit PIN has 10⁴ combinations;
+//     an unsalted SHA-256 pre-image scan is trivial. The salt raises
+//     the cost to a per-user attack (no rainbow tables) but does not
+//     stop targeted brute force.
+//   - The lock is a *convenience* barrier for local shoulder-surfing
+//     and casual multi-user device sharing, NOT an anti-forensics
+//     control. Server-side auth is enforced separately by Supabase Auth
+//     regardless of the local lock state.
+//
+// If/when a project-wide secure-storage plugin is adopted (e.g.
+// `@aparajita/capacitor-secure-storage` — same vendor as the biometric
+// plugin we already ship), swap `prefsGet`/`prefsSet`/`prefsRemove`
+// below to that plugin's Keystore-backed API. `getLockStorageMode()`
+// exists precisely to surface the current backend without lying.
+// ─────────────────────────────────────────────────────────────
 
 export type LockMethod = "pin" | "pattern" | "biometric";
+
+export type LockStorageMode = "secure" | "preferences" | "localstorage";
+
+/**
+ * Report the strongest storage backend actually in use for the
+ * hashed PIN/pattern secret. `"secure"` is reserved for a future
+ * Keystore/Keychain-backed plugin — currently never returned.
+ */
+export async function getLockStorageMode(): Promise<LockStorageMode> {
+  try {
+    const mod = await import("@capacitor/preferences");
+    if (mod && typeof mod.Preferences?.get === "function") return "preferences";
+  } catch {
+    /* plugin not present */
+  }
+  return "localstorage";
+}
 
 export type LockConfig = {
   method: "pin" | "pattern"; // primary stored credential
@@ -16,6 +66,49 @@ export type LockConfig = {
 
 export const APP_LOCK_EVENT = "app-lock:changed";
 export const APP_LOCK_REQUEST = "app-lock:lock-now";
+
+// ─────────────────────────────────────────────────────────────
+// Native picker suppression
+//
+// Membuka kamera / galeri / file picker native di Android bikin
+// WebView berpindah ke background — `document.visibilityState` jadi
+// "hidden" dan idle timer bisa jalan. Tanpa guard, user yang cuma
+// milih foto akan disambut layar App Lock pas kembali. Flag ini
+// meng-suppress trigger lockOnHide dan idleTimer selama window
+// singkat (default 90 detik) yang cukup untuk siklus picker.
+// Guard TIDAK menonaktifkan app-lock total: kalau user beneran
+// keluar app lebih lama, flag akan sudah expired saat kembali.
+// ─────────────────────────────────────────────────────────────
+const SUPPRESS_KEY = "app-lock:suppress-until";
+
+export function beginNativePicker(reasonMs = 90_000) {
+  try {
+    const until = Date.now() + Math.max(1_000, reasonMs);
+    localStorage.setItem(SUPPRESS_KEY, String(until));
+  } catch {}
+}
+
+export function endNativePicker() {
+  try {
+    localStorage.removeItem(SUPPRESS_KEY);
+  } catch {}
+}
+
+export function isLockSuppressed(): boolean {
+  try {
+    const raw = localStorage.getItem(SUPPRESS_KEY);
+    if (!raw) return false;
+    const until = Number(raw);
+    if (!Number.isFinite(until)) return false;
+    if (Date.now() > until) {
+      localStorage.removeItem(SUPPRESS_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function cfgKey(uid: string) {
   return `app-lock:cfg:${uid}`;
@@ -132,15 +225,99 @@ export async function verifySecret(
   return h === cfg.hash;
 }
 
-// Biometric (Capacitor native). Returns false on web/unsupported.
-export async function isBiometricAvailable(): Promise<boolean> {
+// Biometric (Capacitor native). Returns detailed status so UI dapat
+// menjelaskan alasan tidak tersedia (tidak terdaftar / hanya web / dsb).
+export type BiometricStatus = {
+  available: boolean;
+  native: boolean;
+  reason?: string;
+  code?: string;
+  biometryType?: number;
+  platform?: "android" | "ios" | "web";
+  pluginLoaded?: boolean;
+  enrolled?: boolean; // ada sidik jari terdaftar di sistem
+  permission?: "granted" | "denied" | "unknown";
+};
+
+function getPlatform(): "android" | "ios" | "web" {
   try {
-    const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
-    const info = await BiometricAuth.checkBiometry();
-    return !!info.isAvailable;
+    const w = window as unknown as { Capacitor?: { getPlatform?: () => string } };
+    const p = w.Capacitor?.getPlatform?.();
+    if (p === "android" || p === "ios") return p;
+    return "web";
+  } catch {
+    return "web";
+  }
+}
+
+function isNative(): boolean {
+  try {
+    const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+    return !!w.Capacitor?.isNativePlatform?.();
   } catch {
     return false;
   }
+}
+
+export async function checkBiometricStatus(): Promise<BiometricStatus> {
+  const native = isNative();
+  const platform = getPlatform();
+  if (!native) {
+    return {
+      available: false,
+      native: false,
+      platform,
+      pluginLoaded: false,
+      enrolled: false,
+      permission: "unknown",
+      reason: "Hanya tersedia di APK Android (bukan preview browser)",
+    };
+  }
+  try {
+    const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
+    const info = await BiometricAuth.checkBiometry();
+    const code = info.code as string | undefined;
+    // Kode dari plugin: biometryNotEnrolled = tidak ada sidik jari.
+    // biometryNotAvailable = hardware tidak ada / dimatikan.
+    // noDeviceCredential = tidak ada PIN/pola sistem.
+    const enrolled = info.isAvailable
+      ? true
+      : code === "biometryNotEnrolled"
+        ? false
+        : code === "biometryNotAvailable" || code === "noDeviceCredential"
+          ? false
+          : undefined; // tidak diketahui
+    // Plugin ini tidak butuh runtime permission terpisah di Android modern
+    // (USE_BIOMETRIC declared di manifest). Anggap granted bila plugin
+    // berhasil dimuat & checkBiometry tidak melempar.
+    const permission: "granted" | "denied" | "unknown" =
+      code === "authenticationFailed" || code === "userLockout" ? "denied" : "granted";
+    return {
+      available: !!info.isAvailable,
+      native: true,
+      platform,
+      pluginLoaded: true,
+      enrolled: enrolled ?? undefined,
+      permission,
+      reason: info.reason,
+      code,
+      biometryType: info.biometryType as unknown as number,
+    };
+  } catch (e) {
+    return {
+      available: false,
+      native: true,
+      platform,
+      pluginLoaded: false,
+      enrolled: undefined,
+      permission: "unknown",
+      reason: e instanceof Error ? e.message : "Plugin biometrik gagal dimuat",
+    };
+  }
+}
+
+export async function isBiometricAvailable(): Promise<boolean> {
+  return (await checkBiometricStatus()).available;
 }
 
 export async function authenticateBiometric(reason: string): Promise<boolean> {
@@ -155,6 +332,94 @@ export async function authenticateBiometric(reason: string): Promise<boolean> {
       androidSubtitle: reason,
       androidConfirmationRequired: false,
     });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Coba buka layar pendaftaran sidik jari di Pengaturan Sistem (Android/iOS).
+// Mengembalikan `true` bila salah satu intent berhasil dibuka.
+export async function openBiometricEnrollment(): Promise<boolean> {
+  if (!isNative()) return false;
+  let AppLauncher: typeof import("@capacitor/app-launcher").AppLauncher | null = null;
+  try {
+    AppLauncher = (await import("@capacitor/app-launcher")).AppLauncher;
+  } catch {
+    return false;
+  }
+  // Urutan intent Android: khusus enroll biometrik → fingerprint → security → settings umum.
+  // iOS: skema "app-settings:" langsung ke pengaturan aplikasi.
+  const candidates = [
+    "intent:#Intent;action=android.settings.BIOMETRIC_ENROLL;end",
+    "intent:#Intent;action=android.settings.FINGERPRINT_ENROLL;end",
+    "intent:#Intent;action=android.settings.SECURITY_SETTINGS;end",
+    "intent:#Intent;action=android.settings.SETTINGS;end",
+    "app-settings:",
+  ];
+  for (const url of candidates) {
+    try {
+      const can = await AppLauncher.canOpenUrl({ url });
+      if (!can.value) continue;
+      const res = await AppLauncher.openUrl({ url });
+      if (res.completed) return true;
+    } catch {
+      // coba kandidat berikutnya
+    }
+  }
+  // Fallback terakhir: paksa buka Settings umum tanpa cek.
+  try {
+    await AppLauncher.openUrl({ url: "intent:#Intent;action=android.settings.SETTINGS;end" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Buka halaman detail izin aplikasi (App Info) langsung untuk paket ini.
+// Ini adalah rute yang diperlukan saat izin biometrik ditolak permanen.
+export async function openAppPermissionSettings(
+  packageId = "biz.mcmstorage.app",
+  opts: { preferBiometric?: boolean } = {},
+): Promise<boolean> {
+  if (!isNative()) return false;
+  let AppLauncher: typeof import("@capacitor/app-launcher").AppLauncher | null = null;
+  try {
+    AppLauncher = (await import("@capacitor/app-launcher")).AppLauncher;
+  } catch {
+    return false;
+  }
+  const pkg = encodeURIComponent(packageId);
+  // Halaman detail aplikasi (paling relevan saat izin ditolak permanen).
+  const appDetails = [
+    `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;package=${packageId};S.android.provider.extra.APP_PACKAGE=${packageId};end`,
+    `package:${packageId}`,
+    `intent://${pkg}/#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;end`,
+  ];
+  // Halaman biometrik sistem — dipakai saat sidik jari belum terdaftar
+  // atau saat izin biometrik dikelola di halaman biometrik, bukan izin app.
+  const biometricPages = [
+    "intent:#Intent;action=android.settings.BIOMETRIC_ENROLL;end",
+    "intent:#Intent;action=android.settings.FINGERPRINT_ENROLL;end",
+    "intent:#Intent;action=android.settings.SECURITY_SETTINGS;end",
+  ];
+  const candidates = [
+    ...(opts.preferBiometric ? [...biometricPages, ...appDetails] : [...appDetails, ...biometricPages]),
+    "intent:#Intent;action=android.settings.SETTINGS;end",
+    "app-settings:",
+  ];
+  for (const url of candidates) {
+    try {
+      const can = await AppLauncher.canOpenUrl({ url });
+      if (!can.value) continue;
+      const res = await AppLauncher.openUrl({ url });
+      if (res.completed) return true;
+    } catch {
+      // coba kandidat berikutnya
+    }
+  }
+  try {
+    await AppLauncher.openUrl({ url: "intent:#Intent;action=android.settings.SETTINGS;end" });
     return true;
   } catch {
     return false;

@@ -1,8 +1,13 @@
 // Preferensi notifikasi (disimpan di localStorage + di-broadcast ke service worker)
 export type NotifKind = "chat" | "tugas" | "order" | "system";
 
+export type NotifChannel = "toast" | "push" | "email" | "wa";
+
+export type NotifChannels = Record<NotifChannel, boolean>;
+
 export type NotifPrefs = {
   enabledKinds: Record<NotifKind, boolean>;
+  channels: Record<NotifKind, NotifChannels>;
   vibrate: boolean;
   dnd: {
     enabled: boolean;
@@ -16,11 +21,28 @@ const STORAGE_KEY = "mcm.notif.prefs.v1";
 const SYNC_META_KEY = "mcm.notif.prefs.synced_at";
 const LOCAL_UPDATED_KEY = "mcm.notif.prefs.updated_at";
 
+const DEFAULT_CHANNELS: NotifChannels = { toast: true, push: true, email: false, wa: false };
+
 export const DEFAULT_PREFS: NotifPrefs = {
   enabledKinds: { chat: true, tugas: true, order: true, system: true },
+  channels: {
+    chat: { ...DEFAULT_CHANNELS },
+    tugas: { ...DEFAULT_CHANNELS, wa: true },
+    order: { ...DEFAULT_CHANNELS, wa: true },
+    system: { ...DEFAULT_CHANNELS, email: true },
+  },
   vibrate: true,
   dnd: { enabled: false, start: "22:00", end: "06:00", allowUrgent: true },
 };
+
+function mergeChannels(remote?: Partial<Record<NotifKind, Partial<NotifChannels>>>): NotifPrefs["channels"] {
+  const base = DEFAULT_PREFS.channels;
+  const out = {} as NotifPrefs["channels"];
+  (Object.keys(base) as NotifKind[]).forEach((k) => {
+    out[k] = { ...base[k], ...((remote && remote[k]) || {}) };
+  });
+  return out;
+}
 
 export function loadPrefs(): NotifPrefs {
   if (typeof window === "undefined") return DEFAULT_PREFS;
@@ -32,6 +54,7 @@ export function loadPrefs(): NotifPrefs {
       ...DEFAULT_PREFS,
       ...parsed,
       enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...(parsed.enabledKinds || {}) },
+      channels: mergeChannels(parsed.channels as never),
       dnd: { ...DEFAULT_PREFS.dnd, ...(parsed.dnd || {}) },
     };
   } catch {
@@ -60,6 +83,21 @@ export function broadcastPrefs(prefs: NotifPrefs) {
     for (const r of regs) {
       try {
         r.active?.postMessage({ type: "notif-prefs", prefs });
+      } catch {}
+    }
+  }).catch(() => {});
+}
+
+// C7: Sinkronisasi daftar chat yang di-mute ke Service Worker.
+// Map: conversationId -> mutedUntil (ms epoch). Nilai <= now dianggap tidak mute.
+// SW menggunakan map ini untuk menahan tampilan notifikasi walau server salah
+// mengirim (mis. karena race saat mute baru diaktifkan).
+export function broadcastMutedConversations(muted: Record<string, number>) {
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    for (const r of regs) {
+      try {
+        r.active?.postMessage({ type: "muted-conversations", muted });
       } catch {}
     }
   }).catch(() => {});
@@ -135,6 +173,7 @@ export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
       ...DEFAULT_PREFS,
       ...(remote || {}),
       enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...((remote && remote.enabledKinds) || {}) },
+      channels: mergeChannels((remote && remote.channels) as never),
       dnd: { ...DEFAULT_PREFS.dnd, ...((remote && remote.dnd) || {}) },
     };
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
@@ -179,6 +218,7 @@ export function subscribeRemotePrefs(onChange: (p: NotifPrefs) => void): () => v
               ...DEFAULT_PREFS,
               ...remote,
               enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...(remote.enabledKinds || {}) },
+              channels: mergeChannels(remote.channels as never),
               dnd: { ...DEFAULT_PREFS.dnd, ...(remote.dnd || {}) },
             };
             try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}

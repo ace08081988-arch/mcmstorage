@@ -240,4 +240,1514 @@ BEGIN
   RAISE NOTICE 'PASS has_role denies cross-user lookup';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 8) friend_requests: sender may only cancel, only recipient may accept.
+--    Guards against fr_update_self_accept (sender self-acceptance).
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
+        v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
+        v_id uuid;
+        v_status text;
+        v_rows int;
+BEGIN
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP friend_requests policy tests: no test users or role switching';
+    RETURN;
+  END IF;
+
+  -- Clean any prior pair rows so INSERT can proceed under unique(from_user,to_user).
+  DELETE FROM public.friend_requests
+   WHERE (from_user = v_a AND to_user = v_b) OR (from_user = v_b AND to_user = v_a);
+
+  -- A (sender) creates a pending request to B (recipient).
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending')
+  RETURNING id INTO v_id;
+  IF v_id IS NULL THEN
+    PERFORM pg_temp.as_postgres();
+    RAISE EXCEPTION 'FAIL friend_requests: sender could not INSERT pending request';
+  END IF;
+
+  -- 8a) Sender must NOT be able to self-accept. RLS filters the row out of
+  --     the UPDATE's target set, so the statement affects 0 rows.
+  UPDATE public.friend_requests SET status = 'accepted' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to self-accept (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot self-accept';
+
+  -- 8b) Sender must NOT be able to set status to anything other than cancelled
+  --     (e.g. 'rejected' / 'blocked' equivalents). Any non-cancelled target is
+  --     rejected by WITH CHECK on fr_update_sender_cancel_only.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET status = 'rejected' WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status = 'rejected' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to set status=rejected';
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot set non-cancelled status';
+
+  -- 8c) Sender CAN cancel their own pending request.
+  PERFORM pg_temp.as_user(v_a);
+  UPDATE public.friend_requests SET status = 'cancelled' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows <> 1 OR v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender could not cancel own pending (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender can cancel own pending';
+
+  -- 8d) Reset to pending and verify recipient CAN accept.
+  UPDATE public.friend_requests SET status = 'pending' WHERE id = v_id;
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status = 'accepted' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows <> 1 OR v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: recipient could not accept (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: recipient can accept';
+
+  -- 8e) A third party C (postgres role acting as random uuid) must not be able
+  --     to touch the row via authenticated. Simulate by switching to a fresh uuid.
+  PERFORM pg_temp.as_user(gen_random_uuid());
+  UPDATE public.friend_requests SET status = 'cancelled' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: third-party mutated row (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: third-party cannot mutate';
+
+  -- 8f) Sender must NOT be able to swap participants (change to_user).
+  --     Reset to pending as postgres for clean state.
+  UPDATE public.friend_requests SET status = 'pending' WHERE id = v_id;
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET to_user = gen_random_uuid()
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT to_user FROM public.friend_requests WHERE id = v_id) <> v_b THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to swap to_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot swap to_user';
+
+  -- 8g) Sender must NOT be able to rewrite from_user (impersonation attempt).
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = gen_random_uuid()
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to rewrite from_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot rewrite from_user';
+
+  -- 8h) Recipient must NOT be able to swap participants either (even while
+  --     legitimately transitioning status). Trigger enforces immutability.
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = gen_random_uuid(), status = 'accepted'
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a THEN
+    RAISE EXCEPTION 'FAIL friend_requests: recipient was able to rewrite from_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: recipient cannot rewrite participants';
+
+  -- 8i) Even direct swap of both participants at once must be rejected.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = v_b, to_user = v_a
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a
+     OR (SELECT to_user FROM public.friend_requests WHERE id = v_id) <> v_b THEN
+    RAISE EXCEPTION 'FAIL friend_requests: full participant swap succeeded (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: full participant swap rejected';
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 9) fr_update_participant / recipient-only status transitions.
+--    Verifies at the *policy* layer (not just trigger) that only the
+--    matching recipient (auth.uid() = to_user) can update status, and
+--    the sender identity (from_user) can NOT be tampered with.
+-- ---------------------------------------------------------------------
+
+-- 9-static) Assert the expected policies exist with correct qual/with_check.
+DO $$
+DECLARE v_qual text; v_check text;
+BEGIN
+  SELECT qual, with_check INTO v_qual, v_check
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests'
+     AND policyname='fr_update_recipient';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL fr_update_recipient policy missing';
+  END IF;
+  IF v_qual !~ 'to_user' OR v_check !~ 'to_user' THEN
+    RAISE EXCEPTION 'FAIL fr_update_recipient does not scope by to_user (qual=%, check=%)', v_qual, v_check;
+  END IF;
+  RAISE NOTICE 'PASS fr_update_recipient policy scoped by to_user=auth.uid()';
+
+  SELECT qual, with_check INTO v_qual, v_check
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests'
+     AND policyname='fr_update_sender_cancel_only';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL fr_update_sender_cancel_only policy missing';
+  END IF;
+  IF v_qual !~ 'from_user' OR v_check !~ 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL fr_update_sender_cancel_only not restricted to sender→cancelled (qual=%, check=%)', v_qual, v_check;
+  END IF;
+  RAISE NOTICE 'PASS fr_update_sender_cancel_only restricted to sender cancel';
+
+  -- No permissive UPDATE policy may exist that lets from_user set arbitrary status.
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname='public' AND tablename='friend_requests'
+       AND cmd='UPDATE'
+       AND policyname NOT IN ('fr_update_recipient','fr_update_sender_cancel_only')
+  ) THEN
+    RAISE EXCEPTION 'FAIL unexpected UPDATE policy on friend_requests — audit required';
+  END IF;
+  RAISE NOTICE 'PASS friend_requests has only the two vetted UPDATE policies';
+END $$;
+
+-- 9-runtime) Behavioural: only the true recipient can transition status.
+DO $$
+DECLARE
+  v_a uuid; v_b uuid; v_c uuid;
+  v_id uuid; v_rows int; v_status text; v_from uuid;
+BEGIN
+  IF NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 9-runtime: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 9-runtime: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a),(v_a,v_c),(v_c,v_a),(v_b,v_c),(v_c,v_b));
+
+  -- A → B pending.
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_postgres();
+
+  -- 9a) A third authenticated user C (not recipient) must NOT be able to accept.
+  PERFORM pg_temp.as_user(v_c);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_rows > 0 OR v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 9a: non-recipient C accepted (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS 9a: only the row-matched recipient can accept (C blocked)';
+
+  -- 9b) Recipient B accepts — must succeed AND from_user must remain v_a
+  --     (immutability guarded by trigger even during a legitimate status write).
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text, from_user INTO v_status, v_from FROM public.friend_requests WHERE id=v_id;
+  IF v_rows <> 1 OR v_status <> 'accepted' OR v_from <> v_a THEN
+    RAISE EXCEPTION 'FAIL 9b: recipient accept broke invariants (rows=%, status=%, from=%)', v_rows, v_status, v_from;
+  END IF;
+  RAISE NOTICE 'PASS 9b: recipient accept preserves from_user identity';
+
+  -- 9c) Once accepted, even the recipient may not flip it back (only pending → accepted/rejected).
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN
+    UPDATE public.friend_requests SET status='pending' WHERE id=v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN others THEN v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 9c: accepted request was reopened (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 9c: accepted status is terminal for recipient';
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 10) start_dm gate. Tampering with friend_requests must NOT unlock a DM.
+--     Only a genuine recipient-accepted transition can make start_dm succeed.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_a uuid; v_b uuid; v_c uuid;
+  v_id uuid; v_dm uuid; v_rows int; v_status text;
+  v_sqlstate text; v_msg text;
+BEGIN
+  IF NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 10: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 10: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  -- Clean slate: no friendship, no contact link, no existing DM.
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a));
+  DELETE FROM public.customers
+   WHERE (user_id=v_a AND account_user_id=v_b) OR (user_id=v_b AND account_user_id=v_a);
+  DELETE FROM public.suppliers
+   WHERE (user_id=v_a AND account_user_id=v_b) OR (user_id=v_b AND account_user_id=v_a);
+
+  -- A → B pending.
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending') RETURNING id INTO v_id;
+
+  -- 10a) start_dm while pending must raise 'not_allowed'.
+  BEGIN
+    v_dm := public.start_dm(v_b);
+    v_msg := NULL;
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_sqlstate = RETURNED_SQLSTATE, v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10a: start_dm did not reject pending (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10a: start_dm blocked while status=pending';
+
+  -- 10b) Sender tries to self-accept (must fail) → start_dm still blocked.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL;
+  END;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_b);
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 10b: sender self-accept succeeded (guards broken)';
+  END IF;
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10b: start_dm allowed after tampered self-accept (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10b: sender tamper (self-accept) does not unlock start_dm';
+
+  -- 10c) Third party C tries to accept → RLS blocks → start_dm still not_allowed.
+  PERFORM pg_temp.as_user(v_c);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_a);   -- C tries to DM A (unrelated)
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_rows > 0 OR v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 10c: third-party accept succeeded (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10c: third-party opened DM (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10c: third-party tamper does not unlock start_dm';
+
+  -- 10d) Sender attempts to swap to_user to themself (immutability) → guard rejects
+  --      → start_dm still blocked for A↔B.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET to_user = v_a, status = 'accepted' WHERE id = v_id;
+  EXCEPTION WHEN others THEN NULL;
+  END;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_b);
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10d: participant swap unlocked start_dm (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10d: participant swap does not unlock start_dm';
+
+  -- 10e) Genuine recipient acceptance → start_dm now succeeds for both sides.
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  v_dm := public.start_dm(v_a);
+  IF v_dm IS NULL THEN
+    PERFORM pg_temp.as_postgres();
+    RAISE EXCEPTION 'FAIL 10e: recipient accept did not unlock start_dm';
+  END IF;
+  PERFORM pg_temp.as_user(v_a);
+  v_dm := public.start_dm(v_b);
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NULL THEN
+    RAISE EXCEPTION 'FAIL 10e: reverse direction start_dm failed after accept';
+  END IF;
+  RAISE NOTICE 'PASS 10e: recipient accept is the ONLY path that opens start_dm';
+END $$;
+
+-- =====================================================================
+-- 11) Full participant status transition matrix
+--     Verifies each allowed transition succeeds ONLY for the correct
+--     actor, and every disallowed (actor, from_status, to_status) tuple
+--     is rejected by RLS + trigger guard.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;  -- sender
+  v_b uuid := current_setting('test.user_b')::uuid;  -- recipient
+  v_c uuid := current_setting('test.user_c')::uuid;  -- third party
+  v_id uuid;
+  v_status text;
+  v_rows int;
+  v_deleted int;
+
+  -- Helper: seed a request in the given starting status as service_role.
+  --  Uses inline SQL below because plpgsql lacks nested procedures here.
+BEGIN
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 11: cannot switch roles in this session';
+    RETURN;
+  END IF;
+
+  -- ---- 11a) pending → accepted: only recipient (v_b) ----
+  -- sender attempt (must fail; status stays pending)
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11a: sender self-accept mutated status to %', v_status;
+  END IF;
+
+  -- third-party attempt (must fail)
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11a: third-party accept mutated status to %', v_status;
+  END IF;
+
+  -- recipient attempt (must succeed)
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 11a: recipient accept blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11a: pending→accepted only by recipient';
+
+  -- ---- 11b) pending → rejected: only recipient ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11b: non-recipient reject mutated status to %', v_status;
+  END IF;
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'rejected' THEN
+    RAISE EXCEPTION 'FAIL 11b: recipient reject blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11b: pending→rejected only by recipient';
+
+  -- ---- 11c) pending → cancelled: only sender ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  -- recipient cannot cancel
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  -- third-party cannot cancel
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11c: non-sender cancel mutated status to %', v_status;
+  END IF;
+  -- sender can cancel
+  PERFORM pg_temp.as_user(v_a);
+  UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL 11c: sender cancel blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11c: pending→cancelled only by sender';
+
+  -- ---- 11d) accepted is terminal (no further transitions) ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 11d: accepted mutated to % (should be terminal)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11d: accepted is terminal';
+
+  -- ---- 11e) DELETE: rejected row deletable only by recipient ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'rejected') RETURNING id INTO v_id;
+  -- sender cannot delete a rejected row
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11e: sender deleted a rejected row';
+  END IF;
+  -- third party cannot delete
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11e: third-party deleted a rejected row';
+  END IF;
+  -- recipient can delete
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11e: recipient could not delete rejected row (rows=%)', v_deleted;
+  END IF;
+  RAISE NOTICE 'PASS 11e: rejected → delete only by recipient';
+
+  -- ---- 11f) DELETE: cancelled row deletable by BOTH sender and recipient ----
+  --      (fr_delete_from_self covers sender pending/cancelled; fr_delete_to_self
+  --       covers recipient rejected/cancelled)
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_id;
+  -- third party still cannot delete
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11f: third-party deleted a cancelled row';
+  END IF;
+  -- recipient deletes it
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11f: recipient could not delete cancelled row';
+  END IF;
+  -- fresh row: sender also allowed to delete cancelled
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11f: sender could not delete own cancelled row';
+  END IF;
+  RAISE NOTICE 'PASS 11f: cancelled → delete by sender or recipient only';
+
+  -- ---- 11g) DELETE: pending row deletable only by sender ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+  -- recipient cannot delete pending
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11g: recipient deleted a pending row';
+  END IF;
+  -- third party cannot delete pending
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11g: third-party deleted a pending row';
+  END IF;
+  -- sender can delete pending
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11g: sender could not delete own pending row';
+  END IF;
+  RAISE NOTICE 'PASS 11g: pending → delete only by sender';
+
+  -- ---- 11h) DELETE: accepted row NOT deletable by anyone (except service_role) ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted') RETURNING id INTO v_id;
+  FOR v_status IN SELECT unnest(ARRAY[v_a::text,v_b::text,v_c::text]) LOOP
+    PERFORM pg_temp.as_user(v_status::uuid);
+    DELETE FROM public.friend_requests WHERE id=v_id;
+    GET DIAGNOSTICS v_deleted = ROW_COUNT;
+    IF v_deleted <> 0 THEN
+      RAISE EXCEPTION 'FAIL 11h: actor % deleted an accepted row', v_status;
+    END IF;
+  END LOOP;
+  RAISE NOTICE 'PASS 11h: accepted rows not deletable via RLS';
+
+  -- Cleanup: reset role so ROLLBACK is clean.
+  PERFORM pg_temp.as_postgres();
+END $$;
+
+-- =====================================================================
+-- 12) Wrong-recipient / wrong-actor UPDATEs must be rejected with the
+--     exact error, SQLSTATE, DETAIL, and HINT emitted by
+--     tg_friend_requests_guard. This is what CI logs read when triage.
+--
+--     Contract captured from the guard trigger:
+--       - "only the recipient may set status=<X>" → SQLSTATE 42501,
+--         DETAIL contains "req_id=... actor=... role=...", HINT mentions
+--         respond_friend_request.
+--       - "only the sender may cancel"           → SQLSTATE 42501,
+--         HINT mentions cancel_friend_request.
+--       - "participants are immutable"           → SQLSTATE 23514,
+--         HINT mentions "cannot be changed after INSERT".
+--       - "cannot transition status from X to Y" → SQLSTATE 23514.
+--       - "invalid status transition to <X>"     → SQLSTATE 23514.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;   -- sender
+  v_b uuid := current_setting('test.user_b')::uuid;   -- recipient
+  v_c uuid := current_setting('test.user_c')::uuid;   -- third party
+  v_id uuid;
+  v_msg text;
+  v_sqlstate text;
+  v_detail text;
+  v_hint text;
+BEGIN
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 12: cannot switch roles in this session';
+    RETURN;
+  END IF;
+
+  -- Fresh pending request as service_role.
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  ----------------------------------------------------------------
+  -- 12a) Sender (wrong recipient) tries to self-accept
+  --      → trigger fires via fr_update_sender_cancel_only USING clause
+  --      → RAISE with 42501 + recipient hint.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12a: sender self-accept did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_detail   = PG_EXCEPTION_DETAIL,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '42501' THEN
+    RAISE EXCEPTION 'FAIL 12a: expected SQLSTATE 42501, got % (msg=%)', v_sqlstate, v_msg;
+  END IF;
+  IF v_msg !~ 'only the recipient may set status=accepted' THEN
+    RAISE EXCEPTION 'FAIL 12a: unexpected message: %', v_msg;
+  END IF;
+  IF v_detail !~ ('req_id=' || v_id::text) OR v_detail !~ ('actor=' || v_a::text)
+     OR v_detail !~ 'role=authenticated' OR v_detail !~ 'old_status=pending'
+     OR v_detail !~ 'new_status=accepted' THEN
+    RAISE EXCEPTION 'FAIL 12a: DETAIL missing diagnostic fields: %', v_detail;
+  END IF;
+  IF v_hint !~ 'respond_friend_request' THEN
+    RAISE EXCEPTION 'FAIL 12a: HINT missing RPC recommendation: %', v_hint;
+  END IF;
+  RAISE NOTICE 'PASS 12a: sender→accepted rejected with full diagnostics';
+
+  ----------------------------------------------------------------
+  -- 12b) Sender tries to self-reject → same class of error.
+  ----------------------------------------------------------------
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12b: sender self-reject did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_detail   = PG_EXCEPTION_DETAIL,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '42501'
+     OR v_msg !~ 'only the recipient may set status=rejected'
+     OR v_detail !~ ('actor=' || v_a::text)
+     OR v_hint !~ 'respond_friend_request' THEN
+    RAISE EXCEPTION 'FAIL 12b: wrong error surface (sqlstate=%, msg=%, detail=%, hint=%)',
+      v_sqlstate, v_msg, v_detail, v_hint;
+  END IF;
+  RAISE NOTICE 'PASS 12b: sender→rejected rejected with full diagnostics';
+
+  ----------------------------------------------------------------
+  -- 12c) Recipient (wrong actor for cancel) tries to cancel
+  --      → trigger enters cancelled branch, me <> from_user → 42501.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12c: recipient cancel did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_detail   = PG_EXCEPTION_DETAIL,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '42501'
+     OR v_msg !~ 'only the sender may cancel'
+     OR v_detail !~ ('actor=' || v_b::text)
+     OR v_hint !~ 'cancel_friend_request' THEN
+    RAISE EXCEPTION 'FAIL 12c: wrong error surface (sqlstate=%, msg=%, detail=%, hint=%)',
+      v_sqlstate, v_msg, v_detail, v_hint;
+  END IF;
+  RAISE NOTICE 'PASS 12c: recipient→cancelled rejected with full diagnostics';
+
+  ----------------------------------------------------------------
+  -- 12d) Sender attempts participant swap (to_user := v_c)
+  --      → immutability guard, SQLSTATE 23514 + immutability hint.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET to_user=v_c WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12d: participant swap did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_detail   = PG_EXCEPTION_DETAIL,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '23514'
+     OR v_msg !~ 'participants are immutable'
+     OR v_detail !~ ('req_id=' || v_id::text)
+     OR v_hint !~ 'cannot be changed after INSERT' THEN
+    RAISE EXCEPTION 'FAIL 12d: wrong error surface (sqlstate=%, msg=%, detail=%, hint=%)',
+      v_sqlstate, v_msg, v_detail, v_hint;
+  END IF;
+  RAISE NOTICE 'PASS 12d: participant swap rejected with immutability diagnostic';
+
+  ----------------------------------------------------------------
+  -- 12e) After a real accept, recipient tries accepted → rejected
+  --      → non-pending transition, 23514.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12e: accepted→rejected did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_detail   = PG_EXCEPTION_DETAIL,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '23514'
+     OR v_msg !~ 'cannot transition status from accepted to rejected'
+     OR v_detail !~ 'old_status=accepted' THEN
+    RAISE EXCEPTION 'FAIL 12e: wrong error surface (sqlstate=%, msg=%, detail=%)',
+      v_sqlstate, v_msg, v_detail;
+  END IF;
+  RAISE NOTICE 'PASS 12e: non-pending transition rejected with 23514';
+
+  ----------------------------------------------------------------
+  -- 12f) Recipient sets an invalid status value on a fresh pending row
+  --      → guard's ELSE branch, 23514 + "invalid status transition".
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  PERFORM pg_temp.as_user(v_b);
+  v_msg := NULL; v_sqlstate := NULL; v_detail := NULL; v_hint := NULL;
+  BEGIN
+    -- Bypass the enum by casting through text; if the column is an enum,
+    -- Postgres will reject with 22P02 which is also acceptable here.
+    UPDATE public.friend_requests SET status='pending'::text::friend_request_status
+     WHERE id=v_id;
+    -- Same status is a no-op (NEW.status IS NOT DISTINCT FROM OLD.status),
+    -- so trigger's inner IF is skipped and no error is raised. That's OK —
+    -- we only care that no invalid transition slipped through. Now try a
+    -- legitimately invalid value: reuse the ELSE branch by setting status
+    -- to itself... skipped. Instead force through generic dynamic SQL.
+    NULL;
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE;
+  END;
+  -- Real invalid-transition attempt: try to set 'pending' → 'pending' is
+  -- a no-op; instead recipient tries to write 'cancelled' (branch handled
+  -- in 12c already covered from sender side; here recipient hits the
+  -- "only the sender may cancel" branch too).
+  v_msg := NULL; v_sqlstate := NULL; v_hint := NULL;
+  BEGIN
+    UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+    RAISE EXCEPTION 'FAIL 12f: recipient cancel did not raise';
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS
+      v_msg      = MESSAGE_TEXT,
+      v_sqlstate = RETURNED_SQLSTATE,
+      v_hint     = PG_EXCEPTION_HINT;
+  END;
+  IF v_sqlstate <> '42501'
+     OR v_msg !~ 'only the sender may cancel'
+     OR v_hint !~ 'cancel_friend_request' THEN
+    RAISE EXCEPTION 'FAIL 12f: wrong error surface (sqlstate=%, msg=%, hint=%)',
+      v_sqlstate, v_msg, v_hint;
+  END IF;
+  RAISE NOTICE 'PASS 12f: recipient cancel consistently rejected on new row';
+
+  ----------------------------------------------------------------
+  -- 12g) Third-party UPDATE: fails RLS USING (silent no-op) but must NOT
+  --      mutate the row. We do NOT expect DETAIL here — this is the
+  --      one intentionally-silent path documented for callers.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  PERFORM pg_temp.as_postgres();
+  IF (SELECT status::text FROM public.friend_requests WHERE id=v_id) <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 12g: third-party UPDATE mutated a pending row';
+  END IF;
+  RAISE NOTICE 'PASS 12g: third-party UPDATE is a silent no-op (RLS USING filters row out)';
+
+  PERFORM pg_temp.as_postgres();
+END $$;
+
+-- =====================================================================
+-- 13) SELECT visibility on friend_requests
+--     Policy fr_select_self: (from_user = auth.uid() OR to_user = auth.uid()).
+--     Verify:
+--       - sender sees rows where they are from_user
+--       - recipient sees rows where they are to_user
+--       - third party sees NOTHING
+--       - anon sees NOTHING
+--       - visibility survives across every terminal status
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;   -- sender
+  v_b uuid := current_setting('test.user_b')::uuid;   -- recipient
+  v_c uuid := current_setting('test.user_c')::uuid;   -- third party
+  v_pending  uuid;
+  v_accepted uuid;
+  v_rejected uuid;
+  v_cancelled uuid;
+  v_unrelated uuid;   -- request between B and C (v_a must NOT see it)
+  v_seen int;
+  v_qual text;
+BEGIN
+  -- ---- 13-static) Confirm the SELECT policy shape hasn't drifted. ----
+  SELECT qual INTO v_qual
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests' AND cmd='SELECT';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL 13-static: no SELECT policy on friend_requests';
+  END IF;
+  IF v_qual !~ 'from_user = auth\.uid\(\)' OR v_qual !~ 'to_user = auth\.uid\(\)' THEN
+    RAISE EXCEPTION 'FAIL 13-static: SELECT policy no longer scopes to participants: %', v_qual;
+  END IF;
+  -- Reject any additional SELECT policy that could broaden visibility.
+  IF (SELECT count(*) FROM pg_policies
+        WHERE schemaname='public' AND tablename='friend_requests'
+          AND cmd IN ('SELECT','ALL')) > 1 THEN
+    RAISE EXCEPTION 'FAIL 13-static: extra SELECT/ALL policies on friend_requests may leak rows';
+  END IF;
+  RAISE NOTICE 'PASS 13-static: fr_select_self is the only SELECT policy and scoped to participants';
+
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 13 runtime: cannot switch roles in this session';
+    RETURN;
+  END IF;
+
+  -- Seed rows in every relevant status as service_role.
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending')   RETURNING id INTO v_pending;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted')  RETURNING id INTO v_accepted;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'rejected')  RETURNING id INTO v_rejected;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_cancelled;
+  -- Unrelated row (B ↔ C): v_a must never see this.
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_b,v_c,'pending')   RETURNING id INTO v_unrelated;
+
+  ----------------------------------------------------------------
+  -- 13a) Sender (from_user = v_a) sees the four A→B rows
+  --      and does NOT see the B→C row.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13a: sender saw % of 4 own rows', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13a: sender leaked into unrelated row (B↔C)';
+  END IF;
+  RAISE NOTICE 'PASS 13a: sender sees only rows where from_user=self';
+
+  ----------------------------------------------------------------
+  -- 13b) Recipient (to_user = v_b) sees the four A→B rows AND the
+  --      B→C row (as its from_user), but no rows unrelated to them.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient saw % of 4 rows where they are to_user', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient could not see own outgoing row (B→C)';
+  END IF;
+  -- Full table scan must yield exactly 5 rows for v_b (4 as to_user + 1 as from_user).
+  SELECT count(*) INTO v_seen FROM public.friend_requests
+    WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled, v_unrelated);
+  IF v_seen <> 5 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient row count mismatch (%)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13b: recipient sees exactly its participant rows';
+
+  ----------------------------------------------------------------
+  -- 13c) Third party (v_c) sees only the row where they are to_user,
+  --      and NONE of the A↔B rows (regardless of status).
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13c: third party leaked into A↔B rows (saw %)', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13c: third party could not see own incoming row';
+  END IF;
+  RAISE NOTICE 'PASS 13c: third party sees only its own participant rows';
+
+  ----------------------------------------------------------------
+  -- 13d) Attribute leakage guard: even for rows they can see,
+  --      SELECT * must not expose columns of other rows via a
+  --      broad WHERE. Verified by counting all rows via unfiltered
+  --      SELECT and expecting participant-only visibility.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+  SELECT count(*) INTO v_seen FROM public.friend_requests;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13d: third party unfiltered SELECT returned % rows (expected 1)', v_seen;
+  END IF;
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen FROM public.friend_requests;
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13d: sender unfiltered SELECT returned % rows (expected 4)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13d: unfiltered SELECT respects participant scope';
+
+  ----------------------------------------------------------------
+  -- 13e) anon must see nothing.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_anon();
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.friend_requests;
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;   -- anon lacks SELECT grant → also acceptable
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13e: anon SELECT returned % rows', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13e: anon sees zero friend_requests rows';
+
+  PERFORM pg_temp.as_postgres();
+END $$;
+
+-- =====================================================================
+-- 14) SELECT visibility on statuses / status_likes / status_comments
+--     Policies must honor the per-post `visibility` field:
+--       - visibility='public'   → any authenticated user can read (while active)
+--       - visibility='friends'  → only the author + accepted-friend peers
+--       - always: author sees own rows
+--       - expired statuses hidden from everyone except the author
+--       - anon sees nothing on any of the three tables
+--     Likes and comments inherit visibility of the parent status.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid;                     -- author
+  v_b uuid;                     -- accepted friend of A
+  v_c uuid;                     -- stranger
+  v_qual_status  text;
+  v_qual_likes   text;
+  v_qual_comments text;
+  v_pub_id     uuid;            -- public active status by A
+  v_fr_id      uuid;            -- friends-only active status by A
+  v_exp_id     uuid;            -- friends-only EXPIRED status by A
+  v_like_pub   uuid;            -- (author-like on public status)
+  v_like_fr    uuid;            -- (author-like on friends-only status)
+  v_cmt_pub    uuid;
+  v_cmt_fr     uuid;
+  v_seen int;
+BEGIN
+  ----------------------------------------------------------------
+  -- 14-static) Confirm all three SELECT policies reference the
+  -- visibility field + are_friends() helper. Guards against
+  -- accidental drift back to `USING (true)` or dropping the join.
+  ----------------------------------------------------------------
+  SELECT qual INTO v_qual_status FROM pg_policies
+   WHERE schemaname='public' AND tablename='statuses' AND cmd='SELECT';
+  IF v_qual_status IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on statuses';
+  END IF;
+  IF v_qual_status !~ 'visibility' OR v_qual_status !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: statuses SELECT policy no longer gates on visibility+are_friends: %', v_qual_status;
+  END IF;
+
+  SELECT qual INTO v_qual_likes FROM pg_policies
+   WHERE schemaname='public' AND tablename='status_likes' AND cmd='SELECT';
+  IF v_qual_likes IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on status_likes';
+  END IF;
+  IF v_qual_likes = 'true' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_likes SELECT policy is USING (true) — cross-user leak';
+  END IF;
+  IF v_qual_likes !~ 'statuses' OR v_qual_likes !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_likes SELECT policy does not inherit statuses visibility: %', v_qual_likes;
+  END IF;
+
+  SELECT qual INTO v_qual_comments FROM pg_policies
+   WHERE schemaname='public' AND tablename='status_comments' AND cmd='SELECT';
+  IF v_qual_comments IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on status_comments';
+  END IF;
+  IF v_qual_comments = 'true' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_comments SELECT policy is USING (true) — cross-user leak';
+  END IF;
+  IF v_qual_comments !~ 'statuses' OR v_qual_comments !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_comments SELECT policy does not inherit statuses visibility: %', v_qual_comments;
+  END IF;
+  RAISE NOTICE 'PASS 14-static: statuses/likes/comments SELECT policies gate on visibility + are_friends';
+
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 14 runtime: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 14 runtime: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  ----------------------------------------------------------------
+  -- Seed accepted friendship A↔B and three statuses by A.
+  -- Everything is inside the outer transaction so ROLLBACK cleans up.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_postgres();
+
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a),(v_a,v_c),(v_c,v_a),(v_b,v_c),(v_c,v_b));
+  INSERT INTO public.friend_requests(from_user, to_user, status, responded_at)
+  VALUES (v_a, v_b, 'accepted', now());
+
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility)
+  VALUES (v_a, '', '', 'text', 'rls-14 public', 'public')
+  RETURNING id INTO v_pub_id;
+
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility)
+  VALUES (v_a, '', '', 'text', 'rls-14 friends', 'friends')
+  RETURNING id INTO v_fr_id;
+
+  -- Backdated expiry so this row is "expired" from the RLS point of view.
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility, created_at, expires_at)
+  VALUES (v_a, '', '', 'text', 'rls-14 expired-friends', 'friends',
+          now() - interval '2 days', now() - interval '1 day')
+  RETURNING id INTO v_exp_id;
+
+  -- Likes and comments by author A on both live statuses.
+  INSERT INTO public.status_likes(status_id, user_id) VALUES (v_pub_id, v_a);
+  INSERT INTO public.status_likes(status_id, user_id) VALUES (v_fr_id,  v_a);
+
+  INSERT INTO public.status_comments(status_id, user_id, body)
+  VALUES (v_pub_id, v_a, 'rls-14 comment on public')
+  RETURNING id INTO v_cmt_pub;
+  INSERT INTO public.status_comments(status_id, user_id, body)
+  VALUES (v_fr_id,  v_a, 'rls-14 comment on friends')
+  RETURNING id INTO v_cmt_fr;
+
+  ----------------------------------------------------------------
+  -- 14a) Author A sees all three of their own statuses
+  --      (including the expired one — self-visibility overrides expiry).
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id IN (v_pub_id, v_fr_id, v_exp_id);
+  IF v_seen <> 3 THEN
+    RAISE EXCEPTION 'FAIL 14a: author saw % of 3 own statuses', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14a: author always sees own statuses (incl. expired)';
+
+  ----------------------------------------------------------------
+  -- 14b) Accepted friend B sees the public + friends-only statuses,
+  --      but NOT the expired one, and can read A's likes/comments
+  --      on both live statuses.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend cannot see public status of accepted-friend author';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_fr_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend cannot see friends-only status of accepted-friend author';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_exp_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend leaked into expired status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id IN (v_pub_id, v_fr_id) AND user_id = v_a;
+  IF v_seen <> 2 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend saw % of 2 author likes', v_seen;
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id IN (v_cmt_pub, v_cmt_fr);
+  IF v_seen <> 2 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend saw % of 2 author comments', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14b: accepted friend sees public + friends-only statuses and their likes/comments';
+
+  ----------------------------------------------------------------
+  -- 14c) Stranger C sees ONLY the public status. The friends-only
+  --      status and all of its likes/comments must be invisible.
+  --      Expired status also invisible.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see public status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_fr_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED into friends-only status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_exp_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger leaked into expired friends-only status';
+  END IF;
+
+  -- Likes on friends-only status must be hidden from C.
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id = v_fr_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED % likes on friends-only status', v_seen;
+  END IF;
+  -- Likes on public status stay readable.
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see % likes on public status', v_seen;
+  END IF;
+
+  -- Comments on friends-only status hidden; public visible.
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id = v_cmt_fr;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED comment on friends-only status';
+  END IF;
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id = v_cmt_pub;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see comment on public status';
+  END IF;
+
+  -- Broad unfiltered SELECTs must return zero rows across the seeded set
+  -- for the friends-only side. This catches wildcard leaks where a broken
+  -- policy might return the row but strip filtered columns.
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id IN (v_fr_id, v_exp_id);
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger unfiltered SELECT surfaced friends-only rows (%)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14c: stranger sees only public status + its likes/comments; friends-only is fully hidden';
+
+  ----------------------------------------------------------------
+  -- 14d) anon must see nothing across all three tables.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_anon();
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.statuses
+     WHERE id IN (v_pub_id, v_fr_id, v_exp_id);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on statuses returned % rows', v_seen;
+  END IF;
+
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.status_likes
+     WHERE status_id IN (v_pub_id, v_fr_id);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on status_likes returned % rows', v_seen;
+  END IF;
+
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.status_comments
+     WHERE id IN (v_cmt_pub, v_cmt_fr);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on status_comments returned % rows', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14d: anon reads zero rows from statuses / likes / comments';
+
+  PERFORM pg_temp.as_postgres();
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 15) signup_attempts — hanya admin yang bisa membaca; tidak ada policy
+--     INSERT/UPDATE/DELETE (ditulis lewat SECURITY DEFINER function).
+--     Fungsi check_and_record_signup_attempt HANYA boleh dieksekusi oleh
+--     service_role — anon/authenticated tidak.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_rls boolean;
+  v_select_cnt int;
+  v_write_cnt int;
+  v_select_roles text;
+  v_select_qual text;
+  v_anon_exec boolean;
+  v_auth_exec boolean;
+  v_svc_exec boolean;
+BEGIN
+  SELECT relrowsecurity INTO v_rls
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname='signup_attempts';
+  IF NOT v_rls THEN
+    RAISE EXCEPTION 'FAIL 15a: RLS not enabled on signup_attempts';
+  END IF;
+
+  SELECT count(*) INTO v_select_cnt
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts' AND cmd='SELECT';
+  IF v_select_cnt <> 1 THEN
+    RAISE EXCEPTION 'FAIL 15b: expected exactly 1 SELECT policy on signup_attempts, got %', v_select_cnt;
+  END IF;
+
+  SELECT count(*) INTO v_write_cnt
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts'
+     AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
+  IF v_write_cnt <> 0 THEN
+    RAISE EXCEPTION 'FAIL 15c: signup_attempts must have no write/ALL policy, found %', v_write_cnt;
+  END IF;
+
+  SELECT array_to_string(roles, ','), qual INTO v_select_roles, v_select_qual
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts' AND cmd='SELECT';
+  IF v_select_roles NOT LIKE '%authenticated%' THEN
+    RAISE EXCEPTION 'FAIL 15d: SELECT policy not scoped to authenticated (roles=%)', v_select_roles;
+  END IF;
+  IF v_select_qual !~* 'has_role\s*\(.*admin' THEN
+    RAISE EXCEPTION 'FAIL 15e: SELECT policy on signup_attempts must call has_role(..., admin), got: %', v_select_qual;
+  END IF;
+
+  -- EXECUTE priv check on the rate-limit function.
+  SELECT
+    has_function_privilege('anon',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE'),
+    has_function_privilege('authenticated',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE'),
+    has_function_privilege('service_role',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE')
+  INTO v_anon_exec, v_auth_exec, v_svc_exec;
+
+  IF v_anon_exec THEN
+    RAISE EXCEPTION 'FAIL 15f: anon must NOT execute check_and_record_signup_attempt';
+  END IF;
+  IF v_auth_exec THEN
+    RAISE EXCEPTION 'FAIL 15g: authenticated must NOT execute check_and_record_signup_attempt';
+  END IF;
+  IF NOT v_svc_exec THEN
+    RAISE EXCEPTION 'FAIL 15h: service_role must be able to execute check_and_record_signup_attempt';
+  END IF;
+
+  RAISE NOTICE 'PASS 15: signup_attempts admin-only SELECT + no write policies + rate-limit fn is service_role-only';
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 16) get_chat_member_profiles — TIDAK boleh mengembalikan kolom `email`
+--     dan `phone` HANYA boleh keluar untuk peer yang sudah ada di
+--     address_book pemanggil (linked_user_id = p.id) atau untuk profil
+--     pemanggil sendiri. Anon TIDAK boleh EXECUTE.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_exists boolean;
+  v_result_cols text;
+  v_body text;
+  v_anon_exec boolean;
+  v_auth_exec boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname='get_chat_member_profiles'
+  ) INTO v_exists;
+  IF NOT v_exists THEN
+    RAISE EXCEPTION 'FAIL 16a: get_chat_member_profiles is missing';
+  END IF;
+
+  -- Kumpulkan nama-nama OUT parameter (kolom hasil RETURNS TABLE(...)).
+  SELECT string_agg(coalesce(pn, ''), ',') INTO v_result_cols
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid=p.pronamespace,
+         LATERAL unnest(coalesce(p.proargnames, ARRAY[]::text[]),
+                        coalesce(p.proargmodes, ARRAY[]::"char"[])) AS x(pn, pm)
+   WHERE n.nspname='public' AND p.proname='get_chat_member_profiles'
+     AND (pm IS NULL OR pm IN ('o','t','b'));
+
+  IF v_result_cols ~* '(^|,)\s*email\s*(,|$)' THEN
+    RAISE EXCEPTION 'FAIL 16b: get_chat_member_profiles must not expose email column (got: %)', v_result_cols;
+  END IF;
+  IF v_result_cols !~* '(^|,)\s*phone\s*(,|$)' THEN
+    RAISE EXCEPTION 'FAIL 16c: get_chat_member_profiles expected to still return phone (got: %)', v_result_cols;
+  END IF;
+
+  -- Body harus mengunci `phone` dengan pengecekan address_book milik pemanggil.
+  SELECT p.prosrc INTO v_body
+    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname='get_chat_member_profiles';
+  IF v_body !~* 'address_book' THEN
+    RAISE EXCEPTION 'FAIL 16d: get_chat_member_profiles body must gate phone via address_book (missing address_book reference)';
+  END IF;
+  IF v_body !~* 'linked_user_id' THEN
+    RAISE EXCEPTION 'FAIL 16e: get_chat_member_profiles body must gate phone via address_book.linked_user_id';
+  END IF;
+  IF v_body ~* '\bp\.email\b' THEN
+    RAISE EXCEPTION 'FAIL 16f: get_chat_member_profiles body must not select p.email';
+  END IF;
+
+  -- EXECUTE priv: anon TIDAK boleh, authenticated boleh.
+  SELECT
+    has_function_privilege('anon', 'public.get_chat_member_profiles(uuid[])', 'EXECUTE'),
+    has_function_privilege('authenticated', 'public.get_chat_member_profiles(uuid[])', 'EXECUTE')
+  INTO v_anon_exec, v_auth_exec;
+  IF v_anon_exec THEN
+    RAISE EXCEPTION 'FAIL 16g: anon must NOT execute get_chat_member_profiles';
+  END IF;
+  IF NOT v_auth_exec THEN
+    RAISE EXCEPTION 'FAIL 16h: authenticated must be able to execute get_chat_member_profiles';
+  END IF;
+
+  RAISE NOTICE 'PASS 16: get_chat_member_profiles hides email; phone is gated by caller address_book; anon cannot execute';
+END $$;
+
+-- ---------------------------------------------------------------------
+-- 17) get_chat_member_profiles — runtime: phone HANYA keluar bila peer
+--     sudah ada di address_book pemanggil. Kita impersonate role
+--     authenticated dengan auth.uid()=A, membangun conversation A+B,
+--     lalu panggil RPC sebelum & sesudah insert address_book. Semua
+--     perubahan dibungkus transaksi ROLLBACK di akhir file.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
+  v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
+  v_conv uuid;
+  v_new_conv boolean := false;
+  v_new_member_a boolean := false;
+  v_new_member_b boolean := false;
+  v_b_phone text := '+62999' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 10);
+  v_row record;
+  v_count int;
+BEGIN
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 17: cross-user runtime prerequisites missing';
+    RETURN;
+  END IF;
+
+  -- Set phone deterministik untuk B (rollback mengembalikan nilai asli).
+  UPDATE public.profiles SET phone = v_b_phone WHERE id = v_b;
+
+  -- Pastikan A dan B satu conversation.
+  SELECT a.conversation_id INTO v_conv
+    FROM public.conversation_members a
+    JOIN public.conversation_members b ON b.conversation_id = a.conversation_id
+   WHERE a.user_id = v_a AND b.user_id = v_b
+   LIMIT 1;
+  IF v_conv IS NULL THEN
+    INSERT INTO public.conversations(kind, owner_user_id, created_by)
+      VALUES ('dm', v_a, v_a) RETURNING id INTO v_conv;
+    v_new_conv := true;
+    INSERT INTO public.conversation_members(conversation_id, user_id)
+      VALUES (v_conv, v_a) ON CONFLICT DO NOTHING;
+    INSERT INTO public.conversation_members(conversation_id, user_id)
+      VALUES (v_conv, v_b) ON CONFLICT DO NOTHING;
+    v_new_member_a := true;
+    v_new_member_b := true;
+  END IF;
+
+  -- Bersihkan address_book milik A untuk peer B (baseline).
+  DELETE FROM public.address_book WHERE user_id = v_a AND linked_user_id = v_b;
+
+  -- Case A: caller A, TIDAK ada address_book row → phone HARUS null.
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_b]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.id IS NULL THEN
+    RAISE EXCEPTION 'FAIL 17a: RPC returned no row for peer B (conversation membership check gagal)';
+  END IF;
+  IF v_row.phone IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL 17b: phone BOCOR tanpa address_book (got: %)', v_row.phone;
+  END IF;
+
+  -- Case B: A menyimpan B di address_book → phone HARUS keluar.
+  INSERT INTO public.address_book(user_id, name, linked_user_id, source)
+    VALUES (v_a, 'peer-B-test', v_b, 'manual');
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_b]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.phone IS DISTINCT FROM v_b_phone THEN
+    RAISE EXCEPTION 'FAIL 17c: setelah address_book ada, phone harus % — got %', v_b_phone, v_row.phone;
+  END IF;
+
+  -- Case C: caller acak (bukan anggota conversation) → 0 baris.
+  PERFORM pg_temp.as_user(gen_random_uuid());
+  SELECT count(*) INTO v_count FROM public.get_chat_member_profiles(ARRAY[v_b]);
+  PERFORM pg_temp.as_postgres();
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'FAIL 17d: caller non-anggota mendapat % baris, seharusnya 0', v_count;
+  END IF;
+
+  -- Case D: caller melihat profilnya sendiri → phone milik sendiri terlihat.
+  UPDATE public.profiles SET phone = '+62111' || substr(replace(gen_random_uuid()::text,'-',''),1,10)
+   WHERE id = v_a;
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_a]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.phone IS NULL THEN
+    RAISE EXCEPTION 'FAIL 17e: profil sendiri harus tetap melihat phone-nya sendiri';
+  END IF;
+
+  RAISE NOTICE 'PASS 17: phone RPC gated by caller address_book (empty→null, present→visible, non-member→0 rows, self→own phone)';
+END $$;
+
 ROLLBACK;

@@ -2,21 +2,67 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+type TableProps = React.HTMLAttributes<HTMLTableElement> & {
+  /** Class tambahan untuk container scroll (bukan elemen <table>). */
+  containerClassName?: string;
+  /**
+   * Tinggi maksimum area scroll. Kalau diisi, body tabel bisa di-scroll
+   * vertikal sementara header tetap menempel di atas (sticky).
+   */
+  maxHeight?: number | string;
+};
+
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+  ({ className, containerClassName, maxHeight, style, ...props }, ref) => (
+    // `overflow-auto` + momentum scrolling (`overflow-scrolling: touch` via
+    // `[-webkit-overflow-scrolling:touch]`) supaya tabel lebar bisa digeser
+    // halus di HP. `overscroll-contain` menahan gesture supaya tidak
+    // memicu back-swipe browser saat sedang scroll horizontal.
+    <div
+      data-table-scroll=""
+      className={cn(
+        "relative w-full overflow-auto overscroll-contain scroll-smooth",
+        "[-webkit-overflow-scrolling:touch] [scrollbar-width:thin]",
+        "[&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar]:w-1.5",
+        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border",
+        "[&::-webkit-scrollbar-track]:bg-transparent",
+        containerClassName,
+      )}
+      style={maxHeight != null ? { maxHeight } : undefined}
+    >
+      <table
+        ref={ref}
+        className={cn(
+          "w-full caption-bottom depth-table text-ms-sm leading-ms-normal [font-variant-numeric:tabular-nums]",
+          className,
+        )}
+        style={style}
+        {...props}
+      />
     </div>
   ),
 );
 Table.displayName = "Table";
 
-const TableHeader = React.forwardRef<
-  HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
-));
+type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement> & {
+  /** Header menempel di atas saat body di-scroll. Default: true. */
+  sticky?: boolean;
+};
+
+const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
+  ({ className, sticky = true, ...props }, ref) => (
+    <thead
+      ref={ref}
+      className={cn(
+        "[&_tr]:border-b [&_tr]:hover:bg-transparent",
+        sticky &&
+          "sticky top-0 z-20 depth-3d-bar bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 [&_tr]:border-b-0 [&_th]:after:absolute [&_th]:after:inset-x-0 [&_th]:after:bottom-0 [&_th]:after:h-px [&_th]:after:bg-border [&_th]:after:content-['']",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 TableHeader.displayName = "TableHeader";
 
 const TableBody = React.forwardRef<
@@ -33,7 +79,10 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
+    className={cn(
+      "border-t bg-muted/50 text-ms-sm font-semibold [&>tr]:last:border-b-0",
+      className,
+    )}
     {...props}
   />
 ));
@@ -60,7 +109,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "relative h-11 px-3 text-left align-middle text-ms-xs font-semibold uppercase tracking-[0.06em] leading-ms-snug text-muted-foreground whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] sm:h-10 sm:px-2",
       className,
     )}
     {...props}
@@ -75,7 +124,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "px-3 py-2.5 align-middle text-ms-sm leading-ms-normal [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] sm:p-2",
       className,
     )}
     {...props}
@@ -87,7 +136,11 @@ const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>
 >(({ className, ...props }, ref) => (
-  <caption ref={ref} className={cn("mt-4 text-sm text-muted-foreground", className)} {...props} />
+  <caption
+    ref={ref}
+    className={cn("mt-4 text-ms-xs leading-ms-snug text-muted-foreground", className)}
+    {...props}
+  />
 ));
 TableCaption.displayName = "TableCaption";
 

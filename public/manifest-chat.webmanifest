@@ -1,0 +1,30 @@
+{
+  "name": "Ace Chat",
+  "short_name": "Ace Chat",
+  "description": "Ace Chat — pesan cepat, panggilan, dan pembaruan dalam satu aplikasi.",
+  "start_url": "/chat",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#064e3b",
+  "theme_color": "#0a7a4a",
+  "icons": [
+    {
+      "src": "/mcm-chat-icon.png?v=20260808",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/mcm-chat-icon.png?v=20260808",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

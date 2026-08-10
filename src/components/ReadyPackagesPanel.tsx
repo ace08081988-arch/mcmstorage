@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
+import { usePhotoEditorFlow } from "@/components/photo-editor/use-photo-editor-flow";
+import { NumericTextField } from "@/components/NumericDraftInput";
 
 type Item = {
   id: string;
@@ -93,7 +97,7 @@ export function ReadyPackagesPanel({
       .eq("warehouse_item_id", item.id)
       .order("created_at", { ascending: false });
     setLoading(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     setPkgs((data ?? []) as Pkg[]);
   }
 
@@ -122,47 +126,56 @@ export function ReadyPackagesPanel({
   });
   const list = tab === "ready" ? pkgs.filter((p) => p.status === "ready") : historyFiltered;
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-3" onClick={onClose}>
-      <div className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
-        <header className="flex items-center gap-2 border-b px-4 py-3">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-ms-3" onClick={onClose}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket siap kirim"
+        className="flex h-[95vh] w-full max-w-2xl flex-col rounded-t-lg sm:rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center gap-ms-2 border-b px-ms-4 py-ms-3">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">📦 Paket Siap Kirim</div>
-            <div className="truncate text-[11px] text-muted-foreground">
+            <div className="truncate text-ms-sm font-semibold">📦 Paket Siap Kirim</div>
+            <div className="truncate text-ms-2xs text-muted-foreground">
               {item.name} · stok: {fmtItemQty(item.stock_base, item)}
             </div>
           </div>
-          <button onClick={onClose} className="rounded-md border px-3 py-1.5 text-xs hover:bg-accent">Tutup</button>
+          <button onClick={onClose} className="rounded-md border px-ms-3 py-1.5 text-ms-xs hover:bg-accent">Tutup</button>
         </header>
 
-        <div className="flex border-b text-xs">
+        <div className="flex border-b text-ms-xs">
           <button
             onClick={() => setTab("ready")}
-            className={`flex-1 px-3 py-2 font-medium ${tab === "ready" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
+            className={`flex-1 px-ms-3 py-ms-2 font-medium ${tab === "ready" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
           >
             Siap dikirim ({pkgs.filter((p) => p.status === "ready").length})
           </button>
           <button
             onClick={() => setTab("history")}
-            className={`flex-1 px-3 py-2 font-medium ${tab === "history" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
+            className={`flex-1 px-ms-3 py-ms-2 font-medium ${tab === "history" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
           >
             Riwayat ({historyAll.length})
           </button>
         </div>
 
         {tab === "history" && historyAll.length > 0 && (
-          <div className="flex flex-col gap-2 border-b bg-muted/30 px-3 py-2">
-            <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-ms-2 border-b bg-muted/30 px-ms-3 py-ms-2">
+            <div className="flex flex-col gap-ms-2 sm:flex-row">
               <input
                 value={histQuery}
                 onChange={(e) => setHistQuery(e.target.value)}
                 placeholder="Cari nomor WA / nama pelanggan…"
-                className="h-9 flex-1 rounded-md border bg-background px-3 text-xs"
+                className="h-9 flex-1 rounded-md border bg-background px-ms-3 text-ms-xs"
               />
               <select
                 value={histStatus}
                 onChange={(e) => setHistStatus(e.target.value as typeof histStatus)}
-                className="h-9 rounded-md border bg-background px-2 text-xs"
+                className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
               >
                 <option value="all">Semua status</option>
                 <option value="sent">Berhasil dikirim</option>
@@ -171,27 +184,27 @@ export function ReadyPackagesPanel({
                 <option value="failed">Gagal dikirim</option>
               </select>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="text-[11px] text-muted-foreground">Dari</label>
+            <div className="flex flex-wrap items-center gap-ms-2">
+              <label className="text-ms-2xs text-muted-foreground">Dari</label>
               <input
                 type="date"
                 value={histFrom}
                 max={histTo || undefined}
                 onChange={(e) => setHistFrom(e.target.value)}
-                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-2 text-xs"
+                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-ms-2 text-ms-xs"
               />
-              <label className="text-[11px] text-muted-foreground">s/d</label>
+              <label className="text-ms-2xs text-muted-foreground">s/d</label>
               <input
                 type="date"
                 value={histTo}
                 min={histFrom || undefined}
                 onChange={(e) => setHistTo(e.target.value)}
-                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-2 text-xs"
+                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-ms-2 text-ms-xs"
               />
               {(histQuery || histStatus !== "all" || histFrom || histTo) && (
                 <button
                   onClick={() => { setHistQuery(""); setHistStatus("all"); setHistFrom(""); setHistTo(""); }}
-                  className="h-9 rounded-md border px-3 text-xs hover:bg-accent"
+                  className="h-9 rounded-md border px-ms-3 text-ms-xs hover:bg-accent"
                 >
                   Reset
                 </button>
@@ -200,11 +213,11 @@ export function ReadyPackagesPanel({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        <div className="flex-1 overflow-y-auto px-ms-4 py-ms-3 space-ms-2">
           {loading ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">Memuat…</div>
+            <div className="py-8 text-center text-ms-xs text-muted-foreground">Memuat…</div>
           ) : list.length === 0 ? (
-            <div className="py-8 text-center text-xs text-muted-foreground">
+            <div className="py-8 text-center text-ms-xs text-muted-foreground">
               {tab === "ready"
                 ? "Belum ada paket. Ketuk + untuk buat paket baru."
                 : historyAll.length === 0
@@ -223,10 +236,10 @@ export function ReadyPackagesPanel({
         </div>
 
         {tab === "ready" && (
-          <footer className="border-t bg-card/95 p-3">
+          <footer className="border-t bg-card/95 p-ms-3">
             <button
               onClick={() => setShowForm(true)}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90"
+              className="inline-flex h-11 w-full items-center justify-center gap-ms-2 rounded-md bg-primary text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
             >
               + Buat paket baru
             </button>
@@ -287,6 +300,11 @@ function PackageCard({
       lines.push(``);
       lines.push(`🗺️ Buka Maps:`);
       lines.push(pkg.location_url);
+    } else {
+      // Placeholder seragam dengan alur Ecer & Request supaya pembeli tahu
+      // link Maps akan menyusul, bukan hilang karena bug pengirim.
+      lines.push(``);
+      lines.push(`📍 Lokasi belum diisi (owner akan menyusul link)`);
     }
     lines.push(``);
     lines.push(`Silakan ambil produk di lokasi tersebut ya kak. Jika ada pertanyaan, balas pesan ini. Terima kasih! 🙏`);
@@ -355,7 +373,7 @@ function PackageCard({
           sent_to_name: targetName || null,
           sent_to_phone: targetPhone || null,
         }).eq("id", pkg.id);
-        if (error) toast.error(friendlyError(error));
+        if (error) notifyError(error);
         else { toast.success("Tersimpan di riwayat"); onChanged(); }
       } else if (choice === "delete") {
         // Permanently delete (foto + row). Stock stays deducted because we mark sent first.
@@ -365,13 +383,13 @@ function PackageCard({
           sent_to_name: targetName || null,
           sent_to_phone: targetPhone || null,
         }).eq("id", pkg.id);
-        if (e1) { toast.error(friendlyError(e1)); return; }
+        if (e1) { notifyError(e1); return; }
         if (pkg.photo_path) {
           const { error: rmErr } = await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
           logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "doShare.delete" }, rmErr);
         }
         const { error: e2 } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-        if (e2) { toast.error(friendlyError(e2)); return; }
+        if (e2) { notifyError(e2); return; }
         toast.success("Paket dihapus");
         onChanged();
       }
@@ -392,14 +410,17 @@ function PackageCard({
       logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteReady" }, rmErr);
     }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success("Paket dihapus, stok dikembalikan"); onChanged(); }
   }
 
   async function deleteHistory() {
     if (!(await confirm({
       title: "Hapus dari riwayat?",
-      description: "Foto dan link lokasi ikut terhapus permanen.",
+      description:
+        pkg.status === "sent" || pkg.status === "archived"
+          ? "Paket ini sudah dikirim ke pembeli, jadi stok TIDAK dikembalikan ke gudang. Foto dan link lokasi ikut terhapus permanen."
+          : "Paket belum terkirim ke pembeli, jadi stok dikembalikan ke gudang. Foto dan link lokasi ikut terhapus permanen.",
       confirmText: "Hapus",
     }))) return;
     if (pkg.photo_path) {
@@ -407,8 +428,15 @@ function PackageCard({
       logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteHistory" }, rmErr);
     }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
-    else { toast.success("Riwayat dihapus"); onChanged(); }
+    if (error) notifyError(error);
+    else {
+      toast.success(
+        pkg.status === "sent" || pkg.status === "archived"
+          ? "Riwayat dihapus (stok tetap terpotong)"
+          : "Riwayat dihapus, stok dikembalikan",
+      );
+      onChanged();
+    }
   }
 
   async function setStatus(next: Pkg["status"]) {
@@ -423,25 +451,25 @@ function PackageCard({
     const patch: { status: Pkg["status"]; sent_at?: string } = { status: next };
     if (next !== "ready" && !pkg.sent_at) patch.sent_at = new Date().toISOString();
     const { error } = await supabase.from("ready_packages").update(patch).eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success(`Status diubah: ${STATUS_LABEL[next]}`); onChanged(); }
   }
 
   const isReady = pkg.status === "ready";
 
   return (
-    <div className="rounded-md border bg-background p-3">
-      <div className="flex gap-3">
+    <div className="rounded-md border bg-background p-ms-3">
+      <div className="flex gap-ms-3">
         {pkg.photo_path ? (
           <SignedThumb path={pkg.photo_path} className="h-20 w-20 shrink-0 rounded-md border object-cover bg-muted" />
         ) : (
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md border border-dashed text-ms-2xs text-muted-foreground">
             tanpa foto
           </div>
         )}
-        <div className="min-w-0 flex-1 space-y-1 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
+        <div className="min-w-0 flex-1 space-y-1 text-ms-xs">
+          <div className="flex flex-wrap items-center gap-ms-2">
+            <div className="font-semibold tabular-nums text-ms-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
             <StatusBadge size="xs" variant={STATUS_VARIANT[pkg.status]}>
               {STATUS_LABEL[pkg.status]}
             </StatusBadge>
@@ -453,7 +481,7 @@ function PackageCard({
           )}
           {pkg.note && <div className="text-muted-foreground line-clamp-2">{pkg.note}</div>}
           {!isReady && pkg.sent_at && (
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-ms-2xs text-muted-foreground">
               Terkirim {new Date(pkg.sent_at).toLocaleString("id-ID")}
               {pkg.sent_to_name && ` · ke ${pkg.sent_to_name}`}
               {pkg.sent_to_phone && ` (${pkg.sent_to_phone})`}
@@ -462,33 +490,33 @@ function PackageCard({
         </div>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap gap-ms-2">
         {isReady ? (
           <>
-            <button
-              disabled={sharing}
+            <WaShareButton
+              size="md"
+              variant="solid"
+              busy={sharing}
               onClick={() => setPickWA(true)}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              💬 Kirim WA
-            </button>
+              className="flex-1"
+            />
             <button
               onClick={copyCaption}
-              className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
+              className="inline-flex h-9 items-center justify-center rounded-md border px-ms-3 text-ms-xs font-semibold hover:bg-accent"
               title="Salin caption ke clipboard tanpa membuka WA"
             >
               📋 Salin
             </button>
             <button
               onClick={() => setStatus("cancelled")}
-              className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
+              className="inline-flex h-9 items-center justify-center rounded-md border px-ms-3 text-ms-xs font-semibold hover:bg-accent"
               title="Batalkan & kembalikan stok"
             >
               Batal
             </button>
             <button
               onClick={deleteReady}
-              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-ms-3 text-ms-xs font-semibold text-destructive hover:bg-destructive/10"
             >
               🗑
             </button>
@@ -498,7 +526,7 @@ function PackageCard({
             <select
               value={pkg.status}
               onChange={(e) => setStatus(e.target.value as Pkg["status"])}
-              className="h-9 flex-1 rounded-md border bg-background px-2 text-xs"
+              className="h-9 flex-1 rounded-md border bg-background px-ms-2 text-ms-xs"
               aria-label="Ubah status"
             >
               <option value="sent">Berhasil dikirim</option>
@@ -508,7 +536,7 @@ function PackageCard({
             </select>
             <button
               onClick={deleteHistory}
-              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
+              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-ms-3 text-ms-xs font-semibold text-destructive hover:bg-destructive/10"
             >
               🗑
             </button>
@@ -541,15 +569,24 @@ function WAPicker({
     ? customers.filter((c) => (c.name + " " + (c.contact ?? "")).toLowerCase().includes(query.toLowerCase()))
     : customers.slice(0, 10);
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-3" onClick={onClose}>
-      <div className="w-full max-w-md rounded-lg border bg-card p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
-        <div className="text-sm font-semibold">Kirim ke pelanggan</div>
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Kirim ke pelanggan"
+        className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-ms-sm font-semibold">Kirim ke pelanggan</div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Cari pelanggan…"
-          className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm"
         />
         {filtered.length > 0 && (
           <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -557,35 +594,35 @@ function WAPicker({
               <button
                 key={c.id}
                 onClick={() => { setName(c.name); setPhone(c.contact ?? ""); }}
-                className="block w-full rounded-md border bg-background px-3 py-2 text-left text-xs hover:bg-accent"
+                className="block w-full rounded-md border bg-background px-ms-3 py-ms-2 text-left text-ms-xs hover:bg-accent"
               >
                 <div className="font-medium">{c.name}</div>
-                {c.contact && <div className="text-[11px] text-muted-foreground">{c.contact}</div>}
+                {c.contact && <div className="text-ms-2xs text-muted-foreground">{c.contact}</div>}
               </button>
             ))}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-ms-2">
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">Nama</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm" />
+            <span className="text-ms-2xs text-muted-foreground">Nama</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm" />
           </label>
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">No. WA (628…)</span>
+            <span className="text-ms-2xs text-muted-foreground">No. WA (628…)</span>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="6281234…"
               inputMode="tel"
-              className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm tabular-nums"
+              className="mt-1 h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums"
             />
           </label>
         </div>
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-md border px-3 py-2 text-xs hover:bg-accent">Batal</button>
+        <div className="flex gap-ms-2">
+          <button onClick={onClose} className="flex-1 rounded-md border px-ms-3 py-ms-2 text-ms-xs hover:bg-accent">Batal</button>
           <button
             onClick={() => onPick(name.trim(), phone.trim())}
-            className="flex-1 rounded-md bg-[#25D366] px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+            className="flex-1 rounded-md bg-wa px-ms-3 py-ms-2 text-ms-xs font-semibold text-wa-foreground hover:opacity-90"
           >
             💬 Kirim
           </button>
@@ -610,6 +647,14 @@ function PackageForm({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Editor mandatory step untuk foto paket (kamera & galeri).
+  const photoFlow = usePhotoEditorFlow();
+
+  async function pickAndEditPhoto(file: File) {
+    await photoFlow.open([file], async ({ file: edited }) => {
+      await uploadPhoto(edited);
+    });
+  }
 
   // ── Judul Ecer + preset berat (localStorage per item) ──
   type Preset = { label: string; grams: number };
@@ -673,7 +718,7 @@ function PackageForm({
     setUploadingPhoto(false);
     if (error) {
       logStorageError({ bucket: "ready-packages", op: "upload", path, source: "ReadyPackagesPanel.uploadPhoto" }, error);
-      toast.error("Gagal upload: " + friendlyError(error));
+      notifyError(error, { prefix: "Gagal upload: " });
       return;
     }
     setPhotoPath(path);
@@ -703,7 +748,7 @@ function PackageForm({
         setLocationUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
         toast.success("Lokasi diambil", { id: tId });
       },
-      (err) => toast.error("Gagal: " + friendlyError(err), { id: tId }),
+      (err) => notifyError(err, { prefix: "Gagal: " }),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }
@@ -741,37 +786,46 @@ function PackageForm({
         const { error: rmErr } = await supabase.storage.from("ready-packages").remove([photoPath]);
         logStorageError({ bucket: "ready-packages", op: "remove", path: photoPath, source: "save.cleanup" }, rmErr);
       }
-      toast.error(friendlyError(error)); return;
+      notifyError(error); return;
     }
     toast.success("Paket dibuat, stok dikurangi");
     onCreated();
   }
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-3" onClick={onClose}>
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
-        <header className="border-b px-4 py-3 text-sm font-semibold">Paket baru — {item.name}</header>
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/70 p-ms-3" onClick={onClose}>
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Paket baru"
+        className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="border-b px-ms-4 py-ms-3 text-ms-sm font-semibold">Paket baru — {item.name}</header>
+        <div className="flex-1 overflow-y-auto px-ms-4 py-ms-3 space-ms-3 text-ms-sm">
           {/* Judul Ecer + preset */}
-          <div className="rounded-md border bg-background/60 p-2">
+          <div className="rounded-md border bg-background/60 p-ms-2">
             <button
               type="button"
               onClick={() => setShowEcer((v) => !v)}
-              className="flex w-full items-center justify-between text-left text-[11px] font-semibold"
+              className="flex w-full items-center justify-between text-left text-ms-2xs font-semibold"
             >
-              <span>⚖️ Ecer{ecerTitle ? ` — ${ecerTitle}` : ""} {presets.length > 0 && <span className="ml-1 text-[11px] font-normal text-muted-foreground">({presets.length} preset · {item.base_unit === "g" ? ecerUnit : item.base_unit})</span>}</span>
+              <span>⚖️ Ecer{ecerTitle ? ` — ${ecerTitle}` : ""} {presets.length > 0 && <span className="ml-1 text-ms-2xs font-normal text-muted-foreground">({presets.length} preset · {item.base_unit === "g" ? ecerUnit : item.base_unit})</span>}</span>
               <span className="text-muted-foreground">{showEcer ? "▲" : "▼"}</span>
             </button>
 
             {/* Pintasan preset selalu tampil bila ada */}
             {presets.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-ms-1.5">
                 {presets.map((p, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => pickPreset(p)}
-                    className="rounded-full border bg-card px-2.5 py-1 text-[11px] hover:bg-accent"
+                    className="rounded-full border bg-card px-ms-2.5 py-1 text-ms-2xs hover:bg-accent"
                     title={`${p.grams} ${item.base_unit === "g" ? ecerUnit : item.base_unit}`}
                   >
                     {p.label} <span className="text-muted-foreground">· {p.grams} {item.base_unit === "g" ? ecerUnit : item.base_unit}</span>
@@ -781,33 +835,33 @@ function PackageForm({
             )}
 
             {showEcer && (
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 space-ms-2">
                 <label className="block">
-                  <span className="text-[11px] text-muted-foreground">Judul ecer (untuk produk ini)</span>
+                  <span className="text-ms-2xs text-muted-foreground">Judul ecer (untuk produk ini)</span>
                   <input
                     value={ecerTitle}
                     onChange={(e) => { setEcerTitle(e.target.value); persistEcer(e.target.value, presets); }}
                     placeholder="mis. KRISTAL Ecer"
-                    className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    className="mt-1 h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm"
                   />
                 </label>
 
                 {item.base_unit === "g" && (
                   <div>
-                    <div className="text-[11px] text-muted-foreground">Satuan tampilan berat</div>
+                    <div className="text-ms-2xs text-muted-foreground">Satuan tampilan berat</div>
                     <div className="mt-1 inline-flex rounded-md border bg-background p-0.5">
                       {(["g", "gram"] as const).map((u) => (
                         <button
                           key={u}
                           type="button"
                           onClick={() => { setEcerUnit(u); persistEcer(ecerTitle, presets, u); }}
-                          className={`h-8 px-3 text-xs rounded-[5px] ${ecerUnit === u ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-accent"}`}
+                          className={`h-8 px-ms-3 text-ms-xs rounded-[5px] ${ecerUnit === u ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-accent"}`}
                         >
                           {u}
                         </button>
                       ))}
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
+                    <p className="mt-1 text-ms-2xs text-muted-foreground">
                       Dipakai di chip preset, judul, catatan, dan caption WA.
                     </p>
                   </div>
@@ -816,119 +870,123 @@ function PackageForm({
                 {presets.length > 0 && (
                   <ul className="space-y-1">
                     {presets.map((p, i) => (
-                      <li key={i} className="flex items-center gap-2 rounded-md border bg-card px-2 py-1 text-[11px]">
+                      <li key={i} className="flex items-center gap-ms-2 rounded-md border bg-card px-ms-2 py-1 text-ms-2xs">
                         <span className="min-w-12 font-semibold">{p.label}</span>
                         <span className="text-muted-foreground">{p.grams} {item.base_unit === "g" ? ecerUnit : item.base_unit}</span>
                         <button
                           type="button"
                           onClick={() => removePreset(i)}
-                          className="ml-auto text-[11px] text-destructive hover:underline"
+                          className="ml-auto text-ms-2xs text-destructive hover:underline"
                         >Hapus</button>
                       </li>
                     ))}
                   </ul>
                 )}
 
-                <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5">
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-ms-1.5">
                   <input
                     value={newLabel}
                     onChange={(e) => setNewLabel(e.target.value)}
                     placeholder="Label (1G)"
-                    className="h-9 rounded-md border bg-background px-2 text-xs"
+                    className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
                   />
-                  <input
-                    type="number" step="0.01" min="0"
+                  <NumericTextField
                     value={newGrams}
-                    onChange={(e) => setNewGrams(e.target.value)}
-                    placeholder={`Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`}
-                    className="h-9 rounded-md border bg-background px-2 text-xs tabular-nums"
+                    onValueChange={setNewGrams}
+                    step={0.01}
+                    decimal={true}
+                    className="h-9 rounded-md border bg-background px-ms-2 text-ms-xs tabular-nums"
+                    placeholder={
+                      item.base_unit === "pcs"
+                        ? "Isi (pcs)"
+                        : `Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`
+                    }
                   />
                   <button
                     type="button"
                     onClick={addPreset}
-                    className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                    className="h-9 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
                   >+ Tambah</button>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Contoh: label <b>1G</b> berat <b>0.90</b>. Klik chip preset untuk auto-isi jumlah.
+                <p className="text-ms-2xs text-muted-foreground">
+                  {item.base_unit === "pcs" ? (
+                    <>Contoh: label <b>1P</b> isi <b>1</b> pcs. Klik chip preset untuk auto-isi jumlah.</>
+                  ) : (
+                    <>Contoh: label <b>1G</b> berat <b>0.90</b>. Klik chip preset untuk auto-isi jumlah.</>
+                  )}
                 </p>
               </div>
             )}
           </div>
 
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">
-              Jumlah ({item.base_unit}) · stok: {fmtItemQty(item.stock_base, item)}
+            <span className="text-ms-2xs text-muted-foreground">
+              {item.base_unit === "pcs" ? "Jumlah / isi" : "Jumlah"} ({item.base_unit}) · stok: {fmtItemQty(item.stock_base, item)}
             </span>
-            <input
-              type="number"
-              step={item.base_unit === "g" ? "0.01" : "1"}
-              min="0"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              placeholder={item.base_unit === "g" ? "mis. 0.5" : "mis. 1"}
-              className="mt-1 h-11 w-full rounded-md border bg-background px-3 text-sm tabular-nums"
-            />
+            <NumericTextField value={qty} onValueChange={setQty} step={item.base_unit === "g" ? "0.01" : "1"} decimal={true} className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums" placeholder={item.base_unit === "g" ? "mis. 0.5" : "mis. 1"} />
           </label>
 
           <div>
-            <div className="mb-1 text-[11px] text-muted-foreground">Foto paket (kamera akan otomatis isi lokasi)</div>
-            <div className="flex gap-2">
+            <div className="mb-1 text-ms-2xs text-muted-foreground">Foto paket (kamera akan otomatis isi lokasi)</div>
+            <div className="flex gap-ms-2">
               {photoPath ? (
                 <SignedThumb path={photoPath} className="h-20 w-20 rounded-md border object-cover bg-muted" />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">tidak ada</div>
+                <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed text-ms-2xs text-muted-foreground">tidak ada</div>
               )}
-              <div className="flex flex-1 flex-col gap-2">
-                <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-2 text-xs hover:bg-accent">
+              <div className="flex flex-1 flex-col gap-ms-2">
+                <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-ms-2 text-ms-xs hover:bg-accent">
                   📷 {uploadingPhoto ? "Mengunggah…" : "Kamera"}
                   <input type="file" accept="image/*" capture="environment" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
-                <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-2 text-xs hover:bg-accent">
+                <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border bg-background px-ms-2 text-ms-xs hover:bg-accent">
                   🖼️ Galeri
                   <input type="file" accept="image/*" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ""; }} />
+                    onClick={() => { import("@/lib/app-lock").then((m) => m.beginNativePicker()); }}
+                    onChange={(e) => { import("@/lib/app-lock").then((m) => m.endNativePicker()); const f = e.target.files?.[0]; e.target.value = ""; if (f) void pickAndEditPhoto(f); }} />
                 </label>
               </div>
             </div>
           </div>
 
           <div>
-            <div className="mb-1 text-[11px] text-muted-foreground">Link lokasi pengambilan</div>
+            <div className="mb-1 text-ms-2xs text-muted-foreground">Link lokasi pengambilan</div>
             <input
               value={locationUrl}
               onChange={(e) => setLocationUrl(e.target.value)}
               placeholder="https://maps.google.com/?q=…"
-              className="h-11 w-full rounded-md border bg-background px-3 text-sm"
+              className="h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm"
             />
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <button onClick={takeLocation} className="h-10 rounded-md border text-xs hover:bg-accent">📍 Ambil GPS</button>
-              <button onClick={pasteLink} className="h-10 rounded-md border text-xs hover:bg-accent">📋 Tempel link</button>
+            <div className="mt-2 grid grid-cols-2 gap-ms-2">
+              <button onClick={takeLocation} className="h-10 rounded-md border text-ms-xs hover:bg-accent">📍 Ambil GPS</button>
+              <button onClick={pasteLink} className="h-10 rounded-md border text-ms-xs hover:bg-accent">📋 Tempel link</button>
             </div>
           </div>
 
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">Catatan (opsional)</span>
+            <span className="text-ms-2xs text-muted-foreground">Catatan (opsional)</span>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              className="mt-1 w-full resize-none rounded-md border bg-background px-3 py-2 text-sm"
+              className="mt-1 w-full resize-none rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm"
             />
           </label>
         </div>
-        <footer className="flex gap-2 border-t p-3">
-          <button onClick={onClose} className="flex-1 rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>
+        <footer className="flex gap-ms-2 border-t p-ms-3">
+          <button onClick={onClose} className="flex-1 rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>
           <button
             disabled={saving || uploadingPhoto}
             onClick={save}
-            className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {saving ? "Menyimpan…" : "Simpan paket"}
           </button>
         </footer>
       </div>
+      {photoFlow.element}
     </div>
   );
 }
@@ -942,16 +1000,16 @@ function confirmThreeWay(opts: { title: string; description?: string }): Promise
       document.body.removeChild(root);
       resolve(r);
     };
-    root.className = "fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 p-3";
+    root.className = "fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 p-ms-3";
     root.onclick = (e) => { if (e.target === root) cleanup("cancel"); };
     root.innerHTML = `
-      <div class="w-full max-w-sm rounded-lg border bg-card p-4 space-y-3" data-stop>
-        <div class="text-sm font-semibold">${opts.title}</div>
-        ${opts.description ? `<div class="text-xs text-muted-foreground">${opts.description}</div>` : ""}
-        <div class="grid gap-2">
-          <button data-act="archive" class="h-10 rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90">📚 Arsipkan ke riwayat</button>
-          <button data-act="delete" class="h-10 rounded-md border border-destructive/40 text-sm font-semibold text-destructive hover:bg-destructive/10">🗑 Hapus permanen</button>
-          <button data-act="cancel" class="h-10 rounded-md border text-sm hover:bg-accent">Belum jadi kirim</button>
+      <div class="w-full max-w-sm rounded-lg border bg-card p-ms-4 space-ms-3" data-stop>
+        <div class="text-ms-sm font-semibold">${opts.title}</div>
+        ${opts.description ? `<div class="text-ms-xs text-muted-foreground">${opts.description}</div>` : ""}
+        <div class="grid gap-ms-2">
+          <button data-act="archive" class="h-10 rounded-md bg-primary text-ms-sm font-semibold text-primary-foreground hover:opacity-90">📚 Arsipkan ke riwayat</button>
+          <button data-act="delete" class="h-10 rounded-md border border-destructive/40 text-ms-sm font-semibold text-destructive hover:bg-destructive/10">🗑 Hapus permanen</button>
+          <button data-act="cancel" class="h-10 rounded-md border text-ms-sm hover:bg-accent">Belum jadi kirim</button>
         </div>
       </div>`;
     root.querySelectorAll<HTMLButtonElement>("button[data-act]").forEach((b) => {

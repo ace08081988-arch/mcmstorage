@@ -62,6 +62,129 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_denial_events: {
+        Row: {
+          created_at: string
+          fn: string
+          id: string
+          reason: string
+          referer: string | null
+          ua: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fn: string
+          id?: string
+          reason?: string
+          referer?: string | null
+          ua?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fn?: string
+          id?: string
+          reason?: string
+          referer?: string | null
+          ua?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      apk_download_events: {
+        Row: {
+          created_at: string
+          id: string
+          referrer: string | null
+          source: string
+          user_agent: string | null
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
+      apk_min_supported: {
+        Row: {
+          created_at: string
+          min_version_code: number | null
+          min_version_name: string | null
+          reason: string | null
+          updated_at: string
+          updated_by: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          min_version_code?: number | null
+          min_version_name?: string | null
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          min_version_code?: number | null
+          min_version_name?: string | null
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
+      apk_release_meta: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          file_name: string
+          notes: string | null
+          publish_at: string | null
+          updated_at: string
+          updated_by: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          file_name: string
+          notes?: string | null
+          publish_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          file_name?: string
+          notes?: string | null
+          publish_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bank_account_holder: string
@@ -104,6 +227,151 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_send_audit: {
+        Row: {
+          created_at: string
+          finalized_at: string | null
+          id: string
+          note: string | null
+          outcome: string
+          prep_count: number
+          prep_ids: string[]
+          title_id: string
+          total_grams: number
+          unit_label: string | null
+          user_id: string
+          warehouse_item_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          outcome: string
+          prep_count?: number
+          prep_ids?: string[]
+          title_id: string
+          total_grams?: number
+          unit_label?: string | null
+          user_id: string
+          warehouse_item_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string
+          total_grams?: number
+          unit_label?: string | null
+          user_id?: string
+          warehouse_item_id?: string | null
+        }
+        Relationships: []
+      }
+      business_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_call_hidden: {
+        Row: {
+          call_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          call_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          call_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_call_hidden_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "chat_calls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_calls: {
+        Row: {
+          accepted_at: string | null
+          callee_id: string | null
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          duration_sec: number
+          end_reason: string | null
+          ended_at: string | null
+          id: string
+          kind: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          callee_id?: string | null
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          duration_sec?: number
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          kind: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          callee_id?: string | null
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          duration_sec?: number
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          kind?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_delete_audit: {
         Row: {
           action: Database["public"]["Enums"]["chat_delete_action"]
@@ -145,6 +413,72 @@ export type Database = {
           },
         ]
       }
+      chat_list_members: {
+        Row: {
+          added_at: string
+          conversation_id: string
+          list_id: string
+        }
+        Insert: {
+          added_at?: string
+          conversation_id: string
+          list_id: string
+        }
+        Update: {
+          added_at?: string
+          conversation_id?: string
+          list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_list_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "chat_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_lists: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_notes: {
         Row: {
           body: string
@@ -173,6 +507,39 @@ export type Database = {
           id?: string
           source_message_id?: string | null
           title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_party_links: {
+        Row: {
+          alias_key: string
+          alias_label: string
+          created_at: string
+          id: string
+          party_key: string
+          party_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alias_key: string
+          alias_label: string
+          created_at?: string
+          id?: string
+          party_key: string
+          party_name: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          alias_key?: string
+          alias_label?: string
+          created_at?: string
+          id?: string
+          party_key?: string
+          party_name?: string
           updated_at?: string
           user_id?: string
         }
@@ -208,8 +575,10 @@ export type Database = {
       conversation_members: {
         Row: {
           archived_at: string | null
+          cleared_at: string | null
           conversation_id: string
           joined_at: string
+          last_delivered_at: string | null
           last_read_at: string | null
           notifications_muted_until: string | null
           pinned_at: string | null
@@ -219,8 +588,10 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          cleared_at?: string | null
           conversation_id: string
           joined_at?: string
+          last_delivered_at?: string | null
           last_read_at?: string | null
           notifications_muted_until?: string | null
           pinned_at?: string | null
@@ -230,8 +601,10 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          cleared_at?: string | null
           conversation_id?: string
           joined_at?: string
+          last_delivered_at?: string | null
           last_read_at?: string | null
           notifications_muted_until?: string | null
           pinned_at?: string | null
@@ -251,39 +624,95 @@ export type Database = {
       }
       conversations: {
         Row: {
+          archived_at: string | null
+          category: string
           created_at: string
           created_by: string
           id: string
           kind: string
           last_message_at: string | null
+          linked_customer_id: string | null
+          linked_ecer_prep_id: string | null
+          linked_product_id: string | null
+          linked_request_prep_id: string | null
+          linked_task_id: string | null
           order_request_id: string | null
           owner_user_id: string
           title: string | null
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
+          category?: string
           created_at?: string
           created_by: string
           id?: string
           kind: string
           last_message_at?: string | null
+          linked_customer_id?: string | null
+          linked_ecer_prep_id?: string | null
+          linked_product_id?: string | null
+          linked_request_prep_id?: string | null
+          linked_task_id?: string | null
           order_request_id?: string | null
           owner_user_id: string
           title?: string | null
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           id?: string
           kind?: string
           last_message_at?: string | null
+          linked_customer_id?: string | null
+          linked_ecer_prep_id?: string | null
+          linked_product_id?: string | null
+          linked_request_prep_id?: string | null
+          linked_task_id?: string | null
           order_request_id?: string | null
           owner_user_id?: string
           title?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_linked_customer_id_fkey"
+            columns: ["linked_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_ecer_prep_id_fkey"
+            columns: ["linked_ecer_prep_id"]
+            isOneToOne: false
+            referencedRelation: "ecer_preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_product_id_fkey"
+            columns: ["linked_product_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_request_prep_id_fkey"
+            columns: ["linked_request_prep_id"]
+            isOneToOne: false
+            referencedRelation: "request_preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_linked_task_id_fkey"
+            columns: ["linked_task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_order_request_id_fkey"
             columns: ["order_request_id"]
@@ -367,6 +796,51 @@ export type Database = {
           name?: string
           notes?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debt_adjust_audit: {
+        Row: {
+          action: string
+          actor_name: string | null
+          amount: number
+          balance_after: number | null
+          balance_before: number | null
+          conversation_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          party_name: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          party_name?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          amount?: number
+          balance_after?: number | null
+          balance_before?: number | null
+          conversation_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          party_name?: string | null
           user_id?: string
         }
         Relationships: []
@@ -550,9 +1024,37 @@ export type Database = {
         }
         Relationships: []
       }
+      doc_sequences: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          last_seq: number
+          prefix: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          last_seq?: number
+          prefix: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          last_seq?: number
+          prefix?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ecer_preparations: {
         Row: {
           actual_grams: number
+          archived_at: string | null
           created_at: string
           created_by: string
           gps_lat: number | null
@@ -561,13 +1063,28 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
+          prep_submission_id: string | null
           prep_task_item_id: string | null
+          ready_at: string | null
+          rejection_reason: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_note: string | null
+          sold_paid_amount: number | null
+          sold_party_name: string | null
+          sold_payment_method: string | null
+          sold_total: number | null
           title_id: string
           user_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
           warehouse_item_id: string
         }
         Insert: {
           actual_grams: number
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -576,13 +1093,28 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
+          prep_submission_id?: string | null
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_note?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id: string
           user_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           warehouse_item_id: string
         }
         Update: {
           actual_grams?: number
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
@@ -591,17 +1123,52 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
+          prep_submission_id?: string | null
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_note?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id?: string
           user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           warehouse_item_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ecer_preparations_prep_submission_id_fkey"
+            columns: ["prep_submission_id"]
+            isOneToOne: false
+            referencedRelation: "prep_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_prep_submission_id_fkey"
+            columns: ["prep_submission_id"]
+            isOneToOne: false
+            referencedRelation: "prep_submissions_unrouted"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ecer_preparations_prep_task_item_id_fkey"
             columns: ["prep_task_item_id"]
             isOneToOne: false
             referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -619,6 +1186,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ecer_send_events: {
+        Row: {
+          caption_preview: string | null
+          channel: string
+          created_at: string
+          customer_id: string | null
+          error_message: string | null
+          id: string
+          note: string | null
+          outcome: string
+          paid_amount: number | null
+          party_contact: string | null
+          party_name: string | null
+          payment_method: string | null
+          photo_count: number
+          prep_count: number
+          prep_ids: string[]
+          title_id: string | null
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          caption_preview?: string | null
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          paid_amount?: number | null
+          party_contact?: string | null
+          party_name?: string | null
+          payment_method?: string | null
+          photo_count?: number
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string | null
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          caption_preview?: string | null
+          channel?: string
+          created_at?: string
+          customer_id?: string | null
+          error_message?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          paid_amount?: number | null
+          party_contact?: string | null
+          party_name?: string | null
+          payment_method?: string | null
+          photo_count?: number
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string | null
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       ecer_titles: {
         Row: {
@@ -865,6 +1495,57 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      friend_requests: {
+        Row: {
+          created_at: string
+          from_user: string
+          id: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user: string
+          id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user?: string
+          id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          to_user?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_hidden: {
         Row: {
           hidden_at: string
@@ -1029,10 +1710,13 @@ export type Database = {
       }
       order_requests: {
         Row: {
+          cart_group_id: string | null
+          conversation_id: string | null
           created_at: string
           customer_id: string | null
           id: string
-          item_id: string
+          item_id: string | null
+          item_name: string | null
           note: string | null
           price_per_unit: number | null
           qty: number
@@ -1042,10 +1726,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cart_group_id?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
-          item_id: string
+          item_id?: string | null
+          item_name?: string | null
           note?: string | null
           price_per_unit?: number | null
           qty: number
@@ -1055,10 +1742,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cart_group_id?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
-          item_id?: string
+          item_id?: string | null
+          item_name?: string | null
           note?: string | null
           price_per_unit?: number | null
           qty?: number
@@ -1068,6 +1758,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "order_requests_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_requests_customer_id_fkey"
             columns: ["customer_id"]
@@ -1080,6 +1777,186 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_branding: {
+        Row: {
+          brand_color: string
+          logo_url: string
+          org_name: string
+          org_short: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_color?: string
+          logo_url?: string
+          org_name?: string
+          org_short?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_color?: string
+          logo_url?: string
+          org_name?: string
+          org_short?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      portal_error_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          code: string | null
+          count: number
+          created_at: string
+          id: string
+          kind: string
+          severity: string
+          token_hash: string | null
+          window_seconds: number
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code?: string | null
+          count: number
+          created_at?: string
+          id?: string
+          kind: string
+          severity?: string
+          token_hash?: string | null
+          window_seconds: number
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code?: string | null
+          count?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          severity?: string
+          token_hash?: string | null
+          window_seconds?: number
+        }
+        Relationships: []
+      }
+      portal_error_audit: {
+        Row: {
+          code: string | null
+          count: number
+          first_seen_at: string
+          hour_bucket: string
+          id: string
+          kind: string
+          last_seen_at: string
+        }
+        Insert: {
+          code?: string | null
+          count?: number
+          first_seen_at?: string
+          hour_bucket: string
+          id?: string
+          kind: string
+          last_seen_at?: string
+        }
+        Update: {
+          code?: string | null
+          count?: number
+          first_seen_at?: string
+          hour_bucket?: string
+          id?: string
+          kind?: string
+          last_seen_at?: string
+        }
+        Relationships: []
+      }
+      portal_error_events: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          kind: string
+          route: string | null
+          status: string | null
+          token_hash: string | null
+          ua: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          kind: string
+          route?: string | null
+          status?: string | null
+          token_hash?: string | null
+          ua?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          kind?: string
+          route?: string | null
+          status?: string | null
+          token_hash?: string | null
+          ua?: string | null
+        }
+        Relationships: []
+      }
+      prep_link_deliveries: {
+        Row: {
+          channel: string
+          id: string
+          owner_user_id: string
+          sent_at: string
+          task_id: string | null
+          title_id: string | null
+          title_name: string
+          worker_name: string
+        }
+        Insert: {
+          channel: string
+          id?: string
+          owner_user_id: string
+          sent_at?: string
+          task_id?: string | null
+          title_id?: string | null
+          title_name: string
+          worker_name: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          owner_user_id?: string
+          sent_at?: string
+          task_id?: string | null
+          title_id?: string | null
+          title_name?: string
+          worker_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_link_deliveries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_link_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "request_titles"
             referencedColumns: ["id"]
           },
         ]
@@ -1156,9 +2033,16 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           qty_reported: number | null
+          rejection_reason: string | null
+          sent_at: string | null
+          sent_channel: string | null
+          sent_maps_url: string | null
           submitted_at: string
           task_id: string
           task_item_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           gps_lat?: number | null
@@ -1169,9 +2053,16 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           qty_reported?: number | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          sent_channel?: string | null
+          sent_maps_url?: string | null
           submitted_at?: string
           task_id: string
           task_item_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           gps_lat?: number | null
@@ -1182,9 +2073,16 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           qty_reported?: number | null
+          rejection_reason?: string | null
+          sent_at?: string | null
+          sent_channel?: string | null
+          sent_maps_url?: string | null
           submitted_at?: string
           task_id?: string
           task_item_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -1203,10 +2101,35 @@ export type Database = {
           },
         ]
       }
+      prep_submit_wa_hook: {
+        Row: {
+          enabled: boolean
+          forward_url: string | null
+          id: boolean
+          updated_at: string
+          wa_target: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          forward_url?: string | null
+          id?: boolean
+          updated_at?: string
+          wa_target?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          forward_url?: string | null
+          id?: boolean
+          updated_at?: string
+          wa_target?: string | null
+        }
+        Relationships: []
+      }
       prep_task_items: {
         Row: {
           category_snapshot: string | null
           created_at: string
+          ecer_title_id: string | null
           id: string
           name_snapshot: string
           note: string | null
@@ -1222,6 +2145,7 @@ export type Database = {
         Insert: {
           category_snapshot?: string | null
           created_at?: string
+          ecer_title_id?: string | null
           id?: string
           name_snapshot: string
           note?: string | null
@@ -1237,6 +2161,7 @@ export type Database = {
         Update: {
           category_snapshot?: string | null
           created_at?: string
+          ecer_title_id?: string | null
           id?: string
           name_snapshot?: string
           note?: string | null
@@ -1250,6 +2175,13 @@ export type Database = {
           warehouse_item_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "prep_task_items_ecer_title_id_fkey"
+            columns: ["ecer_title_id"]
+            isOneToOne: false
+            referencedRelation: "ecer_titles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prep_task_items_task_id_fkey"
             columns: ["task_id"]
@@ -1266,41 +2198,161 @@ export type Database = {
           },
         ]
       }
+      prep_task_notify_hook_config: {
+        Row: {
+          enabled: boolean
+          hook_url: string | null
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          hook_url?: string | null
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prep_task_request_titles: {
+        Row: {
+          created_at: string
+          task_id: string
+          title_id: string
+        }
+        Insert: {
+          created_at?: string
+          task_id: string
+          title_id: string
+        }
+        Update: {
+          created_at?: string
+          task_id?: string
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_task_request_titles_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_task_request_titles_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "request_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prep_task_wa_hook_log: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          kind: string
+          last_retry_at: string | null
+          new_status: string | null
+          owner_user_id: string
+          payload: Json | null
+          prev_status: string | null
+          retry_count: number
+          send_status: string
+          task_id: string | null
+          title: string | null
+          wa_target: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind: string
+          last_retry_at?: string | null
+          new_status?: string | null
+          owner_user_id: string
+          payload?: Json | null
+          prev_status?: string | null
+          retry_count?: number
+          send_status: string
+          task_id?: string | null
+          title?: string | null
+          wa_target?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          kind?: string
+          last_retry_at?: string | null
+          new_status?: string | null
+          owner_user_id?: string
+          payload?: Json | null
+          prev_status?: string | null
+          retry_count?: number
+          send_status?: string
+          task_id?: string | null
+          title?: string | null
+          wa_target?: string | null
+        }
+        Relationships: []
+      }
       prep_tasks: {
         Row: {
+          completed_at: string | null
+          completion_note: string | null
           created_at: string
           employee_id: string | null
           expires_at: string
           id: string
+          max_submissions: number
           note: string | null
           owner_user_id: string
           pin_hash: string
+          pin_updated_at: string
+          scheduled_at: string | null
           share_token: string
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
+          completion_note?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at?: string
           id?: string
+          max_submissions?: number
           note?: string | null
           owner_user_id: string
           pin_hash: string
+          pin_updated_at?: string
+          scheduled_at?: string | null
           share_token: string
           status?: string
           title?: string
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
+          completion_note?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at?: string
           id?: string
+          max_submissions?: number
           note?: string | null
           owner_user_id?: string
           pin_hash?: string
+          pin_updated_at?: string
+          scheduled_at?: string | null
           share_token?: string
           status?: string
           title?: string
@@ -1329,13 +2381,16 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          chat_only: boolean
           country_code: string
           created_at: string
           currency: string
           date_format: string
+          default_status_visibility: Database["public"]["Enums"]["status_visibility"]
           display_name: string | null
           email: string | null
           id: string
+          invite_code: string
           language: string
           last_seen_at: string | null
           phone: string | null
@@ -1344,13 +2399,16 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          chat_only?: boolean
           country_code?: string
           created_at?: string
           currency?: string
           date_format?: string
+          default_status_visibility?: Database["public"]["Enums"]["status_visibility"]
           display_name?: string | null
           email?: string | null
           id: string
+          invite_code?: string
           language?: string
           last_seen_at?: string | null
           phone?: string | null
@@ -1359,18 +2417,51 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          chat_only?: boolean
           country_code?: string
           created_at?: string
           currency?: string
           date_format?: string
+          default_status_visibility?: Database["public"]["Enums"]["status_visibility"]
           display_name?: string | null
           email?: string | null
           id?: string
+          invite_code?: string
           language?: string
           last_seen_at?: string | null
           phone?: string | null
           show_last_seen?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      public_catalog_settings: {
+        Row: {
+          enabled: boolean
+          shop_name: string
+          slug: string
+          tagline: string
+          updated_at: string
+          user_id: string
+          wa_number: string
+        }
+        Insert: {
+          enabled?: boolean
+          shop_name?: string
+          slug: string
+          tagline?: string
+          updated_at?: string
+          user_id: string
+          wa_number?: string
+        }
+        Update: {
+          enabled?: boolean
+          shop_name?: string
+          slug?: string
+          tagline?: string
+          updated_at?: string
+          user_id?: string
+          wa_number?: string
         }
         Relationships: []
       }
@@ -1460,6 +2551,36 @@ export type Database = {
           last_used_at?: string | null
           p256dh?: string
           user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      query_metrics: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          id: number
+          meta: Json | null
+          query_name: string
+          row_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms: number
+          id?: number
+          meta?: Json | null
+          query_name: string
+          row_count?: number | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          id?: number
+          meta?: Json | null
+          query_name?: string
+          row_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -1586,51 +2707,97 @@ export type Database = {
       }
       request_preparations: {
         Row: {
+          archived_at: string | null
           created_at: string
           created_by: string
           gps_lat: number | null
           gps_lng: number | null
           id: string
           location_url: string | null
+          location_urls: string[] | null
           note: string | null
           photo_path: string | null
           photo_paths: string[]
           prep_task_item_id: string | null
+          ready_at: string | null
+          rejection_reason: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_paid_amount: number | null
+          sold_party_name: string | null
+          sold_payment_method: string | null
+          sold_total: number | null
           title_id: string
           user_id: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
           via_task_id: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
           location_url?: string | null
+          location_urls?: string[] | null
           note?: string | null
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id: string
           user_id: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           via_task_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string
           gps_lat?: number | null
           gps_lng?: number | null
           id?: string
           location_url?: string | null
+          location_urls?: string[] | null
           note?: string | null
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          ready_at?: string | null
+          rejection_reason?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id?: string
           user_id?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
           via_task_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "request_preparations_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "request_preparations_title_id_fkey"
             columns: ["title_id"]
@@ -1693,29 +2860,35 @@ export type Database = {
       }
       request_titles: {
         Row: {
+          archived_at: string | null
           created_at: string
           id: string
           name: string
           note: string | null
           position: number
+          reprep_requested_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name: string
           note?: string | null
           position?: number
+          reprep_requested_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           id?: string
           name?: string
           note?: string | null
           position?: number
+          reprep_requested_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1732,6 +2905,8 @@ export type Database = {
           payment_method: string
           price_per_base: number
           qty_base: number
+          source: string | null
+          source_id: string | null
           total_revenue: number
           user_id: string
         }
@@ -1745,6 +2920,8 @@ export type Database = {
           payment_method?: string
           price_per_base: number
           qty_base: number
+          source?: string | null
+          source_id?: string | null
           total_revenue: number
           user_id: string
         }
@@ -1758,6 +2935,8 @@ export type Database = {
           payment_method?: string
           price_per_base?: number
           qty_base?: number
+          source?: string | null
+          source_id?: string | null
           total_revenue?: number
           user_id?: string
         }
@@ -1777,6 +2956,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scroll_guard_config: {
+        Row: {
+          config: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       security_ack_rate_limit: {
         Row: {
@@ -1939,6 +3136,16 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           sent_at: string | null
+          sent_channel: string | null
+          sent_summary: string | null
+          sent_to: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_debt_id: string | null
+          sold_paid_amount: number | null
+          sold_payment_method: string | null
+          sold_summary: string | null
+          sold_total: number | null
           status: string
           title: string
           updated_at: string
@@ -1953,6 +3160,16 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           sent_at?: string | null
+          sent_channel?: string | null
+          sent_summary?: string | null
+          sent_to?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_debt_id?: string | null
+          sold_paid_amount?: number | null
+          sold_payment_method?: string | null
+          sold_summary?: string | null
+          sold_total?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -1967,11 +3184,90 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           sent_at?: string | null
+          sent_channel?: string | null
+          sent_summary?: string | null
+          sent_to?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_debt_id?: string | null
+          sold_paid_amount?: number | null
+          sold_payment_method?: string | null
+          sold_summary?: string | null
+          sold_total?: number | null
           status?: string
           title?: string
           updated_at?: string
           user_id?: string
           wa_target?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "self_prep_items_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "self_prep_items_sold_debt_id_fkey"
+            columns: ["sold_debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shipment_hook_config: {
+        Row: {
+          endpoint_url: string
+          id: number
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          endpoint_url: string
+          id?: number
+          secret: string
+          updated_at?: string
+        }
+        Update: {
+          endpoint_url?: string
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      signup_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          failure_code: string | null
+          failure_details: string | null
+          id: number
+          ip: string
+          succeeded: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          failure_code?: string | null
+          failure_details?: string | null
+          id?: number
+          ip: string
+          succeeded?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          failure_code?: string | null
+          failure_details?: string | null
+          id?: number
+          ip?: string
+          succeeded?: boolean
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -1980,6 +3276,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          pin_chat_mcm: string | null
           updated_at: string
           user_id: string
           wa_phone: string
@@ -1988,6 +3285,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          pin_chat_mcm?: string | null
           updated_at?: string
           user_id: string
           wa_phone: string
@@ -1996,9 +3294,196 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          pin_chat_mcm?: string | null
           updated_at?: string
           user_id?: string
           wa_phone?: string
+        }
+        Relationships: []
+      }
+      status_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_comments_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_likes: {
+        Row: {
+          created_at: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_likes_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statuses: {
+        Row: {
+          bg_color: string | null
+          caption: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_path: string
+          media_type: string
+          media_url: string
+          user_id: string
+          visibility: Database["public"]["Enums"]["status_visibility"]
+        }
+        Insert: {
+          bg_color?: string | null
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_path: string
+          media_type: string
+          media_url: string
+          user_id: string
+          visibility?: Database["public"]["Enums"]["status_visibility"]
+        }
+        Update: {
+          bg_color?: string | null
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_path?: string
+          media_type?: string
+          media_url?: string
+          user_id?: string
+          visibility?: Database["public"]["Enums"]["status_visibility"]
+        }
+        Relationships: []
+      }
+      stock_ledger: {
+        Row: {
+          actor: string | null
+          balance_after: number
+          created_at: string
+          delta_base: number
+          id: number
+          reason: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          actor?: string | null
+          balance_after: number
+          created_at?: string
+          delta_base: number
+          id?: never
+          reason?: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          actor?: string | null
+          balance_after?: number
+          created_at?: string
+          delta_base?: number
+          id?: never
+          reason?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_ledger_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_events: {
+        Row: {
+          amount: string | null
+          created_at: string
+          currency_code: string | null
+          detail: Json | null
+          environment: string
+          id: string
+          invoice_url: string | null
+          kind: string
+          occurred_at: string
+          paddle_subscription_id: string | null
+          paddle_transaction_id: string | null
+          price_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: string | null
+          created_at?: string
+          currency_code?: string | null
+          detail?: Json | null
+          environment?: string
+          id?: string
+          invoice_url?: string | null
+          kind: string
+          occurred_at?: string
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          price_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: string | null
+          created_at?: string
+          currency_code?: string | null
+          detail?: Json | null
+          environment?: string
+          id?: string
+          invoice_url?: string | null
+          kind?: string
+          occurred_at?: string
+          paddle_subscription_id?: string | null
+          paddle_transaction_id?: string | null
+          price_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -2056,11 +3541,17 @@ export type Database = {
       subscriptions: {
         Row: {
           billing_cycle: string | null
+          cancel_at_period_end: boolean
           created_at: string
+          environment: string
           id: string
+          paddle_customer_id: string | null
+          paddle_subscription_id: string | null
           period_end: string | null
           period_start: string | null
           plan: string
+          price_id: string | null
+          source: string
           status: string
           trial_used_at: string | null
           updated_at: string
@@ -2068,11 +3559,17 @@ export type Database = {
         }
         Insert: {
           billing_cycle?: string | null
+          cancel_at_period_end?: boolean
           created_at?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           period_end?: string | null
           period_start?: string | null
           plan?: string
+          price_id?: string | null
+          source?: string
           status?: string
           trial_used_at?: string | null
           updated_at?: string
@@ -2080,11 +3577,17 @@ export type Database = {
         }
         Update: {
           billing_cycle?: string | null
+          cancel_at_period_end?: boolean
           created_at?: string
+          environment?: string
           id?: string
+          paddle_customer_id?: string | null
+          paddle_subscription_id?: string | null
           period_end?: string | null
           period_start?: string | null
           plan?: string
+          price_id?: string | null
+          source?: string
           status?: string
           trial_used_at?: string | null
           updated_at?: string
@@ -2203,6 +3706,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_appearance_prefs: {
+        Row: {
+          created_at: string
+          payload: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          payload?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          payload?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           created_at: string
@@ -2305,6 +3829,60 @@ export type Database = {
         }
         Relationships: []
       }
+      wa_message_templates: {
+        Row: {
+          created_at: string
+          id: string
+          options: Json
+          template: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          options?: Json
+          template: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          options?: Json
+          template?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      warehouse_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       warehouse_category_variants: {
         Row: {
           category: string
@@ -2391,11 +3969,13 @@ export type Database = {
           base_unit: string
           category: string | null
           created_at: string
+          description: string | null
           id: string
           image_path: string | null
           name: string
           package_size: number
           package_type: string
+          selling_price_per_base: number | null
           stock_base: number
           updated_at: string
           user_id: string
@@ -2405,11 +3985,13 @@ export type Database = {
           base_unit: string
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_path?: string | null
           name: string
           package_size?: number
           package_type: string
+          selling_price_per_base?: number | null
           stock_base?: number
           updated_at?: string
           user_id: string
@@ -2419,22 +4001,282 @@ export type Database = {
           base_unit?: string
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           image_path?: string | null
           name?: string
           package_size?: number
           package_type?: string
+          selling_price_per_base?: number | null
           stock_base?: number
           updated_at?: string
           user_id?: string
         }
         Relationships: []
       }
+      web_vital_alert_config: {
+        Row: {
+          admin_email: string | null
+          cls_threshold: number
+          cooldown_minutes: number
+          created_at: string
+          email_enabled: boolean
+          enabled: boolean
+          id: number
+          inp_threshold_ms: number
+          last_check_at: string | null
+          lcp_threshold_ms: number
+          min_samples: number
+          slack_channel: string | null
+          slack_enabled: boolean
+          telegram_chat_id: string | null
+          telegram_enabled: boolean
+          updated_at: string
+          window_minutes: number
+        }
+        Insert: {
+          admin_email?: string | null
+          cls_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          email_enabled?: boolean
+          enabled?: boolean
+          id?: number
+          inp_threshold_ms?: number
+          last_check_at?: string | null
+          lcp_threshold_ms?: number
+          min_samples?: number
+          slack_channel?: string | null
+          slack_enabled?: boolean
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
+          updated_at?: string
+          window_minutes?: number
+        }
+        Update: {
+          admin_email?: string | null
+          cls_threshold?: number
+          cooldown_minutes?: number
+          created_at?: string
+          email_enabled?: boolean
+          enabled?: boolean
+          id?: number
+          inp_threshold_ms?: number
+          last_check_at?: string | null
+          lcp_threshold_ms?: number
+          min_samples?: number
+          slack_channel?: string | null
+          slack_enabled?: boolean
+          telegram_chat_id?: string | null
+          telegram_enabled?: boolean
+          updated_at?: string
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      web_vital_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          delivery_error: string | null
+          delivery_status: string
+          device: string
+          id: string
+          message: string
+          metric: string
+          notified_email: string | null
+          p75: number
+          page: string
+          samples: number
+          severity: string
+          slack_status: string | null
+          telegram_status: string | null
+          threshold: number
+          window_minutes: number
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
+          device?: string
+          id?: string
+          message: string
+          metric: string
+          notified_email?: string | null
+          p75: number
+          page: string
+          samples: number
+          severity?: string
+          slack_status?: string | null
+          telegram_status?: string | null
+          threshold: number
+          window_minutes: number
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string
+          device?: string
+          id?: string
+          message?: string
+          metric?: string
+          notified_email?: string | null
+          p75?: number
+          page?: string
+          samples?: number
+          severity?: string
+          slack_status?: string | null
+          telegram_status?: string | null
+          threshold?: number
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      web_vital_samples: {
+        Row: {
+          created_at: string
+          device: string
+          id: number
+          metric: string
+          nav_type: string | null
+          page: string
+          rating: string
+          release_tag: string | null
+          slug: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          device?: string
+          id?: number
+          metric: string
+          nav_type?: string | null
+          page: string
+          rating: string
+          release_tag?: string | null
+          slug?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string
+          device?: string
+          id?: number
+          metric?: string
+          nav_type?: string | null
+          page?: string
+          rating?: string
+          release_tag?: string | null
+          slug?: string | null
+          value?: number
+        }
+        Relationships: []
+      }
+      worker_submit_idempotency: {
+        Row: {
+          client_key: string
+          created_at: string
+          result: Json | null
+          task_id: string
+        }
+        Insert: {
+          client_key: string
+          created_at?: string
+          result?: Json | null
+          task_id: string
+        }
+        Update: {
+          client_key?: string
+          created_at?: string
+          result?: Json | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_submit_idempotency_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      prep_submissions_unrouted: {
+        Row: {
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string | null
+          location_url: string | null
+          name_snapshot: string | null
+          note: string | null
+          owner_user_id: string | null
+          photo_path: string | null
+          photo_paths: string[] | null
+          qty_reported: number | null
+          qty_requested: number | null
+          submitted_at: string | null
+          task_id: string | null
+          task_item_id: string | null
+          unit_label: string | null
+          warehouse_item_id: string | null
+          warehouse_item_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_submissions_task_item_id_fkey"
+            columns: ["task_item_id"]
+            isOneToOne: false
+            referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_task_items_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      query_metrics_daily_v1: {
+        Row: {
+          avg_ms: number | null
+          avg_rows: number | null
+          day: string | null
+          max_ms: number | null
+          p50_ms: number | null
+          p95_ms: number | null
+          query_name: string | null
+          samples: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      add_contact_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          already_existed: boolean
+          avatar_url: string
+          contact_id: string
+          display_name: string
+          linked_user_id: string
+        }[]
+      }
       add_group_member: {
         Args: { _conv: string; _user: string }
         Returns: undefined
@@ -2455,6 +4297,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_reconcile_report_v1: { Args: never; Returns: Json }
       admin_reject_payment: {
         Args: { _note: string; _payment_id: string }
         Returns: Json
@@ -2463,8 +4306,25 @@ export type Database = {
         Args: { _grant: boolean; _target: string }
         Returns: boolean
       }
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      cancel_friend_request: {
+        Args: { _request_id: string }
+        Returns: {
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+        }[]
+      }
+      chat_clear_conversation_for_me: {
+        Args: { _conv: string }
+        Returns: string[]
+      }
       chat_heartbeat: { Args: never; Returns: undefined }
+      chat_link_business: {
+        Args: { _conv: string; _id: string; _kind: string }
+        Returns: Json
+      }
+      chat_mark_delivered: { Args: { _conv?: string }; Returns: undefined }
       chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }
       chat_search_messages: {
         Args: { _limit?: number; _q: string }
@@ -2485,6 +4345,24 @@ export type Database = {
         Returns: undefined
       }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }
+      check_and_record_signup_attempt: {
+        Args: {
+          p_email: string
+          p_ip: string
+          p_limit?: number
+          p_user_agent?: string
+          p_window?: string
+        }
+        Returns: {
+          allowed: boolean
+          attempts_in_window: number
+          retry_after_seconds: number
+        }[]
+      }
+      create_chat_cart: {
+        Args: { p_conversation_id: string; p_lines: Json; p_note?: string }
+        Returns: string
+      }
       create_group: {
         Args: { _member_ids: string[]; _title: string }
         Returns: string
@@ -2500,6 +4378,7 @@ export type Database = {
       ecer_submit_via_task: {
         Args: {
           _actual_grams: number
+          _client_key?: string
           _gps_lat: number
           _gps_lng: number
           _location_url: string
@@ -2520,19 +4399,33 @@ export type Database = {
       }
       ensure_order_conversation: { Args: { _order: string }; Returns: string }
       expire_subscriptions: { Args: never; Returns: number }
+      fix_request_prep_payment: {
+        Args: {
+          _paid_amount: number
+          _party_name?: string
+          _payment_method: string
+          _prep_id: string
+        }
+        Returns: Json
+      }
+      gen_invite_code: { Args: never; Returns: string }
       get_chat_member_profiles: {
         Args: { _user_ids: string[] }
         Returns: {
           display_name: string
-          email: string
           id: string
+          invite_code: string
           last_seen_at: string
           phone: string
           show_last_seen: boolean
         }[]
       }
       get_email_cron_secret: { Args: never; Returns: string }
-      has_active_pro: { Args: { _uid: string }; Returns: boolean }
+      get_worker_portal_public_config: { Args: never; Returns: Json }
+      has_active_pro: {
+        Args: { _env?: string; _uid: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2540,6 +4433,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      hutang_summary_v1: { Args: never; Returns: Json }
+      is_chat_only: { Args: { _uid: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
@@ -2547,6 +4442,22 @@ export type Database = {
       is_conversation_owner: {
         Args: { _conv: string; _user: string }
         Returns: boolean
+      }
+      list_friend_requests: {
+        Args: { _direction?: string; _only_pending?: boolean }
+        Returns: {
+          created_at: string
+          direction: string
+          from_user: string
+          id: string
+          peer_avatar_url: string
+          peer_display_name: string
+          peer_id: string
+          peer_invite_code: string
+          responded_at: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+        }[]
       }
       match_address_book_profiles: {
         Args: { _emails?: string[]; _phones?: string[] }
@@ -2579,14 +4490,46 @@ export type Database = {
         }
         Returns: number
       }
+      next_doc_number: {
+        Args: { _day?: string; _prefix: string }
+        Returns: string
+      }
+      normalize_email: { Args: { _e: string }; Returns: string }
       normalize_phone: { Args: { _p: string }; Returns: string }
+      normalize_unit_label: { Args: { _u: string }; Returns: string }
+      order_process_v1: {
+        Args: {
+          _order_id: string
+          _paid_amount?: number
+          _payment_method: string
+        }
+        Returns: Json
+      }
+      party_balance_events_v1: {
+        Args: { p_key?: string; p_limit?: number }
+        Returns: Json
+      }
+      party_balance_v1: { Args: never; Returns: Json }
+      piutang_summary_v1: { Args: never; Returns: Json }
+      pos_commit_sale: {
+        Args: {
+          _item_id: string
+          _note?: string
+          _price_per_base: number
+          _qty_base: number
+        }
+        Returns: string
+      }
       prep_create_task: {
         Args: {
           _items: Json
+          _max_submissions?: number
           _note: string
           _pin: string
+          _scheduled_at?: string
           _share_token: string
           _title: string
+          _title_ids?: string[]
         }
         Returns: string
       }
@@ -2594,61 +4537,48 @@ export type Database = {
       prep_peek_task: { Args: { _token: string }; Returns: Json }
       prep_pin_locked_until: { Args: { _token: string }; Returns: string }
       prep_pin_reset: { Args: { _token: string }; Returns: Json }
+      prep_read_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_reset_pin: {
         Args: { _pin: string; _task_id: string }
         Returns: boolean
       }
-      prep_submit:
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _expected_updated_at?: string
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _expected_updated_at?: string
-              _gps_lat: number
-              _gps_lng: number
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _photo_paths?: string[]
-              _pin: string
-              _qty_reported: number
-              _task_item_id: string
-              _token: string
-            }
-            Returns: Json
-          }
+      prep_share_token_exists: { Args: { _token: string }; Returns: boolean }
+      prep_submission_verify: {
+        Args: { _decision: string; _reason?: string; _submission_id: string }
+        Returns: Json
+      }
+      prep_submissions_mark_sent: {
+        Args: { _channel: string; _ids: string[]; _maps_url?: string }
+        Returns: Json
+      }
+      prep_submissions_unmark_sent: { Args: { _ids: string[] }; Returns: Json }
+      prep_submit: {
+        Args: {
+          _client_key?: string
+          _expected_updated_at: string
+          _gps_lat: number
+          _gps_lng: number
+          _location_url: string
+          _note: string
+          _photo_path: string
+          _photo_paths: string[]
+          _pin: string
+          _qty_reported: number
+          _task_item_id: string
+          _token: string
+        }
+        Returns: Json
+      }
+      prep_task_resolve: {
+        Args: { _pin: string; _token: string }
+        Returns: Json
+      }
       prep_upload_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_worker_upload_allowed: {
         Args: { _owner_user_id: string; _share_token: string }
         Returns: boolean
       }
+      query_metrics_prune: { Args: never; Returns: undefined }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -2658,50 +4588,72 @@ export type Database = {
         }[]
       }
       record_prep_pin_failure: { Args: { _token: string }; Returns: undefined }
+      rename_warehouse_category: {
+        Args: { _new_name: string; _old_name: string }
+        Returns: number
+      }
+      repair_missing_request_task_title_links: {
+        Args: { _owner_user_id?: string; _task_id?: string }
+        Returns: number
+      }
       request_list_titles_via_task: {
         Args: { _pin: string; _token: string }
         Returns: Json
       }
-      request_submit_via_task:
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _items: Json
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _pin: string
-              _prep_task_item_id: string
-              _title_id: string
-              _token: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              _gps_lat: number
-              _gps_lng: number
-              _items: Json
-              _location_url: string
-              _note: string
-              _photo_path: string
-              _photo_paths?: string[]
-              _pin: string
-              _prep_task_item_id: string
-              _title_id: string
-              _token: string
-            }
-            Returns: Json
-          }
+      request_prep_reconcile_report_v1: { Args: never; Returns: Json }
+      request_submit_via_task: {
+        Args: {
+          _client_key?: string
+          _gps_lat: number
+          _gps_lng: number
+          _items: Json
+          _location_url: string
+          _location_urls: string[]
+          _note: string
+          _photo_path: string
+          _photo_paths: string[]
+          _pin: string
+          _prep_task_item_id: string
+          _title_id: string
+          _token: string
+        }
+        Returns: Json
+      }
+      request_title_save_v1: {
+        Args: {
+          _items: Json
+          _name: string
+          _note: string
+          _position: number
+          _title_id: string
+        }
+        Returns: string
+      }
+      resolve_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          avatar_url: string
+          chat_only: boolean
+          display_name: string
+          id: string
+          invite_code: string
+        }[]
+      }
+      respond_friend_request: {
+        Args: { _accept: boolean; _request_id: string }
+        Returns: {
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+        }[]
+      }
       run_internal_security_scan: { Args: never; Returns: Json }
       search_chat_contacts: {
         Args: { _q: string }
         Returns: {
           display_name: string
+          invite_code: string
           kind: string
           label: string
-          phone: string
           user_id: string
         }[]
       }
@@ -2717,10 +4669,58 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      send_ecer_preps_to_customer: {
+        Args: {
+          _customer_id: string
+          _note: string
+          _paid_amount: number
+          _party_name: string
+          _payment_method: string
+          _prep_ids: string[]
+          _total_amount: number
+        }
+        Returns: string[]
+      }
+      send_friend_request: {
+        Args: { _code: string }
+        Returns: {
+          already_friends: boolean
+          avatar_url: string
+          display_name: string
+          incoming_reverse_id: string
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          was_existing: boolean
+        }[]
+      }
+      send_request_prep_to_customer: {
+        Args: {
+          _customer_id: string
+          _note: string
+          _paid_amount?: number
+          _party_name: string
+          _payment_method: string
+          _prep_id: string
+          _total_amount: number
+        }
+        Returns: string
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
       start_pro_trial: { Args: never; Returns: Json }
+      stock_reconcile_v1: { Args: never; Returns: Json }
+      storage_upload_within_limits: {
+        Args: { _max_bytes?: number; _metadata: Json }
+        Returns: boolean
+      }
+      telemetry_cleanup_v1: {
+        Args: { _days?: number; _dry_run?: boolean }
+        Returns: Json
+      }
+      unsend_request_prep: { Args: { _prep_id: string }; Returns: Json }
+      unsend_request_prep_check: { Args: { _prep_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -2730,6 +4730,8 @@ export type Database = {
         | "for_me_bulk"
         | "for_all_bulk"
         | "all_mine"
+      friend_request_status: "pending" | "accepted" | "rejected" | "cancelled"
+      status_visibility: "public" | "friends"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2865,6 +4867,8 @@ export const Constants = {
         "for_all_bulk",
         "all_mine",
       ],
+      friend_request_status: ["pending", "accepted", "rejected", "cancelled"],
+      status_visibility: ["public", "friends"],
     },
   },
 } as const

@@ -1,18 +1,24 @@
 User-agent: *
 Allow: /
+Disallow: /pratinjau-tema
 
 # Halaman publik yang diindeks ada di sitemap:
-#   /, /refund, /terms, /trust, /download, /auth
+#   /, /produk, /harga, /faq, /refund, /terms, /trust, /download, /auth
+#   + /katalog/<toko> dan /katalog/<toko>/<produk> (dibangkitkan otomatis)
 
 # Endpoint API & internal — tidak untuk diindeks
 Disallow: /api/
 Disallow: /lovable/
 
-# Halaman utilitas / privat (butuh login, token, atau hanya error state)
+# Halaman utilitas / privat / otentikasi (butuh login, token, atau hanya error state)
+# Disallow berikut mencerminkan sengaja tidak dimasukkan ke sitemap.
 Disallow: /error
 Disallow: /reset-password
+Disallow: /auth-callback
 Disallow: /t/
+Disallow: /admin-denial-log
 Disallow: /audit
+Disallow: /balas-cepat
 Disallow: /chat
 Disallow: /device-verify
 Disallow: /diagnostics
@@ -26,5 +32,14 @@ Disallow: /pengaturan-kunci
 Disallow: /profil
 Disallow: /request
 Disallow: /tugas
+Disallow: /diagnostik/
+Disallow: /pos-kasir
+Disallow: /mcp
+Disallow: /.mcp/
+Disallow: /.well-known/
+Disallow: /.lovable/
 
-Sitemap: https://mcmstorage.biz/sitemap.xml
+# Katalog publik toko (dinamis, terdaftar di sitemap)
+Allow: /katalog/
+
+Sitemap: https://mcmstorage.app/sitemap.xml

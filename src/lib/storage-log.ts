@@ -75,6 +75,15 @@ export function logStorageError(ctx: StorageErrorContext, error: AnyStorageError
   const status = (error as { statusCode?: string | number }).statusCode;
   const diag = diagnose(msg);
 
+  // Kegagalan jaringan transien (offline, WebView sleep, request dibatalkan)
+  // bukan bug aplikasi — cukup catat ringkas sebagai warning agar console
+  // tidak dipenuhi stack error palsu saat sinyal HP putus-putus.
+  if (/failed to fetch|network ?error|load failed|aborted|typeerror: fetch/i.test(msg)) {
+    // eslint-disable-next-line no-console
+    console.warn(`[storage:${ctx.op}] ${ctx.bucket} offline/jaringan terputus — dilewati`);
+    return true;
+  }
+
   // Group keeps related lines collapsible per failure.
   // eslint-disable-next-line no-console
   console.groupCollapsed(

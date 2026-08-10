@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="false"
+        android:fullBackupContent="@xml/backup_rules"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="false"
+        android:largeHeap="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deep link scheme kustom (dipertahankan untuk kompatibilitas
+                 link lama). Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
+            <intent-filter android:label="Ace Storage Deep Link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="biz.mcmstorage.app" />
+            </intent-filter>
+
+            <!-- Verified HTTPS App Links.
+                 Wajib ada /.well-known/assetlinks.json di kedua host —
+                 lihat docs/ANDROID_APP_LINKS.md. Hanya route yang memang
+                 harus membuka aplikasi: portal tugas pegawai (/t/...) dan
+                 undangan (/undang...). -->
+            <intent-filter android:autoVerify="true" android:label="Ace Storage App Link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mcmstorage.app" android:pathPrefix="/t/" />
+                <data android:scheme="https" android:host="mcmstorage.app" android:pathPrefix="/undang" />
+                <data android:scheme="https" android:host="www.mcmstorage.app" android:pathPrefix="/t/" />
+                <data android:scheme="https" android:host="www.mcmstorage.app" android:pathPrefix="/undang" />
+            </intent-filter>
+
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- ── Jaringan ───────────────────────────────────────────────── -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- ── Panggilan suara/video (WebRTC di dalam WebView) ─────────── -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Headset Bluetooth saat panggilan (Android 12+ saja; runtime-guarded) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- ── Notifikasi (Android 13+ runtime permission) ─────────────── -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- ── Lokasi: core flow bukti penyiapan pegawai ───────────────── -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- ── Foto/galeri ─────────────────────────────────────────────
+         Android 13+ : READ_MEDIA_IMAGES (photo picker Capacitor Camera).
+         Android 14+ : READ_MEDIA_VISUAL_USER_SELECTED (akses parsial).
+         Android <=12: READ_EXTERNAL_STORAGE, dibatasi maxSdkVersion.
+         WRITE_EXTERNAL_STORAGE tidak diminta — app tidak menulis ke
+         galeri publik. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"
+        tools:node="remove" />
+
+    <!-- Tidak diminta: READ_MEDIA_VIDEO, READ_MEDIA_AUDIO, ACCESS_BACKGROUND_LOCATION,
+         SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE — tidak ada fitur yang memakainya. -->
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+</manifest>

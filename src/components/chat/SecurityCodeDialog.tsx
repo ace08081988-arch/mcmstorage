@@ -36,14 +36,14 @@ export function SecurityCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Kode keamanan percakapan</DialogTitle>
+          <DialogTitle className="flex items-center gap-ms-2"><ShieldCheck className="h-5 w-5 text-primary" /> Kode keamanan percakapan</DialogTitle>
           <DialogDescription>
             Bandingkan kode ini dengan kode di perangkat lawan chat. Kode yang sama berarti percakapan kalian tertaut ke peserta yang sama. Kode berubah jika anggota berubah.
           </DialogDescription>
         </DialogHeader>
-        <div className="rounded-md border bg-muted/40 p-4 font-mono text-center text-base leading-7 tracking-widest">
+        <div className="rounded-md border bg-muted/40 p-ms-4 font-mono text-center text-ms-base leading-7 tracking-widest">
           {rows.map((r, i) => (
             <div key={i}>{r.join("  ")}</div>
           ))}

@@ -1,0 +1,38 @@
+name: Social Rescrape
+
+# Memaksa Facebook Sharing Debugger (dipakai juga oleh WhatsApp) dan crawler
+# X/LinkedIn mengambil ulang tag head setelah publish, supaya perubahan
+# og:image tidak tertahan cache lama.
+#
+# Jalan otomatis: setelah deploy gate selesai, tiap hari 02:00 UTC, dan
+# manual lewat tombol "Run workflow" (bisa diisi URL spesifik).
+on:
+  workflow_run:
+    workflows: ["Deploy Gate"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URL/path spesifik (pisahkan spasi). Kosong = ambil dari sitemap."
+        required: false
+        default: ""
+
+jobs:
+  rescrape:
+    name: Rescrape pratinjau sosial
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Rescrape
+        env:
+          # Opsional: tanpa token, crawler hanya di-warm-up (tanpa buang cache).
+          FACEBOOK_GRAPH_TOKEN: ${{ secrets.FACEBOOK_GRAPH_TOKEN }}
+        run: bun scripts/social-rescrape.ts --base https://mcmstorage.app ${{ github.event.inputs.urls }}

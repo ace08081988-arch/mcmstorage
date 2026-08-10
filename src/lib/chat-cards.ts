@@ -14,6 +14,7 @@ export type ContactCard = {
   type: "contact";
   name: string;
   phone: string;
+  pin?: string;
   note?: string;
 };
 export type ProductCard = {
@@ -23,6 +24,20 @@ export type ProductCard = {
   package?: string; // e.g. "0.2 gram" / "1 botol"
   category?: string | null;
   href?: string;
+};
+
+/**
+ * Keranjang belanja yang dikirim dari dalam chat. Setiap baris berisi
+ * nama barang (diketik manual), jumlah, dan harga satuan (opsional).
+ * `cart_group_id` menautkan bubble ini ke baris-baris `order_requests`
+ * yang dibuat lewat RPC `create_chat_cart`.
+ */
+export type CartCard = {
+  type: "cart";
+  cart_group_id: string;
+  lines: { name: string; qty: number; price?: number | null }[];
+  currency?: string;
+  note?: string | null;
 };
 
 /**
@@ -52,9 +67,31 @@ export type StickerCard =
       rotation?: number; scale?: number; caption?: string;
     };
 
-export type Card = LocationCard | ContactCard | ProductCard | StickerCard;
+export type Card =
+  | LocationCard
+  | ContactCard
+  | ProductCard
+  | StickerCard
+  | CartCard;
 
 const SENTINEL = "[mcm-card:v1]";
+
+export const CARD_SENTINEL = SENTINEL;
+
+/**
+ * Cek apakah body pesan adalah payload card (dimulai dengan sentinel).
+ * Dipakai renderer untuk mencegah JSON mentah bocor ke UI walau
+ * decodeCard gagal (mis. payload rusak / versi baru yang belum dikenali).
+ */
+export function isCardBody(body: string | null | undefined): boolean {
+  if (!body) return false;
+  // Toleran: sentinel boleh ada di awal ATAU di baris mana pun.
+  // Beberapa pesan lama tidak menempatkan sentinel di posisi 0 (mis.
+  // ada baris caption di atas payload) — tanpa toleransi ini, body
+  // JSON mentah akan bocor ke bubble chat.
+  if (body.startsWith(SENTINEL)) return true;
+  return body.includes(`\n${SENTINEL}`) || body.includes(`\n${SENTINEL}\n`);
+}
 
 export function encodeCard(card: Card, fallbackText?: string): string {
   return `${SENTINEL}\n${JSON.stringify(card)}${fallbackText ? `\n${fallbackText}` : ""}`;
@@ -62,10 +99,17 @@ export function encodeCard(card: Card, fallbackText?: string): string {
 
 export function decodeCard(body: string | null | undefined): Card | null {
   if (!body) return null;
-  if (!body.startsWith(SENTINEL)) return null;
-  const nl = body.indexOf("\n");
-  if (nl < 0) return null;
-  const rest = body.slice(nl + 1);
+  // Cari baris sentinel di posisi mana pun, lalu ambil baris JSON tepat setelahnya.
+  const idx = body.startsWith(SENTINEL)
+    ? 0
+    : (() => {
+        const i = body.indexOf(`\n${SENTINEL}`);
+        return i < 0 ? -1 : i + 1;
+      })();
+  if (idx < 0) return null;
+  const afterSentinel = body.indexOf("\n", idx + SENTINEL.length);
+  if (afterSentinel < 0) return null;
+  const rest = body.slice(afterSentinel + 1);
   const end = rest.indexOf("\n");
   const json = end < 0 ? rest : rest.slice(0, end);
   try {
@@ -79,11 +123,31 @@ export function decodeCard(body: string | null | undefined): Card | null {
 
 export function previewText(body: string | null | undefined): string | null {
   if (!body) return null;
+  // Payload card tapi decode gagal / tipe baru: jangan bocorkan JSON mentah.
+  if (isCardBody(body)) {
+    const c = decodeCard(body);
+    if (!c) return "📎 Kartu chat";
+    if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
+    if (c.type === "contact") return `👤 Kontak: ${c.name}`;
+    if (c.type === "product") return `🛒 Produk: ${c.name}`;
+    if (c.type === "cart") return `🛒 Keranjang · ${c.lines.length} item`;
+    if (c.type === "sticker") {
+      if (c.kind === "arrow") return `🧭 Stiker panah${c.caption ? ` · ${c.caption}` : ""}`;
+      if (c.kind === "bank") return `🏦 Rekening ${c.bank} · ${c.account_number}`;
+      if (c.kind === "text") return `🏷️ ${c.text.slice(0, 60)}`;
+      if (c.kind === "ai") return `✨ Stiker AI${c.caption ? ` · ${c.caption}` : ""}`;
+    }
+    return "📎 Kartu chat";
+  }
   const c = decodeCard(body);
   if (!c) return body;
   if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
   if (c.type === "contact") return `👤 Kontak: ${c.name}`;
   if (c.type === "product") return `🛒 Produk: ${c.name}`;
+  if (c.type === "cart") {
+    const n = c.lines.length;
+    return `🛒 Keranjang · ${n} item`;
+  }
   if (c.type === "sticker") {
     if (c.kind === "arrow") return `🧭 Stiker panah${c.caption ? ` · ${c.caption}` : ""}`;
     if (c.kind === "bank") return `🏦 Rekening ${c.bank} · ${c.account_number}`;

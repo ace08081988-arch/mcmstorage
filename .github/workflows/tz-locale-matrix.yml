@@ -1,0 +1,185 @@
+name: TZ & Locale Matrix (harga & buildPesan invariance)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.index.tsx"
+      - "src/lib/harga-buildpesan-tz-locale.test.ts"
+      - "src/lib/weight-parse.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/tz-locale-matrix.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.index.tsx"
+      - "src/lib/harga-buildpesan-tz-locale.test.ts"
+      - "src/lib/weight-parse.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/tz-locale-matrix.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: tz-locale-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tz-locale-matrix:
+    name: TZ=${{ matrix.tz }} · LC_ALL=${{ matrix.lc }} · ${{ matrix.runtime }}${{ matrix.node && format(' (node {0})', matrix.node) || '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Kombinasi TZ × LC_ALL × runtime yang paling representatif untuk
+        # menjamin `Intl.NumberFormat("id-ID", …)` dan `buildPesan()` stabil
+        # di semua environment (LTS Node aktif, current, dan Bun).
+        include:
+          # --- Baseline sesuai lokasi user & rilis dev ---
+          - tz: "Asia/Jakarta"
+            lc: "id_ID.UTF-8"
+            runtime: "node"
+            node: "20"
+          - tz: "Asia/Jakarta"
+            lc: "en_ID.UTF-8"
+            runtime: "node"
+            node: "20"
+          - tz: "Asia/Jakarta"
+            lc: "id_ID.UTF-8"
+            runtime: "node"
+            node: "22"
+          - tz: "Asia/Jakarta"
+            lc: "en_ID.UTF-8"
+            runtime: "node"
+            node: "22"
+          - tz: "Asia/Jakarta"
+            lc: "id_ID.UTF-8"
+            runtime: "bun"
+          - tz: "Asia/Jakarta"
+            lc: "en_ID.UTF-8"
+            runtime: "bun"
+          # --- Kontras: TZ & LC_ALL berbeda drastis, harus tetap identik ---
+          - tz: "UTC"
+            lc: "C.UTF-8"
+            runtime: "node"
+            node: "20"
+          - tz: "UTC"
+            lc: "C.UTF-8"
+            runtime: "node"
+            node: "24"
+          - tz: "UTC"
+            lc: "C.UTF-8"
+            runtime: "bun"
+          - tz: "America/Los_Angeles"
+            lc: "en_US.UTF-8"
+            runtime: "node"
+            node: "22"
+          - tz: "America/Los_Angeles"
+            lc: "en_US.UTF-8"
+            runtime: "bun"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: matrix.runtime == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install non-C locales
+        # `en_ID` / `id_ID` tidak pre-generated di ubuntu-latest. Skip untuk
+        # `C.UTF-8` yang selalu tersedia.
+        if: matrix.lc != 'C.UTF-8'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends locales
+          # `en_ID` diturunkan dari `en_US` + region ID — locale-gen menerima
+          # entri arbitrer selama ada di /usr/share/i18n/locales atau kita
+          # tambahkan alias. Fallback ke en_US.UTF-8 bila tidak dikenali.
+          echo "id_ID.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen
+          echo "en_ID.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen
+          echo "en_US.UTF-8 UTF-8" | sudo tee -a /etc/locale.gen
+          sudo locale-gen || true
+          locale -a | grep -Ei 'id_ID|en_ID|en_US' || true
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Print runtime & env
+        env:
+          TZ: ${{ matrix.tz }}
+          LC_ALL: ${{ matrix.lc }}
+          LANG: ${{ matrix.lc }}
+        run: |
+          echo "runtime: ${{ matrix.runtime }}"
+          echo "node:    $(node -v 2>/dev/null || echo 'n/a')"
+          echo "bun:     $(bun -v)"
+          echo "TZ:      $TZ"
+          echo "LC_ALL:  $LC_ALL"
+          echo "LANG:    $LANG"
+          node -e "console.log('resolved TZ:', Intl.DateTimeFormat().resolvedOptions().timeZone)" || true
+          node -e "console.log('id-ID 15000 →', (15000).toLocaleString('id-ID'))" || true
+
+      - name: Run TZ/locale invariance test (bun)
+        if: matrix.runtime == 'bun'
+        env:
+          TZ: ${{ matrix.tz }}
+          LC_ALL: ${{ matrix.lc }}
+          LANG: ${{ matrix.lc }}
+        run: |
+          bunx vitest run \
+            --reporter=default \
+            src/lib/harga-buildpesan-tz-locale.test.ts \
+            src/routes/_authenticated.index.wa-message-package-switch.test.ts \
+            src/lib/wa-url-encode-package-switch.test.ts
+
+      - name: Run TZ/locale invariance test (node)
+        if: matrix.runtime == 'node'
+        env:
+          TZ: ${{ matrix.tz }}
+          LC_ALL: ${{ matrix.lc }}
+          LANG: ${{ matrix.lc }}
+        run: |
+          npx --yes vitest@$(node -p "require('./package.json').devDependencies.vitest || require('./package.json').dependencies.vitest || 'latest'") run \
+            --reporter=default \
+            src/lib/harga-buildpesan-tz-locale.test.ts \
+            src/routes/_authenticated.index.wa-message-package-switch.test.ts \
+            src/lib/wa-url-encode-package-switch.test.ts
+
+      - name: Job summary on failure
+        if: failure()
+        run: |
+          {
+            echo "## ❌ TZ/locale matrix failed";
+            echo "";
+            echo "- Runtime: **${{ matrix.runtime }}${{ matrix.node && format(' (node {0})', matrix.node) || '' }}**";
+            echo "- \`TZ=${{ matrix.tz }}\`";
+            echo "- \`LC_ALL=${{ matrix.lc }}\`";
+            echo "";
+            echo "Formatter harga (`Intl.NumberFormat('id-ID', …)`) atau `buildPesan()` drift ketika environment berubah.";
+            echo "Curigai: ICU data yang tidak lengkap, `toLocaleString` tanpa argumen locale, atau `Intl.DateTimeFormat` tanpa opsi `timeZone` eksplisit.";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  tz-locale-matrix-summary:
+    name: TZ/locale matrix summary
+    if: always()
+    needs: tz-locale-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any matrix job failed
+        run: |
+          if [ "${{ needs.tz-locale-matrix.result }}" != "success" ]; then
+            echo "One or more TZ/locale jobs failed: ${{ needs.tz-locale-matrix.result }}"
+            exit 1
+          fi
+          echo "All TZ/locale combinations green."

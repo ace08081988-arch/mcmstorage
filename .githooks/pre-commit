@@ -1,0 +1,46 @@
+#!/bin/sh
+# Pre-commit hook Ace Storage — cegah mismatch tag head & lockfile salah format.
+# Aktifkan dengan: bun run hooks:install  (otomatis lewat `prepare`).
+set -e
+
+# 1) Aturan lockfile (docs/dependency-lockfile.md): wajib `bun.lock` teks.
+if [ "$SKIP_LOCKFILE_CHECK" = "1" ]; then
+  echo "↷ Cek lockfile dilewati (SKIP_LOCKFILE_CHECK=1)."
+else
+  # Tolak lockfile biner yang ikut ter-stage, sekalipun belum ada di worktree.
+  staged_binary=$(git diff --cached --name-only --diff-filter=ACMR | grep -x 'bun.lockb' || true)
+  if [ -n "$staged_binary" ]; then
+    echo "❌ Commit ditolak: \`bun.lockb\` (lockfile biner) ada di staging area."
+    echo "   Jalankan: git rm --cached bun.lockb && rm -f bun.lockb && bun install"
+    echo "   Panduan: docs/dependency-lockfile.md"
+    exit 1
+  fi
+  # Auto-perbaiki: kalau format lockfile belum sesuai, jalankan fix:lockfile lalu
+  # ikutkan hasilnya ke commit ini (lewati dengan SKIP_LOCKFILE_FIX=1).
+  if node scripts/check-text-lockfile.mjs; then
+    :
+  elif [ "$SKIP_LOCKFILE_FIX" = "1" ]; then
+    echo "❌ Lockfile belum sesuai dan auto-fix dilewati (SKIP_LOCKFILE_FIX=1)."
+    echo "   Jalankan: bun run fix:lockfile"
+    exit 1
+  else
+    echo "⚙️  Lockfile belum sesuai — menjalankan \`bun run fix:lockfile\`…"
+    node scripts/fix-lockfile.mjs || {
+      echo "❌ Auto-fix lockfile gagal. Perbaiki manual lalu commit ulang."
+      exit 1
+    }
+    for f in bun.lock bunfig.toml; do
+      [ -f "$f" ] && git add "$f"
+    done
+    git rm --cached -q bun.lockb 2>/dev/null || true
+    echo "✅ Lockfile diperbaiki dan ditambahkan ke commit ini."
+  fi
+fi
+
+# 2) Audit tag head.
+if [ "$SKIP_HEAD_AUDIT" = "1" ]; then
+  echo "↷ Audit head dilewati (SKIP_HEAD_AUDIT=1)."
+  exit 0
+fi
+
+node scripts/pre-commit-head-audit.mjs

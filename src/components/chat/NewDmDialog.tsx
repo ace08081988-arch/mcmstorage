@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { PinChip } from "@/components/chat/ContactIdentity";
 import { z } from "zod";
 
 // Normalisasi nomor → digit-only E.164 (tanpa "+").
@@ -27,7 +28,7 @@ function normalizeWaDigits(raw: string): string {
 const waPhoneSchema = z
   .string()
   .regex(/^[1-9]\d{7,14}$/, {
-    message: "Nomor WhatsApp harus 8–15 digit dan diawali kode negara yang valid.",
+    message: "Nomor WA harus 8–15 digit dan diawali kode negara yang valid.",
   });
 
 type WaValidation =
@@ -69,7 +70,7 @@ export function NewDmDialog() {
     const origin =
       typeof window !== "undefined" ? window.location.origin : "https://mcmstorage.biz";
     const msg = [
-      "Halo! Saya mengundang Anda bergabung di aplikasi MCM Storage.",
+      "Halo! Saya mengundang Anda bergabung di aplikasi Ace Storage.",
       "",
       "Silakan daftar/masuk lewat tautan berikut, lalu kita bisa saling chat di dalam aplikasi:",
       origin,
@@ -81,7 +82,7 @@ export function NewDmDialog() {
       toast.error("Popup diblokir browser. Izinkan popup lalu coba lagi.");
       return;
     }
-    toast.success("Undangan WA dibuka untuk " + invitePhone);
+    toast.success("Undangan Ace dibuka untuk " + invitePhone);
   }
 
   const onPick = async (uid: string) => {
@@ -97,11 +98,17 @@ export function NewDmDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default" size="sm" className="gap-1.5">
-          <MessageSquarePlus className="h-4 w-4" /> Chat baru
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-full"
+          aria-label="Chat baru"
+          title="Chat baru"
+        >
+          <MessageSquarePlus className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Mulai chat dengan kontak</DialogTitle>
         </DialogHeader>
@@ -110,55 +117,55 @@ export function NewDmDialog() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari nama atau nomor telepon…"
+            placeholder="Cari nama atau PIN Ace…"
             className="pl-8"
             autoFocus
           />
         </div>
-        <div className="max-h-80 space-y-1 overflow-auto rounded-md border p-1">
+        <div className="max-h-80 space-y-1 overflow-auto rounded-md border p-ms-1">
           {isLoading ? (
-            <div className="flex items-center justify-center p-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center p-ms-6 text-ms-sm text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
             </div>
           ) : (contacts ?? []).length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-4 text-center">
+            <div className="flex flex-col items-center gap-ms-3 p-ms-4 text-center">
               <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
                 {looksLikePhone ? <Send className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
               </div>
               {looksLikePhone ? (
                 <>
-                  <div className="text-xs text-muted-foreground">
-                    Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat WhatsApp agar dapat diajak chat.
+                  <div className="text-ms-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat Ace agar dapat diajak chat.
                   </div>
                   {invitePhone && (
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-ms-2xs text-muted-foreground">
                       Akan dikirim ke: <span className="font-mono text-foreground">+{invitePhone}</span>
                     </div>
                   )}
                   <Button
                     type="button"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-ms-1.5"
                     onClick={inviteByWhatsApp}
                     disabled={!validation.ok}
                   >
                     <Send className="h-4 w-4" /> Undang via WhatsApp
                   </Button>
                   {!validation.ok && (
-                    <p className="text-[11px] text-destructive">
+                    <p className="text-ms-2xs text-destructive">
                       {validation.reason} Contoh: 08123456789 atau 628123456789.
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  <div className="text-xs text-muted-foreground">
-                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik nomor WA untuk mengundang.
+                  <div className="text-ms-xs text-muted-foreground">
+                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik PIN Ace untuk mengundang.
                   </div>
                   <Button
                     type="button"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-ms-1.5"
                     onClick={() => {
                       setOpen(false);
                       navigate({ to: "/kontak" });
@@ -177,17 +184,20 @@ export function NewDmDialog() {
                 type="button"
                 onClick={() => onPick(c.user_id)}
                 disabled={startDm.isPending}
-                className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-accent disabled:opacity-50"
+                className="flex w-full items-center gap-ms-3 rounded-md px-ms-2 py-ms-2 text-left hover:bg-accent disabled:opacity-50"
               >
                 <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
                   <UserRound className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">
-                    {c.display_name || c.phone || "Pengguna"}
+                  <div className="flex min-w-0 items-center gap-ms-2">
+                    <span className="min-w-0 flex-1 truncate text-ms-sm font-medium">
+                      {c.display_name || "Pengguna Ace"}
+                    </span>
+                    <PinChip code={c.invite_code} />
                   </div>
-                  <div className="truncate text-[11px] text-muted-foreground">
-                    {c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}
+                  <div className="truncate text-ms-2xs text-muted-foreground">
+                    {c.label ?? c.kind}
                   </div>
                 </div>
               </button>

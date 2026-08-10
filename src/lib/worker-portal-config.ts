@@ -258,12 +258,8 @@ export function getWorkerPortalConfig(): WorkerPortalConfig {
 export async function fetchAndApplyWorkerPortalConfig(): Promise<WorkerPortalConfig> {
   try {
     const { publicSupabase } = await import("@/lib/public-supabase");
-    const { data } = await publicSupabase
-      .from("app_settings")
-      .select("worker_portal_config")
-      .eq("id", true)
-      .maybeSingle();
-    const raw = (data as { worker_portal_config?: unknown } | null)?.worker_portal_config;
+    const { data } = await publicSupabase.rpc("get_worker_portal_public_config");
+    const raw = data as unknown;
     if (raw && typeof raw === "object" && !Array.isArray(raw)) {
       applyRemoteWorkerPortalConfig(raw as Partial<WorkerPortalConfig>);
     }

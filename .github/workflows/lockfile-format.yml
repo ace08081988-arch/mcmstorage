@@ -1,0 +1,130 @@
+name: Lockfile Format
+
+# Job khusus: memastikan lockfile tetap format teks (`bun.lock`) sesuai
+# docs/dependency-lockfile.md. Sengaja TIDAK menjalankan `bun install`
+# supaya status check muncul cepat di setiap PR.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: lockfile-format-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-lockfile:
+    name: check:lockfile (format lockfile teks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Jalankan check:lockfile
+        id: check
+        run: |
+          set +e
+          bun run check:lockfile > /tmp/lockfile-check.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/lockfile-check.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit $status
+
+      - name: Jalankan fix:lockfile (regenerasi lockfile)
+        id: fix
+        run: |
+          set +e
+          bun run fix:lockfile > /tmp/lockfile-fix.log 2>&1
+          status=$?
+          set -e
+          cat /tmp/lockfile-fix.log
+          exit $status
+
+      - name: Deteksi drift lockfile (hasil fix vs repo)
+        id: drift
+        run: |
+          git diff --stat -- bun.lock bunfig.toml > /tmp/lockfile-drift.stat || true
+          git diff -- bun.lock bunfig.toml > /tmp/lockfile-drift.diff || true
+          if [ -s /tmp/lockfile-drift.diff ]; then
+            echo "❌ Lockfile hasil \`bun run fix:lockfile\` berbeda dari yang ada di repo."
+            cat /tmp/lockfile-drift.stat
+            echo ""
+            head -c 20000 /tmp/lockfile-drift.diff
+            exit 1
+          fi
+          echo "✅ Lockfile di repo sudah identik dengan hasil regenerasi."
+
+      - name: Ringkasan sukses
+        if: success()
+        run: |
+          {
+            echo "## ✅ Format lockfile valid";
+            echo "";
+            echo '`bun.lock` berformat teks dan `saveTextLockfile = true` aktif di `bunfig.toml`.';
+            echo "";
+            echo 'Regenerasi lewat `bun run fix:lockfile` menghasilkan file yang identik — tidak ada drift.';
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ringkasan drift
+        if: failure() && steps.drift.outcome == 'failure'
+        run: |
+          {
+            echo "## ❌ Lockfile di repo tidak sinkron";
+            echo "";
+            echo 'CI menjalankan `bun run fix:lockfile` dan hasilnya **berbeda** dari `bun.lock`/`bunfig.toml` yang di-commit.';
+            echo "";
+            echo "### Perbedaan";
+            echo "";
+            echo '```diff';
+            head -c 20000 /tmp/lockfile-drift.diff 2>/dev/null || echo "(tidak ada diff)";
+            echo '```';
+            echo "";
+            echo "### Cara memperbaiki";
+            echo "";
+            echo '```bash';
+            echo "bun run fix:lockfile";
+            echo "git add bun.lock bunfig.toml && git commit -m 'chore: sync lockfile'";
+            echo '```';
+            echo "";
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Ringkasan kegagalan
+        if: failure() && steps.drift.outcome != 'failure'
+        run: |
+          {
+            echo "## ❌ Format lockfile melanggar aturan";
+            echo "";
+            echo "Aturan: [docs/dependency-lockfile.md](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/docs/dependency-lockfile.md)";
+            echo "";
+            echo "### Output pemeriksaan";
+            echo "";
+            echo '```text';
+            cat /tmp/lockfile-check.log 2>/dev/null || echo "(tidak ada output)";
+            cat /tmp/lockfile-fix.log 2>/dev/null || true;
+            echo '```';
+            echo "";
+            echo "### Cara memperbaiki";
+            echo "";
+            echo '```bash';
+            echo "bun run fix:lockfile   # otomatis: hapus bun.lockb, set saveTextLockfile, regenerasi bun.lock";
+            echo "git add bun.lock bunfig.toml";
+            echo '```';
+            echo "";
+            echo "Lalu commit ulang. Jangan commit \`bun.lockb\` (lockfile biner).";
+            echo "";
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
+          } >> "$GITHUB_STEP_SUMMARY"

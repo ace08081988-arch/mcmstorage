@@ -2,14 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
+import { PublicHeader } from "@/components/PublicHeader";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Atur Ulang Kata Sandi — MCM Storage" },
-      { name: "description", content: "Atur ulang kata sandi akun MCM Storage Anda." },
+      { title: "Atur Ulang Kata Sandi — Ace Storage" },
+      { name: "description", content: "Atur ulang kata sandi akun Ace Storage Anda." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -47,7 +49,7 @@ function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Kata sandi diperbarui");
@@ -55,17 +57,19 @@ function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="flex min-h-screen flex-col bg-background">
+      <PublicHeader />
+      <main id="konten-utama" tabIndex={-1} className="flex flex-1 items-center justify-center px-ms-4">
+      <div className="w-full max-w-sm space-ms-6 rounded-2xl border bg-card p-ms-6 shadow-sm">
         <div className="text-center">
-          <h1 className="text-lg font-semibold tracking-tight">Atur ulang kata sandi</h1>
-          <p className="text-xs text-muted-foreground">
+          <h1 className="text-ms-lg font-semibold tracking-tight">Atur ulang kata sandi</h1>
+          <p className="text-ms-xs text-muted-foreground">
             {ready
               ? "Masukkan kata sandi baru Anda"
               : "Membuka tautan reset… buka tautan ini dari email yang dikirim."}
           </p>
         </div>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="space-ms-3">
           <input
             type="password"
             required
@@ -74,7 +78,7 @@ function ResetPasswordPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Kata sandi baru (min. 8 karakter)"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             disabled={!ready}
           />
           <input
@@ -85,18 +89,20 @@ function ResetPasswordPage() {
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             placeholder="Konfirmasi kata sandi"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             disabled={!ready}
           />
           <button
             type="submit"
             disabled={loading || !ready}
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Menyimpan…" : "Simpan kata sandi"}
           </button>
         </form>
       </div>
+      </main>
+      <PublicFooter />
     </div>
   );
 }

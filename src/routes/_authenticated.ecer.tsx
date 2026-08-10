@@ -1,8 +1,12 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createFileRoute, useRouter, useNavigate, Link } from "@tanstack/react-router";
+import { NumericTextField } from "@/components/NumericDraftInput";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { PhotoEditor } from "@/components/PhotoEditor";
+import { ensureFreshSession } from "@/lib/ensure-session";
+import { assertStorageAccess } from "@/lib/storage-access";
+import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
+import { TaskQrCode } from "@/components/TaskQrCode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,28 +17,107 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  AutoSendConfirmDialog,
+  AutoSendCancelReasonDialog,
+  AUTO_SEND_CANCEL_REASONS,
+  type AutoSendCancelState,
+} from "@/components/ecer/AutoSendDialogs";
+import { PendingVerificationSection } from "@/components/prep/PendingVerificationSection";
+import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
-  Calendar, Clock, Hash, CheckCircle2, Boxes,
+  Share2, ExternalLink, Loader2, ChevronLeft, ChevronRight, ChevronDown, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
+  Calendar, Clock, Hash, CheckCircle2, Boxes, Send, Wallet, HandCoins,
+  Search, LayoutGrid, PackageSearch, Sparkles, MoreHorizontal,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { markSent, useSentShots } from "@/lib/wa-sent-history";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
+import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
-import { fmtItemQty } from "@/lib/stock-format";
+import {
+  logAutoSendProposed,
+  logAutoSendTerminal,
+  finalizeAutoSend,
+} from "@/lib/auto-send-audit";
+import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
+import { fmtItemQty, fmtWeight, rupiah } from "@/lib/stock-format";
+import { useEffectiveSoldTotal } from "@/lib/sold-total";
 import { displayUnit } from "@/lib/unit-label";
+import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
+import { copyUrlWithToast } from "@/lib/copy-url-toast";
+import { useIsAdmin } from "@/hooks/use-is-admin";
+import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
+import { filterActivePreps, filterSentPreps, isActivePrep, isSentPrep } from "@/lib/prep-active-selector";
+import { debounce } from "@/lib/realtime-debounce";
+import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { renderWaCaption } from "@/lib/wa-template";
+import { useWaTemplate } from "@/lib/wa-template-store";
+import { emitDebtTx } from "@/lib/debt-tx-event";
+import { withPlainTimeout, withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
+import { DomRaceBoundary } from "@/components/DomRaceBoundary";
+import { PaintDeferred } from "@/components/PaintDeferred";
+import { DomRaceRecoveryPanel } from "@/components/DomRaceRecoveryPanel";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
-  head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
+  head: () => ({ meta: [{ title: "Penyiapan Ecer · Ace Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    // "send=1" → auto-buka mode pilih + dialog "Kirim ke pembeli" untuk semua
+    // kotak aktif pada judul yang dituju. Dipakai oleh shortcut di dashboard
+    // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
+    send: typeof s.send === "string" ? s.send : undefined,
   }),
-  component: EcerPage,
+  component: EcerRoute,
 });
+
+/**
+ * Sama seperti Gudang: Ecer merender grid kartu besar berisi foto + portal
+ * dialog, kombinasi yang paling sering memicu `NotFoundError: removeChild`
+ * di Android WebView. Boundary ini retry diam-diam dulu, baru menampilkan
+ * panel pemulihan bila benar-benar gagal — jadi tidak perlu reload penuh
+ * yang membuang state pilih/dialog.
+ */
+function EcerRoute() {
+  return (
+    <DomRaceBoundary
+      label="ecer"
+      renderFallback={(error, reset, info) => (
+        <DomRaceRecoveryPanel
+          error={error}
+          reset={reset}
+          info={info}
+          title="Halaman Ecer gagal ditampilkan"
+        />
+      )}
+    >
+      <EcerPage />
+    </DomRaceBoundary>
+  );
+}
 
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
@@ -42,6 +125,103 @@ type WarehouseItem = {
   package_type?: string | null;
   package_size?: number | null;
 };
+
+type ChipTone = "primary" | "info" | "success" | "warning" | "danger";
+
+function StatChip({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: ChipTone;
+}) {
+  const map: Record<ChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-success bg-success/10 ring-success/20 dark:text-success",
+    warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="flex items-center gap-ms-2 rounded-lg border bg-background/70 px-ms-2.5 py-1.5 backdrop-blur">
+      <span className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 ring-inset ${map[tone]}`}>
+        <Icon className="h-3.5 w-3.5" />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div className="text-ms-sm font-bold leading-none tabular-nums">{value.toLocaleString("id-ID")}</div>
+      </div>
+    </div>
+  );
+}
+
+function EcerLoadingSkeleton() {
+  return (
+    <div className="mx-auto w-full max-w-4xl space-ms-4 px-ms-4 py-ms-4 sm:space-ms-5 sm:px-ms-6 sm:py-ms-6">
+      <div className="h-28 w-full animate-pulse rounded-2xl bg-muted/50" />
+      <div className="h-24 w-full animate-pulse rounded-xl bg-muted/50" />
+      <div className="space-ms-2">
+        <div className="h-14 w-full animate-pulse rounded-lg bg-muted/40" />
+        <div className="grid gap-ms-2 sm:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 w-full animate-pulse rounded-lg bg-muted/40" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EcerSummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: number;
+  tone: ChipTone;
+  hint?: string;
+}) {
+  const map: Record<ChipTone, string> = {
+    primary: "text-primary bg-primary/10 ring-primary/20",
+    info: "text-sky-600 bg-sky-500/10 ring-sky-500/20 dark:text-sky-400",
+    success: "text-success bg-success/10 ring-success/20 dark:text-success",
+    warning: "text-warning bg-warning/10 ring-warning/20 dark:text-warning",
+    danger: "text-destructive bg-destructive/10 ring-destructive/20",
+  };
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-card to-background p-ms-3 elev-sm backdrop-blur transition-all hover:border-primary/40 hover:elev-md md:p-ms-4">
+      <div className="flex items-start justify-between gap-ms-2">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-ms-2xs font-semibold uppercase tracking-[0.1em] text-muted-foreground md:tracking-[0.18em]">
+            {label}
+          </p>
+          <p className="mt-1 truncate text-ms-xl font-semibold tabular-nums md:text-ms-2xl">
+            {value.toLocaleString("id-ID")}
+          </p>
+          {hint && (
+            <p className="mt-0.5 hidden text-ms-2xs leading-tight text-muted-foreground md:block">
+              {hint}
+            </p>
+          )}
+        </div>
+        <span
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ${map[tone]} md:h-10 md:w-10`}
+          aria-hidden
+        >
+          <Icon className="h-4 w-4 md:h-[18px] md:w-[18px]" />
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function EcerPage() {
   const search = Route.useSearch();
@@ -61,12 +241,21 @@ function EcerPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
+  // Ambil `send=1` sekali saat mount. URL sync effect di bawah akan
+  // menghapus flag dari URL setelah render pertama, jadi kita simpan di
+  // state agar TitleDetailView bisa mengonsumsinya walau URL sudah bersih.
+  const [pendingAutoSend, setPendingAutoSend] = useState(search.send === "1");
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
   // Membuat judul lain untuk item tertentu langsung dari halaman detail.
   const [creatingTitleForItem, setCreatingTitleForItem] = useState<WarehouseItem | null>(null);
   // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
   const [creatingProduct, setCreatingProduct] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  // Read-only aggregate untuk kartu ringkasan (Menunggu / Berjalan / Selesai).
+  // Bukan business logic baru — hanya count per title dari tabel yang sama
+  // dengan yang sudah dipakai TitleCard.
+  const [prepStats, setPrepStats] = useState<Record<string, { total: number; sold: number }>>({});
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
@@ -95,7 +284,11 @@ function EcerPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      const { data: sess, error: sessErr } = await withPlainTimeout(
+        supabase.auth.getSession(),
+        "ecer-session",
+        3_000,
+      );
       if (sessErr) {
         setLoadError({ source: "auth.getSession", message: sessErr.message, diagnosis: "Gagal membaca sesi login dari browser." });
         setLoading(false); return;
@@ -109,9 +302,23 @@ function EcerPage() {
         setLoading(false); return;
       }
       const [wi, et] = await Promise.all([
-        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").order("name"),
+        withSupabaseQueryTimeout(
+          (signal) => supabase
+            .from("warehouse_items")
+            .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size")
+            .order("name")
+            .abortSignal(signal),
+          "ecer-warehouse_items",
+        ),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
+        withSupabaseQueryTimeout<SupabaseQueryResult<EcerTitle[]>>(
+          (signal) => (supabase.from as any)("ecer_titles")
+            .select("*")
+            .order("position")
+            .order("created_at")
+            .abortSignal(signal),
+          "ecer_titles",
+        ),
       ]);
       if (wi.error) {
         const e = wi.error as { code?: string; message: string; hint?: string; details?: string };
@@ -133,6 +340,32 @@ function EcerPage() {
       }
       setItems((wi.data ?? []) as WarehouseItem[]);
       setTitles((et.data ?? []) as EcerTitle[]);
+      // Ambil ringkasan penyiapan (per-title) untuk kartu ringkasan.
+      // Non-blocking: gagal → biarkan kosong, tidak memengaruhi alur utama.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pr = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ title_id: string; sold_at: string | null }>>>(
+          (signal) => (supabase.from as any)("ecer_preparations")
+            // L1: batas atas defensif — ringkasan per-title cukup dengan
+            // sampel besar tetapi bounded agar query tidak balloon untuk
+            // dataset lama.
+            .select("title_id, sold_at")
+            .order("created_at", { ascending: false })
+            .limit(5000)
+            .abortSignal(signal),
+          "ecer_preparations_stats",
+        );
+        if (!pr.error && Array.isArray(pr.data)) {
+          const acc: Record<string, { total: number; sold: number }> = {};
+          for (const row of pr.data as Array<{ title_id: string; sold_at: string | null }>) {
+            const s = acc[row.title_id] ?? { total: 0, sold: 0 };
+            s.total += 1;
+            if (row.sold_at) s.sold += 1;
+            acc[row.title_id] = s;
+          }
+          setPrepStats(acc);
+        }
+      } catch { /* diamkan — kartu ringkasan default 0 */ }
     } catch (e) {
       const err = e as { message?: string; status?: number; code?: string; name?: string };
       setLoadError({
@@ -153,10 +386,15 @@ function EcerPage() {
   useEffect(() => {
     void router.navigate({
       to: "/ecer",
-      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined },
+      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined, send: undefined },
       replace: true,
     });
-  }, [selectedItemId, selectedTitleId, router]);
+    // M11: `router` sengaja tidak masuk deps. Instance `router` bisa
+    // berubah rujukan pada beberapa versi TanStack Router (mis. saat
+    // route context di-invalidate) dan menyebabkan effect ini re-fire
+    // tanpa perubahan seleksi → loop `navigate({ replace: true })`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedItemId, selectedTitleId]);
 
   // Persist selected warehouse item so other surfaces (beranda) can sync filter
   useEffect(() => {
@@ -217,33 +455,29 @@ function EcerPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
-      </div>
-    );
+    return <EcerLoadingSkeleton />;
   }
 
   if (loadError && items.length === 0 && titles.length === 0) {
     const navOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     return (
-      <div className="mx-auto max-w-lg p-4 sm:p-6">
-        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5">
-          <div className="mb-3 flex items-start gap-3">
+      <div className="mx-auto max-w-lg p-ms-4 sm:p-ms-6">
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-ms-5">
+          <div className="mb-3 flex items-start gap-ms-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Sumber: <code className="rounded bg-muted px-1 py-0.5">{loadError.source}</code></div>
+              <div className="text-ms-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
+              <div className="mt-0.5 text-ms-xs text-muted-foreground">Sumber: <code className="rounded bg-muted px-1 py-0.5">{loadError.source}</code></div>
             </div>
           </div>
 
           {loadError.diagnosis && (
-            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-xs leading-snug text-amber-700 dark:text-amber-400">
+            <div className="mb-3 rounded-md border border-warning/40 bg-warning/5 p-ms-2.5 text-ms-xs leading-snug text-warning dark:text-warning">
               <b>Kemungkinan penyebab:</b> {loadError.diagnosis}
             </div>
           )}
 
-          <div className="space-y-1.5 rounded-md border bg-background/60 p-2.5 text-[11px] leading-snug">
+          <div className="space-y-1.5 rounded-md border bg-background/60 p-ms-2.5 text-ms-2xs leading-snug">
             <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
             {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
             {loadError.status !== undefined && <div><span className="text-muted-foreground">HTTP:</span> <span className="font-mono">{String(loadError.status)}</span></div>}
@@ -252,7 +486,7 @@ function EcerPage() {
             <div><span className="text-muted-foreground">Jaringan:</span> <span className="font-mono">{navOnline ? "online" : "offline"}</span></div>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-ms-2">
             <Button size="sm" onClick={() => void loadAll()}>
               <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
             </Button>
@@ -279,6 +513,8 @@ function EcerPage() {
           onTitleUpdated={refetchTitles}
           onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
           onCreateProduct={() => setCreatingProduct(true)}
+          autoSend={pendingAutoSend}
+          onAutoSendConsumed={() => setPendingAutoSend(false)}
         />
         {creatingTitleForItem && (
           <TitleFormDialog
@@ -311,53 +547,173 @@ function EcerPage() {
     );
   }
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
-        <Scale className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Penyiapan Ecer</h1>
-      </div>
-      <p className="text-xs leading-snug text-muted-foreground">
-        Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambahkan kotak-kotak penyiapan
-        berisi foto + lokasi + berat aktual yang ditimbang. Stok produk otomatis berkurang setiap penyiapan disimpan.
-      </p>
+  const q = productSearch.trim().toLowerCase();
+  const filteredItems = q
+    ? items.filter((it) =>
+        (it.name || "").toLowerCase().includes(q) ||
+        (it.category || "").toLowerCase().includes(q),
+      )
+    : items;
 
-      <div>
-        <Label className="text-xs">Pilih produk</Label>
-        <select
-          value={selectedItemId ?? ""}
-          onChange={(e) => { setSelectedItemId(e.target.value || undefined); setSelectedTitleId(undefined); }}
-          className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
-        >
-          <option value="">— Pilih produk —</option>
-          {items.map((it) => (
-            <option key={it.id} value={it.id}>
-              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
-            </option>
-          ))}
-        </select>
+  const totalTitles = titles.length;
+
+  // Ringkasan status Judul Ecer (indikatif, dari prepStats).
+  //  - Siap    : ada penyiapan, semua sudah terkirim (sold_at != null)
+  //  - Berjalan: ada penyiapan, sebagian belum terkirim
+  //  - Menunggu: belum ada penyiapan sama sekali
+  //  - Selesai : sama dengan "Siap" (semua sold) — mengikuti label yang diminta
+  let readyCount = 0;
+  let inProgressCount = 0;
+  let waitingCount = 0;
+  for (const t of titles) {
+    const s = prepStats[t.id];
+    if (!s || s.total === 0) waitingCount += 1;
+    else if (s.sold >= s.total) readyCount += 1;
+    else inProgressCount += 1;
+  }
+
+  return (
+    <div className="mx-auto w-full max-w-4xl space-ms-4 px-ms-4 py-ms-4 sm:space-ms-5 sm:px-ms-6 sm:py-ms-6">
+      {/* Hero header */}
+      <section aria-labelledby="ecer-heading" className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm sm:p-ms-5">
+        <div className="flex items-start justify-between gap-ms-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 inline-flex items-center gap-ms-1.5 rounded-full border bg-background/70 px-ms-2.5 py-0.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground backdrop-blur">
+              <Sparkles className="h-3 w-3 text-primary" /> Modul Penyiapan
+            </div>
+            <h1 id="ecer-heading" className="flex items-center gap-ms-2 text-ms-lg font-bold tracking-tight sm:text-ms-xl">
+              <Scale className="h-5 w-5 text-primary" /> Penyiapan Ecer
+            </h1>
+            <p className="mt-1 max-w-xl text-ms-2xs leading-snug text-muted-foreground sm:text-ms-xs">
+              Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambah kotak penyiapan
+              berisi foto + lokasi + berat aktual. Stok produk otomatis berkurang setiap penyiapan disimpan.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setCreatingProduct(true)} className="shrink-0 gap-ms-1" aria-label="Tambah produk gudang baru">
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Produk baru</span>
+          </Button>
+        </div>
+      </section>
+
+      <PendingVerificationSection />
+
+      {/* Summary cards — Ready / In Progress / Waiting / Completed */}
+      <section aria-label="Ringkasan Judul Ecer" className="grid grid-cols-2 gap-ms-2.5 md:grid-cols-4">
+        <EcerSummaryCard
+          icon={LayoutGrid}
+          label="Total Judul"
+          value={totalTitles}
+          tone="primary"
+        />
+        <EcerSummaryCard
+          icon={Clock}
+          label="Menunggu"
+          value={waitingCount}
+          tone="warning"
+          hint="Belum ada penyiapan"
+        />
+        <EcerSummaryCard
+          icon={RefreshCw}
+          label="Berjalan"
+          value={inProgressCount}
+          tone="info"
+          hint="Sebagian sudah disiapkan"
+        />
+        <EcerSummaryCard
+          icon={CheckCircle2}
+          label="Selesai"
+          value={readyCount}
+          tone="success"
+          hint="Semua sudah terkirim"
+        />
+      </section>
+
+      {/* Product picker */}
+      <div className="rounded-xl border bg-card p-ms-3 shadow-sm sm:p-ms-4">
+        <div className="flex items-center justify-between gap-ms-2">
+          <Label className="flex items-center gap-ms-1.5 text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <PackageSearch className="h-3.5 w-3.5" /> Pilih produk
+          </Label>
+          {q && (
+            <span className="text-ms-2xs text-muted-foreground">
+              {filteredItems.length} / {items.length}
+            </span>
+          )}
+        </div>
+        <div className="mt-2 grid gap-ms-2 sm:grid-cols-[1fr_1.4fr]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              placeholder="Cari produk / kategori…"
+              className="h-10 w-full rounded-md border bg-background pl-8 pr-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+          <select
+            value={selectedItemId ?? ""}
+            onChange={(e) => { setSelectedItemId(e.target.value || undefined); setSelectedTitleId(undefined); }}
+            className="h-10 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">— Pilih produk —</option>
+            {filteredItems.map((it) => (
+              <option key={it.id} value={it.id}>
+                {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
+              </option>
+            ))}
+          </select>
+        </div>
+        {items.length === 0 && (
+          <div className="mt-3 rounded-lg border border-dashed p-ms-4 text-center text-ms-xs text-muted-foreground">
+            <Package className="mx-auto mb-1.5 h-6 w-6 opacity-60" />
+            Belum ada produk gudang. Tambahkan produk untuk mulai membuat judul ecer.
+          </div>
+        )}
       </div>
 
       {selectedItem && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <div>
-              <CardTitle className="text-base">{selectedItem.name}</CardTitle>
-              <div className="text-xs text-muted-foreground">
-                {selectedItem.category ?? "—"} · stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}
+        <Card className="overflow-hidden border shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between gap-ms-2 space-y-0 border-b bg-muted/30 pb-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-ms-1.5">
+                <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Package className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <CardTitle className="truncate text-ms-base">{selectedItem.name}</CardTitle>
+                  <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
+                    {selectedItem.category && (
+                      <span className="rounded-full bg-background px-1.5 py-0.5 ring-1 ring-inset ring-border">
+                        {selectedItem.category}
+                      </span>
+                    )}
+                    <span>stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <Button size="sm" onClick={() => setCreatingTitle(true)}>
+            <Button size="sm" onClick={() => setCreatingTitle(true)} className="shrink-0 gap-ms-1">
               <Plus className="h-4 w-4" /> Judul baru
             </Button>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-ms-2 pt-3">
             {titlesForItem.length === 0 ? (
-              <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-                Belum ada Judul Ecer. Buat satu untuk mulai mencatat penyiapan ecer.
+              <div className="flex flex-col items-center gap-ms-2 rounded-lg border border-dashed p-ms-6 text-center">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <LayoutGrid className="h-5 w-5" />
+                </span>
+                <div className="text-ms-sm font-medium">Belum ada Judul Ecer</div>
+                <div className="max-w-xs text-ms-2xs text-muted-foreground">
+                  Buat judul pertama untuk mulai mencatat kotak penyiapan produk ini.
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setCreatingTitle(true)} className="mt-1 gap-ms-1">
+                  <Plus className="h-3.5 w-3.5" /> Buat Judul Ecer
+                </Button>
               </div>
             ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-ms-2 sm:grid-cols-2">
                 {titlesForItem.map((t) => (
                   <TitleCard
                     key={t.id}
@@ -367,12 +723,25 @@ function EcerPage() {
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
                     highlighted={highlightTitleId === t.id}
+                    stat={prepStats[t.id]}
                   />
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+      )}
+
+      {!selectedItem && items.length > 0 && (
+        <div className="flex flex-col items-center gap-ms-2 rounded-xl border border-dashed bg-card/50 p-8 text-center">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <PackageSearch className="h-6 w-6" />
+          </span>
+          <div className="text-ms-sm font-medium">Pilih produk untuk mulai</div>
+          <div className="max-w-sm text-ms-2xs text-muted-foreground">
+            Cari atau pilih produk gudang di atas untuk melihat dan mengelola Judul Ecer yang terkait.
+          </div>
+        </div>
       )}
 
       {(creatingTitle || editingTitle) && selectedItem && (
@@ -421,9 +790,10 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: {
+function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted, stat }: {
   title: EcerTitle; itemName?: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
+  stat?: { total: number; sold: number };
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
@@ -448,6 +818,21 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
     onDeleted();
   }
 
+  // Prefer aggregate `stat` (dari parent), fallback ke head-count lama.
+  const c = stat?.total ?? count ?? 0;
+  const soldC = stat?.sold ?? 0;
+  const isLoadingCount = stat == null && count === null;
+  const status = isLoadingCount
+    ? { label: "…", cls: "bg-muted text-muted-foreground" }
+    : c === 0
+      ? { label: "Menunggu", cls: "bg-warning/15 text-warning dark:text-warning" }
+      : soldC >= c
+        ? { label: "Selesai", cls: "bg-success/15 text-success dark:text-success" }
+        : { label: "Berjalan", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-400" };
+  // Progress berbasis penyiapan yang sudah terkirim; fallback: skala 10 penyiapan.
+  const progress = c > 0 && stat
+    ? Math.min(100, Math.round((soldC / c) * 100))
+    : Math.min(100, Math.round((c / 10) * 100));
   return (
     <div
       role="button"
@@ -455,20 +840,49 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       data-title-id={title.id}
-      className={`cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-card p-ms-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md active:translate-y-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
-      <div className="text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
-      <div className="mt-1 text-xs text-muted-foreground">
-        Target: <b>{title.target_grams} {displayUnit(itemName, title.unit_label)}</b> · {count ?? "…"} penyiapan
+      <div className="flex items-start justify-between gap-ms-2">
+        <div className="min-w-0 flex-1">
+          <div className="text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs text-muted-foreground">
+            <span className="inline-flex items-center gap-ms-1 rounded-md bg-muted px-1.5 py-0.5 font-medium tabular-nums text-foreground">
+              <Scale className="h-3 w-3" /> {fmtWeight(Number(title.target_grams), displayUnit(itemName, title.unit_label))}
+            </span>
+            <span className="inline-flex items-center gap-ms-1 tabular-nums">
+              <Hash className="h-3 w-3" />
+              {isLoadingCount ? "…" : stat ? `${soldC}/${c} terkirim` : `${c} penyiapan`}
+            </span>
+          </div>
+        </div>
+        <span className={`inline-flex h-5 shrink-0 items-center rounded-full px-ms-2 text-ms-2xs font-semibold uppercase tracking-wide ${status.cls}`}>
+          {status.label}
+        </span>
       </div>
-      {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
-      <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-        <span className="text-[11px] leading-snug text-muted-foreground">Tap untuk buka penyimpanan →</span>
-        <div className="flex gap-1">
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+
+      {title.note && (
+        <div className="mt-2 line-clamp-2 rounded-md bg-muted/40 px-ms-2 py-1 text-ms-2xs leading-snug text-muted-foreground">
+          {title.note}
+        </div>
+      )}
+
+      {/* Progress indicator */}
+      <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-ms-2 border-t pt-2">
+        <span className="text-ms-2xs leading-snug text-muted-foreground group-hover:text-primary">
+          Tap untuk buka →
+        </span>
+        <div className="flex gap-ms-1">
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }} aria-label="Edit judul">
             <Edit3 className="h-3.5 w-3.5" />
           </Button>
-          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); void onDelete(); }}>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); void onDelete(); }} aria-label="Hapus judul">
             <Trash2 className="h-3.5 w-3.5 text-destructive" />
           </Button>
         </div>
@@ -486,6 +900,10 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   const [unit, setUnit] = useState<"g" | "gram">((existing?.unit_label as "g" | "gram") ?? "gram");
   const [note, setNote] = useState(existing?.note ?? "");
   const [busy, setBusy] = useState(false);
+  // Ikut mode layout tersimpan (key `readyEcer`) — di mode `compact`
+  // pasangan input menumpuk penuh, selebihnya responsif 1→2 kolom.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama wajib diisi"); return; }
@@ -514,9 +932,9 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
           <DialogTitle>{existing ? "Edit judul ecer" : "Judul ecer baru"}</DialogTitle>
           <DialogDescription>Produk: <b>{item.name}</b></DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <Label className="text-xs">Nama judul</Label>
+            <Label className="text-ms-xs">Nama judul</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -528,17 +946,17 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
               inputMode="text"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={pairClass}>
             <div>
-              <Label className="text-xs">Target berat</Label>
-              <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
+              <Label className="text-ms-xs">Target berat</Label>
+              <NumericTextField value={target} onValueChange={setTarget} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
             </div>
             <div>
-              <Label className="text-xs">Satuan</Label>
+              <Label className="text-ms-xs">Satuan</Label>
               <div className="mt-1 inline-flex h-9 rounded-md border bg-background p-0.5">
                 {(["g", "gram"] as const).map((u) => (
                   <button key={u} onClick={() => setUnit(u)}
-                    className={`h-full rounded px-3 text-xs font-medium ${unit === u ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+                    className={`h-full rounded px-ms-3 text-ms-xs font-medium ${unit === u ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
                     {u}
                   </button>
                 ))}
@@ -546,7 +964,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
             </div>
           </div>
           <div>
-            <Label className="text-xs">Keterangan (opsional)</Label>
+            <Label className="text-ms-xs">Keterangan (opsional)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Peraturan penyiapan / catatan…" rows={2} />
           </div>
         </div>
@@ -559,7 +977,14 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   );
 }
 
+// AutoSendConfirmDialog + AutoSendCancelReasonDialog dipindah ke
+// `@/components/ecer/AutoSendDialogs` supaya bisa dipakai harness e2e
+// (`/lovable/visual/auto-send-cancel`) tanpa menduplikasi implementasi.
+
 // ---- Hero: branded receipt-style header for a title ----
+// shortenUrlForToast dipindah ke src/lib/shorten-url-for-toast.ts agar
+// bisa diuji unit tanpa render route.
+
 function DetailHero({
   item, title, preps, onAdd, onCreateTitle, onCreateProduct, onScrollToWorker,
 }: {
@@ -571,6 +996,7 @@ function DetailHero({
   onCreateProduct?: () => void;
   onScrollToWorker: () => void;
 }) {
+  const isAdmin = useIsAdmin();
   const unit = displayUnit(item.name, title.unit_label);
   const totalActual = preps.reduce((s, p) => s + (Number(p.actual_grams) || 0), 0);
   const targetTotal = (Number(title.target_grams) || 0) * preps.length;
@@ -581,70 +1007,217 @@ function DetailHero({
   const fmtTime = (d: Date) => d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
   const ref = title.id.replace(/-/g, "").slice(0, 16).toUpperCase();
 
+  // Permalink Penyiapan pegawai untuk judul ini. Dipakai admin untuk
+  // membagikan link prefilled (mis. lewat WhatsApp ke pegawai lain / device
+  // admin) tanpa harus menavigasi manual. Origin diambil dari window agar
+  // otomatis cocok dengan custom domain/preview.
+  const onCopyPrepLink = async () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+    // Pratinjau URL yang benar-benar masuk clipboard: strip protokol supaya
+    // ringkas di layar HP, dan potong tengah pakai ellipsis Unicode jika
+    // lebih panjang dari 56 char sehingga host + akhir query tetap
+    // terlihat (paling informatif untuk verifikasi cepat). Bila clipboard
+    // ditolak, helper menampilkan toast dengan tombol "Salin manual"
+    // (window.prompt) + URL penuh sebagai fallback.
+    await copyUrlWithToast(url, "Link Penyiapan pegawai disalin");
+  };
+
+  const [qrOpen, setQrOpen] = useState(false);
+  // Permalink admin (untuk Salin link Shift+L). QR di dialog di bawah
+  // TIDAK memakai URL ini — QR harus membuka portal pegawai (bukan aplikasi
+  // admin), lengkap dengan PIN baru tiap kali dibuka.
+  const prepPermalink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`
+      : `/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+
+  // Sesi worker portal untuk QR: setiap kali dialog dibuka kita mint task
+  // baru (share_token + PIN baru) yang sudah prefill item-nya ke judul ini
+  // — supaya foto pegawai otomatis masuk folder ecer yang benar (trigger
+  // prep_task_items_resolve_ecer_title mengunci ecer_title_id dari
+  // (warehouse_item_id, qty, unit)).
+  const [workerSession, setWorkerSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [workerBusy, setWorkerBusy] = useState(false);
+  const [workerErr, setWorkerErr] = useState<string | null>(null);
+
+  const mintWorkerSession = async () => {
+    setWorkerBusy(true);
+    setWorkerErr(null);
+    try {
+      const pin = genPin();
+      const token = genShareToken();
+      const unitLabel = title.unit_label ?? null;
+      const targetGrams = Number(title.target_grams) || 0;
+      const payload = title.warehouse_item_id
+        ? [{
+            name: `${item.name} — ${title.name}`,
+            category: null,
+            qty_requested: targetGrams,
+            unit_label: unitLabel,
+            ref_photo_path: null,
+            warehouse_item_id: title.warehouse_item_id,
+            ecer_title_id: title.id,
+          }]
+        : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+        _title: `Ecer: ${title.name}`,
+        _note: `Penyiapan ${item.name} — ${title.name} (${targetGrams} ${unitLabel ?? ""}). Foto masuk folder ecer otomatis.`,
+        _pin: pin,
+        _share_token: token,
+        _items: payload,
+      });
+      if (rpcErr) throw rpcErr;
+      setWorkerSession({ url: publicTaskUrl(token, pin), pin, token });
+    } catch (e) {
+      setWorkerErr((e as Error).message || "Gagal membuat sesi pegawai");
+      setWorkerSession(null);
+    } finally {
+      setWorkerBusy(false);
+    }
+  };
+
+  // Setiap kali dialog dibuka: mint sesi baru (PIN baru). Saat ditutup:
+  // kosongkan sesi supaya buka lagi = generate ulang.
+  useEffect(() => {
+    if (!qrOpen) {
+      setWorkerSession(null);
+      setWorkerErr(null);
+      return;
+    }
+    void mintWorkerSession();
+    // Sengaja tidak memasukkan mintWorkerSession ke deps (stable-enough,
+    // hanya bergantung title.id yang tidak berubah selama komponen mount).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrOpen]);
+  // Tooltip pratinjau URL yang akan disalin. Native `title=` bekerja di
+  // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
+  // supaya admin bisa memastikan link yang benar sebelum menekan.
+  const copyLinkTooltip = `Salin permalink Penyiapan pegawai (Shift+L):\n${prepPermalink}`;
+  // Label a11y untuk tombol Salin link. Screen reader membaca aria-label
+  // apa adanya, jadi kita ejakan pintasan supaya jelas ("Shift L" bukan
+  // "Shift plus L"). `aria-keyshortcuts` mengikuti spec WAI-ARIA sehingga
+  // AT modern juga bisa mengumumkannya lewat kanal pintasan terpisah.
+  const copyLinkAriaLabel =
+    "Salin permalink Penyiapan pegawai untuk judul ini — pintasan Shift L";
+  const navigate = useNavigate();
+
+  // Shortcut keyboard: Shift + L saat halaman folder ecer terbuka menyalin
+  // permalink Penyiapan pegawai tanpa harus menyentuh tombol. Aktif hanya
+  // untuk admin dan hanya jika fokus tidak sedang di input/textarea/select/
+  // contenteditable — supaya tidak menabrak pengetikan (mis. edit judul).
+  // Modifier lain (Ctrl/Meta/Alt) diblok agar tidak bentrok dengan shortcut
+  // browser (Cmd+L, Ctrl+Shift+L, dst).
+  useEffect(() => {
+    if (!isAdmin) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!e.shiftKey) return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (t?.isContentEditable) return;
+      if (e.key === "L" || e.key === "l") {
+        e.preventDefault();
+        void onCopyPrepLink();
+        return;
+      }
+      // Shift+Q: toggle dialog QR permalink Penyiapan pegawai. Toggle
+      // (bukan sekadar open) supaya bisa tutup lagi lewat keyboard tanpa
+      // pindah tangan ke mouse.
+      if (e.key === "Q" || e.key === "q") {
+        e.preventDefault();
+        setQrOpen((v) => !v);
+        return;
+      }
+      // Shift+P: buka halaman Tugas Baru dengan prefill judul saat ini.
+      // Navigasi client-side (bukan window.location) supaya state router
+      // dan cache TanStack Query tetap utuh.
+      if (e.key === "P" || e.key === "p") {
+        e.preventDefault();
+        void navigate({ to: "/tugas-baru", search: { title_id: title.id } });
+        return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // onCopyPrepLink stable-enough: hanya bergantung title.id yang tetap
+    // selama komponen mount. Rebind saat admin flag/title berubah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, title.id]);
+
   return (
-    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
-      {/* Brand strip */}
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-4 pb-4 pt-4 text-primary-foreground sm:px-5 sm:pb-6 sm:pt-5">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+    <div className="overflow-hidden rounded-3xl border bg-card shadow-[0_18px_40px_-24px_rgba(0,0,0,0.55)]">
+      {/* Brand strip — gold plate */}
+      <div className="relative bg-gradient-to-br from-primary/90 via-primary to-primary/70 px-ms-4 pb-8 pt-4 text-primary-foreground sm:px-ms-5 sm:pt-5">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_100%_0%,rgba(255,255,255,0.28),transparent_65%)]" />
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-ms-1.5 text-ms-2xs font-bold uppercase leading-none tracking-[0.2em] text-primary-foreground/75">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl">{title.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-none text-primary-foreground/85">
-              <span
-                className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm"
-                title={item.name}
-              >
-                <Package className="h-3 w-3 shrink-0" />
-                <span className="truncate">{item.name}</span>
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm">
-                Target <b className="ml-0.5">{title.target_grams} {unit}</b>
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
-                <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
-              </span>
-              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/10 px-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
-                <Hash className="h-3 w-3 shrink-0" /> {ref}
-              </span>
-            </div>
+            <h2 className="mt-1.5 break-words text-ms-lg font-extrabold leading-tight tracking-tight sm:text-ms-xl">{title.name}</h2>
           </div>
-          <div className="hidden shrink-0 text-right sm:block">
-            <div className="text-[11px] uppercase leading-snug tracking-wider text-primary-foreground/70">No. Referensi</div>
-            <div className="font-mono text-[11px] leading-snug text-primary-foreground/95">{ref}</div>
-          </div>
+          <span className="shrink-0 rounded-full border border-primary-foreground/25 bg-primary-foreground/10 px-ms-2 py-1 font-mono text-ms-2xs font-semibold leading-none backdrop-blur-sm">
+            #{ref}
+          </span>
+        </div>
+        <div className="relative mt-ms-3 flex flex-wrap items-center gap-ms-1.5 text-ms-2xs leading-none">
+          <span
+            className="inline-flex h-6 min-w-0 max-w-full items-center gap-ms-1 rounded-md bg-primary-foreground/90 px-ms-2 font-bold leading-none text-primary shadow-sm"
+            title={item.name}
+          >
+            <Package className="h-3 w-3 shrink-0" />
+            <span className="truncate">{item.name}</span>
+          </span>
+          <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-md bg-primary-foreground/15 px-ms-2 font-semibold leading-none ring-1 ring-inset ring-primary-foreground/20">
+            Target <b className="ml-0.5">{fmtWeight(Number(title.target_grams), unit)}</b>
+          </span>
+          <span className="inline-flex h-6 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-md bg-success px-ms-2 font-bold uppercase tracking-wider leading-none text-success-foreground shadow-sm">
+            <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
+          </span>
         </div>
       </div>
 
       {/* Detail rows */}
-      <div className="divide-y bg-card px-4 sm:px-5">
-        <DetailRow icon={<Package className="h-3.5 w-3.5" />} label="Produk gudang"
-          value={<span className="font-semibold">{item.name}</span>}
+      <div className="relative z-10 -mt-5 space-y-ms-4 rounded-t-3xl border-t bg-card px-ms-4 pb-ms-4 pt-ms-4 sm:px-ms-5">
+        <DetailRow icon={<Package className="h-4 w-4" />} label="Produk gudang"
+          value={item.name}
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
         />
-        <DetailRow icon={<Scale className="h-3.5 w-3.5" />} label="Target per kotak"
-          value={<span className="font-semibold">{title.target_grams} {unit}</span>}
-          sub={preps.length > 0 ? `Total target ${targetTotal} ${unit} · aktual ${totalActual} ${unit}` : undefined}
+        <DetailRow icon={<Scale className="h-4 w-4" />} label="Target per kotak"
+          value={fmtWeight(Number(title.target_grams), unit)}
+          accent
+          sub={preps.length > 0 ? `Total ${fmtWeight(targetTotal, unit)} · aktual ${fmtWeight(totalActual, unit)}` : undefined}
         />
-        <DetailRow icon={<Boxes className="h-3.5 w-3.5" />} label="Jumlah penyiapan"
-          value={<span className="font-semibold">{preps.length} kotak</span>}
-          sub={preps.length > 0 ? `${progress}% dari target` : "Belum ada kotak"}
+        {/* `preps` di header ini sudah difilter aktif (lihat pemanggilan
+            `<Header preps={active} />` di komponen induk). Label
+            "kotak siap" wajib konsisten dengan badge di ReadyEcerSection
+            (juga bersumber `countActiveByTitle`) supaya angka 0 tidak
+            bermakna berbeda di list vs detail. */}
+        <DetailRow icon={<Boxes className="h-4 w-4" />} label="Jumlah penyiapan"
+          value={`${preps.length} kotak siap`}
+          badge={preps.length > 0 ? `${progress}% dari target` : undefined}
+          sub={preps.length > 0 ? undefined : "Belum ada kotak siap"}
         />
-        {lastDate && (
-          <>
-            <DetailRow icon={<Calendar className="h-3.5 w-3.5" />} label="Tanggal terakhir"
-              value={<span className="font-semibold">{fmtDate(lastDate)}</span>} />
-            <DetailRow icon={<Clock className="h-3.5 w-3.5" />} label="Jam terakhir"
-              value={<span className="font-semibold">{fmtTime(lastDate)}</span>} />
-          </>
-        )}
-        <DetailRow icon={<Hash className="h-3.5 w-3.5" />} label="ID judul"
-          value={<span className="font-mono text-xs">{ref}</span>} />
+
+        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+        <div className="grid grid-cols-2 gap-ms-3">
+          {lastDate && (
+            <>
+              <MiniStat icon={<Calendar className="h-3.5 w-3.5" />} label="Tanggal terakhir" value={fmtDate(lastDate)} />
+              <MiniStat icon={<Clock className="h-3.5 w-3.5" />} label="Jam terakhir" value={fmtTime(lastDate)} />
+            </>
+          )}
+          <MiniStat icon={<Hash className="h-3.5 w-3.5" />} label="ID judul" value={ref} mono />
+        </div>
+
         {title.note && (
-          <div className="py-2.5">
+          <div className="rounded-2xl border bg-muted/30 p-ms-3">
             <EcerLabel as="div">Catatan</EcerLabel>
             <EcerBody as="div" className="mt-1.5 whitespace-pre-wrap">{title.note}</EcerBody>
           </div>
@@ -653,53 +1226,82 @@ function DetailHero({
 
       {/* Action footer — bar 4 tombol ramah jempol (pill aktif lega) */}
       <div
-        className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-5 sm:py-3 sm:shadow-none sm:backdrop-blur-0"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+        className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-ms-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-ms-5 sm:py-ms-3 sm:shadow-none sm:backdrop-blur-0"
+        style={{ paddingBottom: "calc(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)) + 0.5rem)" }}
       >
-        <div className="hidden text-[11px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
+        <div className="hidden text-ms-2xs uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        <div className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
-          {onCreateTitle && (
-            <button
-              type="button"
-              onClick={onCreateTitle}
-              title="Judul ecer baru untuk produk yang sama"
-              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <Plus className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none tracking-tight">Judul</span>
-            </button>
-          )}
-          {onCreateProduct && (
-            <button
-              type="button"
-              onClick={onCreateProduct}
-              title="Buat produk gudang baru lalu langsung dibuatkan judulnya"
-              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-            >
-              <Package className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none tracking-tight">Produk</span>
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={onScrollToWorker}
-            title="Lihat kiriman pegawai untuk judul ini"
-            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
-          >
-            <Users className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
-          </button>
+        {/* Mobile: maksimal 4 slot — slot ke-4 adalah menu "Lainnya".
+            Tombol yang jarang dipakai (Judul, Produk, Salin link, QR) disembunyikan
+            di dropdown supaya bar bawah tidak padat & label tidak terpotong. */}
+        <div className="grid grid-cols-4 gap-ms-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-ms-1.5">
           <button
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-success p-ms-2 text-success-foreground shadow-[0_6px_16px_-8px_color-mix(in_oklab,var(--success)_70%,transparent)] transition-all active:scale-95 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-semibold leading-none tracking-tight">Penyiapan</span>
+            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Tambah</span>
           </button>
+          <button
+            type="button"
+            onClick={onScrollToWorker}
+            title="Lihat kiriman pegawai untuk judul ini"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-muted/40 p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/70 hover:text-foreground sm:hidden"
+          >
+            <Users className="h-5 w-5" aria-hidden />
+            <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Pegawai</span>
+          </button>
+          {isAdmin ? (
+            <Link
+              to="/tugas-baru"
+              search={{ title_id: title.id }}
+              title="Buat perintah penyiapan untuk pegawai (Shift+P)"
+              aria-label="Buat perintah penyiapan untuk pegawai"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl border border-primary/25 bg-primary/10 p-ms-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
+            >
+              <UserPlus className="h-5 w-5" aria-hidden />
+              <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Perintah</span>
+            </Link>
+          ) : (
+            <span className="hidden sm:block" />
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title="Opsi lainnya"
+                className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-ms-1 rounded-2xl bg-muted/40 p-ms-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/70 hover:text-foreground sm:hidden"
+              >
+                <MoreHorizontal className="h-5 w-5" aria-hidden />
+                <span className="max-w-full truncate text-ms-2xs font-semibold leading-none tracking-tight">Lainnya</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {onCreateTitle && (
+                <DropdownMenuItem onSelect={onCreateTitle}>
+                  <Plus className="mr-2 h-4 w-4" /> Judul ecer baru
+                </DropdownMenuItem>
+              )}
+              {onCreateProduct && (
+                <DropdownMenuItem onSelect={onCreateProduct}>
+                  <Package className="mr-2 h-4 w-4" /> Produk gudang baru
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <DropdownMenuItem onSelect={onCopyPrepLink}>
+                  <Link2 className="mr-2 h-4 w-4" /> Salin link pegawai
+                </DropdownMenuItem>
+              )}
+              {isAdmin && (
+                <DropdownMenuItem onSelect={() => setQrOpen(true)}>
+                  <QrCode className="mr-2 h-4 w-4" /> Tampilkan QR
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Desktop / tablet — keep richer labels */}
           {onCreateTitle && (
@@ -715,56 +1317,283 @@ function DetailHero({
           <Button size="sm" variant="outline" onClick={onScrollToWorker} title="Lihat kiriman pegawai untuk judul ini" className="hidden sm:inline-flex">
             <Users className="h-4 w-4" /> Pegawai
           </Button>
-          <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
+          {isAdmin && (
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="hidden border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary sm:inline-flex"
+              title="Buat perintah penyiapan untuk pegawai (Shift+P)"
+            >
+              <Link to="/tugas-baru" search={{ title_id: title.id }}>
+                <UserPlus className="h-4 w-4" /> Penyiapan pegawai
+              </Link>
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCopyPrepLink}
+              title={copyLinkTooltip}
+              aria-label={copyLinkAriaLabel}
+              aria-keyshortcuts="Shift+L"
+              className="hidden sm:inline-flex"
+            >
+              <Link2 className="h-4 w-4" /> Salin link
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setQrOpen(true)}
+              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
+              className="hidden sm:inline-flex"
+            >
+              <QrCode className="h-4 w-4" /> QR
+            </Button>
+          )}
+          <Button size="sm" onClick={onAdd} className="hidden bg-success hover:bg-success sm:inline-flex">
             <Plus className="h-4 w-4" /> Penyiapan
           </Button>
+        </div>
+      </div>
+      {isAdmin && (
+        <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="truncate">QR portal pegawai — {title.name}</DialogTitle>
+              <DialogDescription>
+                Pegawai memindai QR ini untuk membuka portal penyiapan (bukan aplikasi admin).
+                PIN baru dibuat setiap kali dialog dibuka atau tombol <b>Buat ulang</b> ditekan.
+              </DialogDescription>
+            </DialogHeader>
+            {workerBusy && !workerSession ? (
+              <div className="flex items-center justify-center gap-ms-2 py-8 text-ms-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Membuat sesi pegawai…
+              </div>
+            ) : workerErr ? (
+              <div className="space-ms-2">
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-3 text-ms-xs text-destructive">
+                  <div className="flex items-center gap-ms-1 font-semibold">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat sesi
+                  </div>
+                  <div className="mt-1 break-words">{workerErr}</div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => void mintWorkerSession()}>
+                  <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+                </Button>
+              </div>
+            ) : workerSession ? (
+              <div className="space-ms-3">
+                <TaskQrCode url={workerSession.url} pin={workerSession.pin} title={`Penyiapan ${title.name}`} />
+                <div>
+                  <Label className="text-ms-2xs uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                  <div className="break-all rounded-md border bg-muted/30 px-ms-2 py-1.5 text-ms-2xs font-mono">
+                    {workerSession.url}
+                  </div>
+                </div>
+                <div className="flex gap-ms-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={async () => {
+                      await copyUrlWithToast(workerSession.url, "Link pegawai disalin");
+                    }}
+                  >
+                    <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={() => void mintWorkerSession()}
+                  >
+                    <RefreshCw className={`mr-1 h-3.5 w-3.5 ${workerBusy ? "animate-spin" : ""}`} /> Buat ulang (PIN baru)
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value, sub, accent, badge }: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  accent?: boolean;
+  badge?: string;
+}) {
+  return (
+    <div className="flex items-start gap-ms-3">
+      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-muted/40 text-primary [&_svg]:h-[18px] [&_svg]:w-[18px]">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <EcerLabel as="div" className="leading-none" title={label}>
+          {label}
+        </EcerLabel>
+        <div className="mt-1 flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+          <span
+            className={
+              accent
+                ? "min-w-0 text-ms-base font-bold leading-snug text-primary [overflow-wrap:anywhere]"
+                : "min-w-0 text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
+            }
+          >
+            {value}
+          </span>
+          {badge ? (
+            <span className="shrink-0 rounded-md border border-success/30 bg-success/10 px-1.5 py-0.5 text-ms-2xs font-bold leading-none text-success">
+              {badge}
+            </span>
+          ) : sub ? (
+            <EcerMeta as="span" className="min-w-0 font-normal leading-snug">
+              {sub}
+            </EcerMeta>
+          ) : null}
+          {badge && sub ? (
+            <EcerMeta as="span" className="min-w-0 font-normal leading-snug">
+              {sub}
+            </EcerMeta>
+          ) : null}
         </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
+function MiniStat({ icon, label, value, mono }: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
-    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-2 py-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <EcerLabel className="flex min-w-0 items-center gap-1.5 leading-snug" title={label}>
-        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
-          {icon}
+    <div className="min-w-0">
+      <EcerLabel as="div" className="leading-none">{label}</EcerLabel>
+      <div className="mt-1 flex min-w-0 items-center gap-1.5 text-muted-foreground">
+        <span className="shrink-0 opacity-60 [&_svg]:h-3.5 [&_svg]:w-3.5">{icon}</span>
+        <span
+          className={`min-w-0 truncate text-ms-sm font-semibold text-foreground ${mono ? "font-mono text-ms-xs" : ""}`}
+          title={value}
+        >
+          {value}
         </span>
-        <span className="truncate">{label}</span>
-      </EcerLabel>
-      <div
-        className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
-        title={[typeof value === "string" ? value : undefined, sub].filter(Boolean).join(" · ") || undefined}
-      >
-        <span className="min-w-0 truncate [overflow-wrap:anywhere]">{value}</span>
-        {sub && (
-          <EcerMeta as="span" className="min-w-0 shrink-0 truncate whitespace-nowrap font-normal leading-snug">
-            · {sub}
-          </EcerMeta>
-        )}
       </div>
     </div>
   );
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct, autoSend, onAutoSendConsumed }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
+  autoSend?: boolean; onAutoSendConsumed?: () => void;
 }) {
   void onBack;
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [loadError, setLoadError] = useState<{ message: string; code?: string; hint?: string } | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sendOpen, setSendOpen] = useState(false);
+  const [quickSendPrep, setQuickSendPrep] = useState<EcerPreparation | null>(null);
+  // Konfirmasi auto-send: memegang daftar kotak (aktif, sudah tersaring)
+  // yang akan ikut Kirim ke pembeli. Owner harus melihat & bisa memperluas
+  // daftar sebelum menekan Lanjut ke pembayaran.
+  const [autoSendConfirm, setAutoSendConfirm] = useState<{
+    preps: EcerPreparation[];
+  } | null>(null);
+  // Estimasi harga per satuan dasar untuk item ini — diambil dari harga
+  // penjualan terakhir (`sales.price_per_base`) saat modal konfirmasi
+  // auto-send terbuka. Owner bisa melihat perkiraan total biaya SEBELUM
+  // dialog verifikasi pembayaran terbuka; kalau belum ada riwayat
+  // penjualan, baris estimasi disembunyikan.
+  const [autoSendUnitPrice, setAutoSendUnitPrice] = useState<number | null>(
+    null,
+  );
+  // Dialog "kenapa Batal?" — dibuka setelah cancel dari confirm modal
+  // atau dari SendEcerPrepsDialog. Selama state ini terisi, baris audit
+  // masih di outcome `proposed`: finalize hanya terjadi saat owner
+  // memilih alasan (Simpan alasan) atau menutup dialog (Lewati).
+  const [autoSendCancel, setAutoSendCancel] =
+    useState<AutoSendCancelState | null>(null);
+  // ID baris audit `auto_send_audit` untuk flag `send=1` yang sedang berjalan.
+  // Dipakai untuk memindahkan outcome ke `confirmed`/`cancelled` setelah
+  // dialog pembayaran ditutup, dan menjadi kunci ringkasan Riwayat.
+  const autoSendAuditIdRef = useRef<string | null>(null);
+  // Cache preps yang tersaji di modal konfirmasi — dipakai saat cancel
+  // datang dari path "closed_send_dialog" (selectedPreps sudah berubah),
+  // dan sebagai fallback ringkasan.
+  const autoSendPrepsRef = useRef<EcerPreparation[]>([]);
+  // Ringkasan auto-send terakhir yang berhasil dikonfirmasi — ditampilkan
+  // sebagai banner di atas Riwayat Terkirim setelah RPC penjualan sukses.
+  const [autoSendSummary, setAutoSendSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+  } | null>(null);
+  // Ringkasan pembatalan auto-send terakhir — banner terpisah supaya jejak
+  // "kenapa dibatalkan" ikut terlihat di halaman, bukan hanya di DB audit.
+  const [autoSendCancelSummary, setAutoSendCancelSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+    reason: string;
+    detail: string;
+    source: AutoSendCancelState["source"];
+  } | null>(null);
+  const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
+  // Dialog + progress untuk hapus massal penyiapan yang ditandai.
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false);
+  const [bulkDeleteStep, setBulkDeleteStep] = useState<"idle" | "photo" | "record" | "refresh" | "done">("idle");
+  const [bulkDeleteIndex, setBulkDeleteIndex] = useState(0);
+  const [bulkDeleteTotal, setBulkDeleteTotal] = useState(0);
+
+
+  useEffect(() => {
+    void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
+      setCustomers((data ?? []) as Array<{ id: string; name: string; contact: string | null }>);
+    });
+  }, []);
 
   async function load() {
     setLoading(true);
     setLoadError(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from as any)("ecer_preparations")
-      .select("*").eq("title_id", title.id).order("created_at", { ascending: false });
+    let data: unknown[] | null = null;
+    let error: { message?: string; code?: string; hint?: string } | null = null;
+    try {
+      const res = await withSupabaseQueryTimeout<SupabaseQueryResult<EcerPreparation[]>>(
+        (signal) => (supabase.from as any)("ecer_preparations")
+          .select("*")
+          .eq("title_id", title.id)
+          .order("created_at", { ascending: false })
+          // L1: batasi baris per judul (kotak ecer). 500 jauh di atas kebutuhan
+          // operator harian (biasanya <50) dan mencegah fetch balloon jika
+          // ada penyiapan lama yang tidak dibersihkan.
+          .limit(500)
+          .abortSignal(signal),
+        "ecer_title_preparations",
+      );
+      data = (res.data ?? []) as unknown[];
+      error = res.error;
+    } catch (err) {
+      error = { message: err instanceof Error ? err.message : String(err) };
+    }
     if (error) {
       setLoadError({
         message: error.message ?? "Gagal memuat daftar penyiapan.",
@@ -781,29 +1610,217 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
 
   useEffect(() => { void load(); }, [title.id]);
 
+  // Auto-open dialog "Kirim ke pembeli" saat datang dari dashboard dengan
+  // flag `send=1`. Pilih semua kotak aktif untuk judul ini agar owner cukup
+  // konfirmasi metode bayar. Sekali dijalankan, konsumsi flag.
+  const autoSendFiredRef = useRef(false);
+  useEffect(() => {
+    if (!autoSend || autoSendFiredRef.current || loading) return;
+    // Sabuk pengaman berlapis: walau query `preps` sudah difilter
+    // `title_id=eq.title.id` server-side dan `filterActivePreps` mengunci
+    // semantik "aktif", tetap saring ulang di klien agar `send=1` MUSTAHIL
+    // memilih kotak dari judul lain, produk lain, atau kotak yang sudah
+    // ter-sold_at. Kalau ada anomali (data lintas judul / produk), gugurkan
+    // flag dan beri toast — jangan buka dialog dengan pilihan salah.
+    const rawActive = filterActivePreps(preps);
+    const mismatched = rawActive.filter(
+      (p) =>
+        p.title_id !== title.id ||
+        (p.warehouse_item_id != null && p.warehouse_item_id !== item.id),
+    );
+    const activeNow = rawActive.filter(
+      (p) =>
+        p.title_id === title.id &&
+        (p.warehouse_item_id == null || p.warehouse_item_id === item.id),
+    );
+    if (mismatched.length > 0) {
+      // Terlihat data lintas judul / produk pada state — batal auto-send
+      // supaya owner memeriksa manual. Ini seharusnya tidak pernah terjadi
+      // (query sudah di-scope), tapi kita gagal aman.
+      autoSendFiredRef.current = true;
+      // Sebutkan kotak mana yang tidak valid: tampilkan alasan
+      // (judul lain / produk lain) + ID pendek supaya owner bisa
+      // menelusuri langsung. Batasi 5 kotak agar toast tetap terbaca.
+      const details = mismatched.slice(0, 5).map((p) => {
+        const shortId = String(p.id).slice(0, 8);
+        const reasons: string[] = [];
+        if (p.title_id !== title.id) reasons.push("judul lain");
+        if (p.warehouse_item_id != null && p.warehouse_item_id !== item.id)
+          reasons.push("produk lain");
+        return `#${shortId} (${reasons.join(" & ") || "tidak cocok"})`;
+      });
+      const extra =
+        mismatched.length > 5 ? ` +${mismatched.length - 5} lainnya` : "";
+      toast.error(
+        `Batal auto-Kirim: ${mismatched.length} kotak tidak valid. Pilih manual.`,
+        { description: `Kotak: ${details.join(", ")}${extra}` },
+      );
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: mismatched.map((p) => p.id),
+        prepCount: mismatched.length,
+        totalGrams: mismatched.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+        unitLabel: title.unit_label || null,
+        outcome: "mismatched",
+        note: `mismatched: ${details.join(", ")}${extra}`,
+      });
+      onAutoSendConsumed?.();
+      return;
+    }
+    if (activeNow.length === 0) {
+      // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
+      autoSendFiredRef.current = true;
+      toast.info("Tidak ada kotak aktif untuk dikirim pada judul ini.");
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: [],
+        prepCount: 0,
+        totalGrams: 0,
+        unitLabel: title.unit_label || null,
+        outcome: "empty",
+      });
+      onAutoSendConsumed?.();
+      return;
+    }
+    autoSendFiredRef.current = true;
+    setSelectionMode(true);
+    setSelected(new Set(activeNow.map((p) => p.id)));
+    // Pangkas gate: langsung buka dialog pembayaran (SendEcerPrepsDialog).
+    // Ringkasan kotak & edit per-berat sudah tersedia di dalam wizard,
+    // jadi modal konfirmasi perantara AutoSendConfirmDialog di-skip agar
+    // alur "Verifikasi bayar" cukup 1 tap → 1 modal → 1 Kirim.
+    setSendOpen(true);
+    autoSendPrepsRef.current = activeNow;
+    // Ambil harga jual terakhir sebagai estimasi. Query di-scope ke item
+    // ini; kalau gagal atau kosong, estimasi cukup disembunyikan.
+    void (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data } = await (supabase.from as any)("sales")
+          .select("price_per_base")
+          .eq("item_id", item.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const p = Number(data?.price_per_base);
+        setAutoSendUnitPrice(Number.isFinite(p) && p > 0 ? p : null);
+      } catch {
+        setAutoSendUnitPrice(null);
+      }
+    })();
+    // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
+    // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
+    void logAutoSendProposed({
+      titleId: title.id,
+      warehouseItemId: item.id,
+      prepIds: activeNow.map((p) => p.id),
+      prepCount: activeNow.length,
+      totalGrams: activeNow.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+      unitLabel: title.unit_label || null,
+    }).then((id) => {
+      autoSendAuditIdRef.current = id;
+    });
+    onAutoSendConsumed?.();
+  }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
+
   // realtime
   useEffect(() => {
+    // Debounce 300ms — batch UPDATE dari worker (mis. tandai N item)
+    // hanya perlu satu reload.
+    const reload = debounce(() => { void load(); }, 300);
     const ch = supabase.channel(`ecer_prep_${title.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations", filter: `title_id=eq.${title.id}` },
-        () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations", filter: `title_id=eq.${title.id}` }, reload)
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => { reload.cancel(); void supabase.removeChannel(ch); };
   }, [title.id]);
 
+  const active = useMemo(() => filterActivePreps(preps), [preps]);
+  const sent = useMemo(() => filterSentPreps(preps), [preps]);
+  const selectedPreps = useMemo(() => active.filter((p) => selected.has(p.id)), [active, selected]);
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelection() {
+    setSelectionMode(false);
+    setSelected(new Set());
+  }
+
+  async function deleteSelectedPreps() {
+    const targets = active.filter((p) => selected.has(p.id));
+    if (targets.length === 0) return;
+    setBulkDeleteOpen(true);
+    setBulkDeleteBusy(true);
+    setBulkDeleteStep("photo");
+    setBulkDeleteTotal(targets.length);
+    setBulkDeleteIndex(0);
+    try {
+      // Hapus serial agar trigger pengembalian stok tidak berlomba.
+      for (let i = 0; i < targets.length; i++) {
+        const p = targets[i];
+        setBulkDeleteIndex(i + 1);
+        setBulkDeleteStep("photo");
+        if (p.photo_path) {
+          await deleteEcerPhoto(p.photo_path);
+        }
+        setBulkDeleteStep("record");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", p.id);
+        if (error) throw new Error(`#${p.id}: ${error.message}`);
+      }
+      setBulkDeleteStep("refresh");
+      try {
+        await Promise.all([load(), onTitleUpdated()]);
+      } catch (refreshErr) {
+        toast.error("Gagal memuat ulang daftar: " + ((refreshErr as Error)?.message ?? String(refreshErr)), {
+          description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
+        });
+      }
+      setBulkDeleteStep("done");
+      toast.success(
+        `${targets.length} penyiapan dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      setSelected(new Set());
+      setSelectionMode(false);
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setBulkDeleteOpen(false);
+    } catch (e) {
+      toast.error("Gagal hapus massal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setBulkDeleteBusy(false);
+      setBulkDeleteStep("idle");
+      setBulkDeleteIndex(0);
+      setBulkDeleteTotal(0);
+    }
+  }
+
   return (
-    <div className="ecer-detail mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
-      <div className="flex items-center gap-2">
+
+    <div className="ecer-detail mx-auto max-w-4xl space-ms-4 p-ms-3 sm:p-ms-5">
+      <div className="flex items-center gap-ms-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
       </div>
       <DetailHero
         item={item}
         title={title}
-        preps={preps}
+        preps={active}
         onAdd={() => setAdding(true)}
         onCreateTitle={onCreateTitle}
         onCreateProduct={onCreateProduct}
         onScrollToWorker={() => {
-          const el = document.getElementById(`worker-shots-${title.id}`);
+          // Kartu "Kiriman pegawai" sudah dilebur ke Daftar penyiapan
+          // (kiriman pegawai tampil sebagai kartu ber-badge "Pegawai").
+          // Shortcut lama diarahkan ke Daftar penyiapan supaya tetap
+          // memberi umpan balik yang benar.
+          const el = document.getElementById(`daftar-penyiapan-${title.id}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
             el.classList.add("ring-2", "ring-primary");
@@ -811,42 +1828,68 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           }
         }}
       />
-      <Card>
+      <Card id={`daftar-penyiapan-${title.id}`} className="scroll-mt-20 transition-shadow">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
-            <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
-            <span
-              className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
-              title={`${preps.length} penyiapan`}
-            >
-              {preps.length}
-            </span>
-          </CardTitle>
+          <div className="flex items-center justify-between gap-ms-2">
+            <CardTitle className="flex items-center gap-ms-1.5 text-ms-sm leading-snug">
+              <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
+              <span
+                className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-ms-2 text-ms-2xs font-medium leading-none text-muted-foreground tabular-nums"
+                title={`${active.length} penyiapan aktif`}
+              >
+                {active.length}
+              </span>
+            </CardTitle>
+            {active.length > 0 && (
+              selectionMode ? (
+                <div className="flex flex-wrap items-center justify-end gap-ms-1">
+                  <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-destructive/60 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={selectedPreps.length === 0 || bulkDeleteBusy}
+                    onClick={() => setBulkDeleteOpen(true)}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus ({selectedPreps.length})
+                  </Button>
+                  <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
+                    <Send className="mr-1 h-3.5 w-3.5" /> Verifikasi bayar ({selectedPreps.length})
+                  </Button>
+                </div>
+              ) : (
+
+                <Button size="sm" variant="outline" onClick={() => setSelectionMode(true)}>
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pilih
+                </Button>
+              )
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+            <div className="space-ms-3">
+              <div className="flex items-center justify-center gap-ms-2 py-ms-2 text-ms-xs text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Memuat daftar penyiapan…
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="aspect-square animate-pulse rounded-md border bg-muted/40" />
                 ))}
               </div>
             </div>
           ) : loadError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
-              <div className="flex items-start gap-2.5">
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-4">
+              <div className="flex items-start gap-ms-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="text-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
-                  <div className="space-y-1 rounded-md border bg-background/60 p-2 text-[11px] leading-snug">
+                <div className="min-w-0 flex-1 space-ms-2">
+                  <div className="text-ms-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
+                  <div className="space-y-1 rounded-md border bg-background/60 p-ms-2 text-ms-2xs leading-snug">
                     <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
                     {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
                     {loadError.hint && <div><span className="text-muted-foreground">Hint:</span> <span className="font-mono">{loadError.hint}</span></div>}
                   </div>
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-ms-2 pt-1">
                     <Button size="sm" onClick={() => void load()}>
                       <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
                     </Button>
@@ -860,28 +1903,137 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 </div>
               </div>
             </div>
-          ) : preps.length === 0 ? (
-            <div className="rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
+          ) : active.length === 0 && sent.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-4 py-8 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Boxes className="h-6 w-6 text-primary" />
               </div>
-              <div className="text-sm font-semibold">Belum ada penyiapan</div>
-              <p className="mx-auto mt-1 max-w-xs text-xs leading-snug text-muted-foreground">
+              <div className="text-ms-sm font-semibold">Belum ada penyiapan</div>
+              <p className="mx-auto mt-1 max-w-xs text-ms-xs leading-snug text-muted-foreground">
                 Tambahkan kotak penyiapan pertama untuk judul <b className="break-words">{title.name}</b>.
                 Setiap kotak berisi foto, lokasi, dan berat aktual yang ditimbang.
               </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
                 <Button size="sm" onClick={() => setAdding(true)}>
                   <Plus className="mr-1 h-4 w-4" /> Tambah penyiapan
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {preps.map((p, idx) => (
-                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} itemName={item.name} onChanged={load} onTitleUpdated={onTitleUpdated} />
-              ))}
-            </div>
+            <>
+              {active.length > 0 ? (
+                <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
+                  {active.map((p, idx) => (
+                    <PaintDeferred key={p.id} minHeight={240}>
+                      <PrepBox
+                        prep={p}
+                        index={active.length - idx}
+                        title={title}
+                        itemName={item.name}
+                        onChanged={load}
+                        onTitleUpdated={onTitleUpdated}
+                        selectionMode={selectionMode}
+                        selected={selected.has(p.id)}
+                        onToggleSelect={() => toggleSelect(p.id)}
+                        onQuickSend={() => setQuickSendPrep(p)}
+                      />
+                    </PaintDeferred>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed bg-muted/20 px-ms-4 py-ms-4 text-center text-ms-xs text-muted-foreground">
+                  Semua penyiapan sudah dikirim ke pembeli. Tambah yang baru untuk mengisi lagi.
+                </div>
+              )}
+              {sent.length > 0 && (
+                <div id="riwayat-terkirim" data-testid="riwayat-terkirim" className="mt-5 border-t pt-3 scroll-mt-20">
+                  <div className="mb-2 flex items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Riwayat Terkirim
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
+                      {sent.length}
+                    </span>
+                  </div>
+                  {autoSendSummary && (
+                    <div
+                      data-testid="auto-send-summary"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-success/40 bg-success/10 px-ms-3 py-ms-2 text-ms-xs text-success"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim tercatat</div>
+                        <div className="text-success/90">
+                          {autoSendSummary.count} kotak · Total {autoSendSummary.grams} {autoSendSummary.unit} ·
+                          {" "}
+                          {new Date(autoSendSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan"
+                        onClick={() => setAutoSendSummary(null)}
+                        className="rounded p-ms-1 text-success/70 hover:bg-success/20"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                  {autoSendCancelSummary && (
+                    <div
+                      data-testid="auto-send-cancel-summary"
+                      className="mb-3 flex items-start justify-between gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim dibatalkan</div>
+                        <div className="text-warning/90">
+                          {autoSendCancelSummary.count} kotak · {autoSendCancelSummary.grams} {autoSendCancelSummary.unit} ·
+                          {" "}
+                          {(
+                            AUTO_SEND_CANCEL_REASONS.find(
+                              (r) => r.value === autoSendCancelSummary.reason,
+                            )?.label
+                          ) || autoSendCancelSummary.reason}
+                          {" · "}
+                          {new Date(autoSendCancelSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        {autoSendCancelSummary.detail ? (
+                          <div className="mt-0.5 line-clamp-2 text-warning/80">
+                            “{autoSendCancelSummary.detail}”
+                          </div>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan pembatalan"
+                        onClick={() => setAutoSendCancelSummary(null)}
+                        className="rounded p-ms-1 text-warning/70 hover:bg-warning/20"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-2 gap-ms-3 sm:grid-cols-3">
+                    {sent.map((p, idx) => (
+                      <PaintDeferred key={p.id} minHeight={240}>
+                        <PrepBox
+                          prep={p}
+                          index={sent.length - idx}
+                          title={title}
+                          itemName={item.name}
+                          onChanged={load}
+                          onTitleUpdated={onTitleUpdated}
+                        />
+                      </PaintDeferred>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <EcerSendHistorySection titleId={title.id} />
+            </>
           )}
         </CardContent>
       </Card>
@@ -895,235 +2047,387 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         />
       )}
 
-      <WorkerSubmissionsCard title={title} itemName={item.name} />
+      {sendOpen && (
+        <SendEcerPrepsDialog
+          open={sendOpen}
+          preps={selectedPreps}
+          title={title}
+          itemName={item.name}
+          customers={customers}
+          onLocationSaved={() => { void load(); }}
+          onClose={() => {
+            setSendOpen(false);
+            // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
+            // datang dari auto-send, jangan langsung finalize: buka dialog
+            // pemilihan alasan supaya baris audit menyimpan alasan +
+            // ringkasan seleksi (bukan sekadar token sumber).
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              setAutoSendCancel({
+                preps: autoSendPrepsRef.current.length
+                  ? autoSendPrepsRef.current
+                  : selectedPreps,
+                auditId,
+                source: "closed_send_dialog",
+              });
+            }
+          }}
+          onSent={() => {
+            setSendOpen(false);
+            // Optimistic move ke Riwayat Terkirim: tandai sold_at lokal
+            // untuk semua prep yang dikirim supaya `filterSentPreps`
+            // langsung memindahkan kartu tanpa menunggu refetch/realtime.
+            // Konsisten dengan /request (awaitingSentId) — kartu tidak
+            // pernah tertahan di grid Aktif setelah RPC sukses.
+            const nowIso = new Date().toISOString();
+            const sentIds = new Set(selectedPreps.map((p) => p.id));
+            if (sentIds.size > 0) {
+              setPreps((prev) => prev.map((p) => (
+                sentIds.has(p.id) && isActivePrep(p) ? { ...p, sold_at: nowIso } : p
+              )));
+            }
+            exitSelection();
+            void load();
+            onTitleUpdated();
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              autoSendAuditIdRef.current = null;
+              void finalizeAutoSend(auditId, "confirmed").then((row) => {
+                if (!row) return;
+                setAutoSendSummary({
+                  count: row.prep_count,
+                  grams: Number(row.total_grams) || 0,
+                  unit: row.unit_label || title.unit_label || "g",
+                  at: row.finalized_at || new Date().toISOString(),
+                });
+              });
+            }
+          }}
+        />
+      )}
+
+      {quickSendPrep && (
+        <SendEcerPrepsDialog
+          open={!!quickSendPrep}
+          preps={[quickSendPrep]}
+          title={title}
+          itemName={item.name}
+          customers={customers}
+          onLocationSaved={() => { void load(); }}
+          onClose={() => setQuickSendPrep(null)}
+          onSent={() => {
+            // Optimistic move ke Riwayat Terkirim untuk quick-send
+            // (satu kartu) — samakan aturan dengan flow seleksi jamak
+            // di atas, supaya konsisten di semua permukaan.
+            if (quickSendPrep) {
+              const nowIso = new Date().toISOString();
+              const id = quickSendPrep.id;
+              setPreps((prev) => prev.map((p) => (
+                p.id === id && isActivePrep(p) ? { ...p, sold_at: nowIso } : p
+              )));
+            }
+            setQuickSendPrep(null);
+            void load();
+            onTitleUpdated();
+          }}
+        />
+      )}
+
+      <AutoSendConfirmDialog
+        state={autoSendConfirm}
+        title={title}
+        itemName={item.name}
+        pricePerBase={autoSendUnitPrice}
+        expectedTitleId={title.id}
+        expectedItemId={item.id}
+        onCancel={() => {
+          const preps = autoSendConfirm?.preps ?? [];
+          setAutoSendConfirm(null);
+          setSelectionMode(false);
+          setSelected(new Set());
+          const auditId = autoSendAuditIdRef.current;
+          if (auditId) {
+            setAutoSendCancel({
+              preps,
+              auditId,
+              source: "confirm_modal",
+            });
+          }
+        }}
+        onConfirm={() => {
+          setAutoSendConfirm(null);
+          setSendOpen(true);
+        }}
+        onRemove={(prepId) => {
+          // Buang dari seleksi auto-send. Bila kotak tinggal 1, tombol
+          // di UI sudah disabled — jadi handler ini aman men-set daftar
+          // baru tanpa cek "kosong". Sinkronkan pula Set seleksi induk
+          // supaya jumlah + total di header langsung sinkron.
+          setAutoSendConfirm((prev) => {
+            if (!prev) return prev;
+            const next = prev.preps.filter((p) => p.id !== prepId);
+            autoSendPrepsRef.current = next;
+            return next.length > 0 ? { preps: next } : prev;
+          });
+          setSelected((prev) => {
+            const next = new Set(prev);
+            next.delete(prepId);
+            return next;
+          });
+          toast.success("Kotak dihapus dari seleksi");
+        }}
+        onUpdateGrams={async (prepId, grams) => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from as any)("ecer_preparations")
+              .update({ actual_grams: grams })
+              .eq("id", prepId);
+            if (error) throw error;
+            // Optimistic local update: prep list + confirm modal state.
+            setPreps((prev) =>
+              prev.map((p) =>
+                p.id === prepId ? { ...p, actual_grams: grams } : p,
+              ),
+            );
+            setAutoSendConfirm((prev) => {
+              if (!prev) return prev;
+              const next = prev.preps.map((p) =>
+                p.id === prepId ? { ...p, actual_grams: grams } : p,
+              );
+              autoSendPrepsRef.current = next;
+              return { preps: next };
+            });
+            toast.success("Berat kotak diperbarui");
+            return true;
+          } catch (e) {
+            toast.error("Gagal ubah berat: " + (e as Error).message);
+            return false;
+          }
+        }}
+      />
+
+      <AutoSendCancelReasonDialog
+        state={autoSendCancel}
+        title={title}
+        itemName={item.name}
+        onSubmit={(reason, detail) => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason,
+            detail: detail || null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason,
+            detail,
+            source: st.source,
+          });
+        }}
+        onDismiss={() => {
+          const st = autoSendCancel;
+          setAutoSendCancel(null);
+          if (!st) return;
+          // Owner menutup dialog tanpa memilih — finalize dengan alasan
+          // "tidak_dijelaskan" supaya baris audit tidak menggantung.
+          const unit = title.unit_label || "g";
+          const totalGrams = st.preps.reduce(
+            (acc, p) => acc + (Number(p.actual_grams) || 0),
+            0,
+          );
+          const note = JSON.stringify({
+            reason: "tidak_dijelaskan",
+            detail: null,
+            source: st.source,
+            summary: {
+              count: st.preps.length,
+              grams: totalGrams,
+              unit,
+              prep_ids: st.preps.slice(0, 5).map((p) => p.id),
+            },
+          });
+          autoSendAuditIdRef.current = null;
+          void finalizeAutoSend(st.auditId, "cancelled", note);
+          setAutoSendCancelSummary({
+            count: st.preps.length,
+            grams: totalGrams,
+            unit,
+            at: new Date().toISOString(),
+            reason: "tidak_dijelaskan",
+            detail: "",
+            source: st.source,
+          });
+        }}
+      />
+
+      <AlertDialog
+        open={bulkDeleteOpen}
+        onOpenChange={(o) => {
+          if (bulkDeleteBusy) return;
+          setBulkDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedPreps.length} penyiapan yang ditandai?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua penyiapan yang dipilih akan dihapus, foto di penyimpanan ikut dihapus,
+              dan stok <span className="font-semibold">{item.name ?? title.name}</span> dikembalikan.
+              Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {bulkDeleteBusy && (
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-2 flex items-center justify-between gap-2 font-medium">
+                <div className="flex items-center gap-2">
+                  {bulkDeleteStep === "done" ? (
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
+                  <span>
+                    {bulkDeleteStep === "photo" && `Menghapus foto… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "record" && `Menghapus data & stok… ${bulkDeleteIndex}/${bulkDeleteTotal}`}
+                    {bulkDeleteStep === "refresh" && "Menyegarkan daftar…"}
+                    {bulkDeleteStep === "done" && "Selesai"}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">
+                  {bulkDeleteStep === "photo" && "1/3"}
+                  {bulkDeleteStep === "record" && "2/3"}
+                  {bulkDeleteStep === "refresh" && "3/3"}
+                  {bulkDeleteStep === "done" && "3/3"}
+                </span>
+              </div>
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${Math.min(100, Math.round((bulkDeleteIndex / Math.max(1, bulkDeleteTotal)) * 100))}%`,
+                  }}
+                />
+              </div>
+              <div className="text-muted-foreground">
+                {bulkDeleteStep === "photo" && "Mohon tunggu, foto sedang dihapus dari penyimpanan."}
+                {bulkDeleteStep === "record" && "Record penyiapan dihapus dan stok dikembalikan."}
+                {bulkDeleteStep === "refresh" && "Memperbarui tampilan daftar…"}
+                {bulkDeleteStep === "done" && "Semua penyiapan terpilih berhasil dihapus."}
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteBusy} onClick={() => setBulkDeleteOpen(false)}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteBusy || selectedPreps.length === 0}
+              onClick={() => void deleteSelectedPreps()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleteBusy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+              Hapus {selectedPreps.length} penyiapan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
 
-// ---- Worker submissions card (kiriman pegawai untuk judul ini) ----
-type WorkerShot = {
-  id: string;
-  photo_path: string | null;
-  photo_paths?: string[] | null;
-  location_url: string | null;
-  submitted_at: string;
-  thumb_url?: string | null;
-  match: "strict" | "fallback_grams" | "fallback_wid";
-};
 
-async function resolvePrepUrl(path: string, expires = 60 * 60): Promise<string | null> {
-  const a = await prepSignedUrl(path, expires);
-  if (a) return a;
-  return await ecerSignedUrl(path, expires);
-}
 
 function normUnitStr(u: string | null | undefined) {
   return (u ?? "").trim().toLowerCase();
 }
 
-function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
-  const [shots, setShots] = useState<WorkerShot[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const targetUnit = normUnitStr(title.unit_label);
-  const targetGrams = Number(title.target_grams) || 0;
-  const displayUnitStr = itemName.trim().toLowerCase() === "gs" ? "botol" : (title.unit_label ?? "");
-
-  async function load() {
-    setError(null);
-    if (!title.warehouse_item_id) {
-      setShots([]);
-      setLoading(false);
-      return;
+/**
+ * Parse a location URL (usually Google Maps) into a human-readable label
+ * plus a short kind badge, so the confirm-dialog preview can show what the
+ * `📍` line will look like before sending.
+ *
+ * Handles:
+ *  - google.com/maps?q=lat,lng           → "Koordinat: -6.20, 106.80"
+ *  - google.com/maps?q=Nama+Tempat        → "Nama Tempat"
+ *  - google.com/maps/place/Nama/…         → "Nama"
+ *  - google.com/maps/@lat,lng,zoom        → "Koordinat: -6.20, 106.80"
+ *  - maps.app.goo.gl / short links        → null label (URL only)
+ */
+function describeLocationUrl(raw: string): { label: string | null; kind: string | null } {
+  const url = (raw ?? "").trim();
+  if (!url) return { label: null, kind: null };
+  let u: URL;
+  try { u = new URL(url); } catch { return { label: null, kind: null }; }
+  const host = u.hostname.toLowerCase();
+  const decode = (s: string) => {
+    try { return decodeURIComponent(s.replace(/\+/g, " ")).trim(); } catch { return s.trim(); }
+  };
+  const coordRe = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
+  const fmtCoord = (lat: string, lng: string) => {
+    const la = Number(lat), ln = Number(lng);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return null;
+    return `Koordinat: ${la.toFixed(5)}, ${ln.toFixed(5)}`;
+  };
+  // ?q= parameter
+  const q = u.searchParams.get("q") ?? u.searchParams.get("query");
+  if (q) {
+    const m = q.match(coordRe);
+    if (m) {
+      const c = fmtCoord(m[1], m[2]);
+      if (c) return { label: c, kind: "GPS" };
     }
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: tItems, error: e1 } = await (supabase.from as any)("prep_task_items")
-        .select("id,qty_requested,unit_label")
-        .eq("warehouse_item_id", title.warehouse_item_id);
-      if (e1) throw new Error(e1.message);
-      const items = (tItems ?? []) as Array<{ id: string; qty_requested: number | null; unit_label: string | null }>;
-      if (items.length === 0) { setShots([]); return; }
-
-      const matchKindByItem = new Map<string, "strict" | "fallback_grams" | "fallback_wid">();
-      for (const it of items) {
-        const g = Number(it.qty_requested) || 0;
-        const u = normUnitStr(it.unit_label);
-        let kind: "strict" | "fallback_grams" | "fallback_wid" = "fallback_wid";
-        if (g === targetGrams && u === targetUnit) kind = "strict";
-        else if (g === targetGrams) kind = "fallback_grams";
-        matchKindByItem.set(it.id, kind);
-      }
-      const ids = Array.from(matchKindByItem.keys());
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: subs, error: e2 } = await (supabase.from as any)("prep_submissions")
-        .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
-        .in("task_item_id", ids)
-        .order("submitted_at", { ascending: false })
-        .limit(60);
-      if (e2) throw new Error(e2.message);
-      const rows = ((subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>)
-        .map((s) => ({
-          id: s.id,
-          photo_path: s.photo_path,
-          photo_paths: s.photo_paths,
-          location_url: s.location_url,
-          submitted_at: s.submitted_at,
-          match: matchKindByItem.get(s.task_item_id) ?? "fallback_wid",
-        }) as WorkerShot);
-      // Resolve thumb URLs in parallel
-      await Promise.all(rows.map(async (r) => {
-        if (r.photo_path) r.thumb_url = await resolvePrepUrl(r.photo_path);
-      }));
-      setShots(rows);
-    } catch (err) {
-      setError((err as Error).message);
-      setShots([]);
-    }
+    const name = decode(q);
+    if (name) return { label: name, kind: "Nama tempat" };
   }
-
-  useEffect(() => {
-    setLoading(true);
-    void load().finally(() => setLoading(false));
-    const ch = supabase.channel(`worker_subs_${title.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void load())
-      .subscribe();
-    return () => { void supabase.removeChannel(ch); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title.id, title.warehouse_item_id, targetGrams, targetUnit]);
-
-  async function refresh() {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+  // /maps/place/Nama/…
+  const placeMatch = u.pathname.match(/\/maps\/place\/([^/]+)/i);
+  if (placeMatch?.[1]) {
+    return { label: decode(placeMatch[1]), kind: "Nama tempat" };
   }
-
-  async function sendWA() {
-    if (sending || shots.length === 0) return;
-    setSending(true);
-    try {
-      const take = shots.slice(0, 6);
-      const files: File[] = [];
-      for (const s of take) {
-        const paths = Array.from(new Set([
-          ...((s.photo_paths ?? []) as string[]),
-          ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
-        for (let pi = 0; pi < paths.length; pi++) {
-          const url = await resolvePrepUrl(paths[pi], 600);
-          if (!url) continue;
-          const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
-          if (f) files.push(f);
-          if (files.length >= 10) break;
-        }
-        if (files.length >= 10) break;
-      }
-      if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
-      const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLoc = take.find((s) => s.location_url);
-      const text = [
-        `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
-        ...lines,
-        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
-      ].join("\n");
-      const res = await shareToWhatsApp({ text, title: title.name, files });
-      notifyShareResult(res);
-    } catch (err) {
-      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
-    } finally {
-      setSending(false);
-    }
+  // /maps/@lat,lng,zoom
+  const atMatch = u.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    const c = fmtCoord(atMatch[1], atMatch[2]);
+    if (c) return { label: c, kind: "GPS" };
   }
-
-  return (
-    <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
-      <CardHeader className="pb-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
-              <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
-              {!loading && (
-                <span
-                  className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
-                  title={`${shots.length} kiriman`}
-                >
-                  {shots.length}
-                </span>
-              )}
-            </CardTitle>
-            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-              Cocok via warehouse_item_id + {title.target_grams}{displayUnitStr} (fallback ukuran/unit).
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={refresh} disabled={refreshing || loading}>
-              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
-            </Button>
-            <Button size="sm" onClick={sendWA} disabled={sending || shots.length === 0} className="bg-emerald-600 hover:bg-emerald-700">
-              <MessageCircle className="h-3.5 w-3.5" /> Kirim WA
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {!title.warehouse_item_id ? (
-          <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center text-xs text-amber-700 dark:text-amber-300">
-            Judul ini belum terhubung ke produk gudang (<code>warehouse_item_id</code> kosong), jadi tidak bisa mencocokkan kiriman pegawai. Set produk gudang pada judul ini terlebih dahulu.
-          </div>
-        ) : loading ? (
-          <div className="py-6 text-center text-xs text-muted-foreground"><Loader2 className="inline h-4 w-4 animate-spin" /> Memuat kiriman pegawai…</div>
-        ) : error ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
-            Gagal memuat: {error}
-          </div>
-        ) : shots.length === 0 ? (
-          <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-            Belum ada kiriman pegawai untuk judul ini. Bagikan link tugas ke pegawai dari halaman Tugas.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {shots.map((s) => (
-              <div key={s.id} className="group relative overflow-hidden rounded-md border bg-muted">
-                <div className="aspect-square">
-                  {s.thumb_url ? (
-                    <img src={s.thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
-                  )}
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
-                  <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
-                  {s.location_url && (
-                    <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
-                      <MapPin className="h-2.5 w-2.5" /> GPS
-                    </a>
-                  )}
-                </div>
-                {s.match !== "strict" && (
-                  <span
-                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
-                    title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}
-                  >
-                    {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+  // Short-link hosts — can't resolve without network
+  if (/(^|\.)maps\.app\.goo\.gl$/.test(host) || /(^|\.)goo\.gl$/.test(host)) {
+    return { label: null, kind: "Short link" };
+  }
+  return { label: null, kind: null };
 }
 
-function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
-  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string; onChanged: () => void; onTitleUpdated: () => void;
+
+function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, selectionMode, selected, onToggleSelect, onQuickSend }: {
+  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string;
+  onChanged: () => void; onTitleUpdated: () => void;
+  selectionMode?: boolean; selected?: boolean; onToggleSelect?: () => void;
+  onQuickSend?: () => void;
 }) {
+  const sold = isSentPrep(prep);
+  // Nilai penjualan pakai SSOT bersama (sold_total, fallback ke catatan sales).
+  const soldValue = useEffectiveSoldTotal("ecer_prep", prep.id, prep.sold_total, sold);
+  const readOnly = sold;
   const [url, setUrl] = useState<string | null>(null);
+  const [photoMissing, setPhotoMissing] = useState(false);
   type ShareDiag = {
     when: string;
     online: boolean;
@@ -1135,6 +2439,26 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     error?: string;
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  // Dialog konfirmasi + indikator progres untuk "Hapus penyiapan". Kita
+  // gunakan AlertDialog (bukan window.confirm) supaya tombol tidak bisa
+  // ditap dua kali dan user melihat langkah mana yang sedang berjalan
+  // (hapus foto → hapus record). Dialog TIDAK boleh ditutup selagi proses
+  // berlangsung agar tidak ada race di WebView Android.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"idle" | "photo" | "record" | "refresh" | "done">("idle");
+  // Tangkap elemen pemicu hapus supaya fokus keyboard bisa kembali ke sana
+  // setelah dialog dibatalkan atau proses selesai.
+  const deleteReturnElRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (deleteOpen) return;
+    const el = deleteReturnElRef.current;
+    if (el && document.contains(el) && typeof el.focus === "function") {
+      queueMicrotask(() => el.focus());
+    }
+    deleteReturnElRef.current = null;
+  }, [deleteOpen]);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
@@ -1145,12 +2469,23 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     if (a) return a;
     return await secondary(path, expiresIn as number);
   };
-  useEffect(() => { void resolvePhotoUrl(prep.photo_path).then(setUrl); }, [prep.photo_path, prep.created_by]);
+  useEffect(() => {
+    let cancelled = false;
+    setPhotoMissing(false);
+    setUrl(null);
+    if (!prep.photo_path) return;
+    void resolvePhotoUrl(prep.photo_path).then((u) => {
+      if (cancelled) return;
+      setUrl(u);
+      setPhotoMissing(!u);
+    });
+    return () => { cancelled = true; };
+  }, [prep.photo_path, prep.created_by]);
 
   async function onShare() {
     const text =
       `*${title.name}* #${index}\n` +
-      `Berat aktual: ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}\n` +
+      `Berat aktual: ${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
@@ -1211,54 +2546,174 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
   }
 
   async function onDelete() {
-    const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
-    );
-    if (!ok) return;
-    if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
-    if (error) { toast.error("Gagal: " + error.message); return; }
-    toast.success("Dihapus, stok dikembalikan");
-    onChanged(); onTitleUpdated();
+    setDeleteStep("idle");
+    setDeleteOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (deleteBusy) return;
+    setDeleteBusy(true);
+    try {
+      if (prep.photo_path) {
+        setDeleteStep("photo");
+        await deleteEcerPhoto(prep.photo_path);
+      }
+      setDeleteStep("record");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_preparations").delete().eq("id", prep.id);
+      if (error) {
+        toast.error("Gagal: " + error.message);
+        setDeleteBusy(false);
+        setDeleteStep("idle");
+        return;
+      }
+      setDeleteStep("refresh");
+      try {
+        await Promise.all([onChanged(), onTitleUpdated()]);
+      } catch (refreshErr) {
+        toast.error("Gagal memuat ulang daftar: " + ((refreshErr as Error)?.message ?? String(refreshErr)), {
+          description: "Tarik ke bawah atau tekan tombol refresh untuk memperbarui tampilan.",
+        });
+      }
+      setDeleteStep("done");
+      toast.success(
+        `Penyiapan #${index} (${fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}) dihapus · stok dikembalikan`,
+        { duration: 4000 }
+      );
+      // Biarkan user melihat status "Selesai" sebentar sebelum dialog tertutup.
+      await new Promise((resolve) => setTimeout(resolve, 900));
+      setDeleteOpen(false);
+    } catch (e) {
+      toast.error("Gagal: " + ((e as Error)?.message ?? String(e)));
+    } finally {
+      setDeleteBusy(false);
+      setDeleteStep("idle");
+    }
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div
+      aria-readonly={readOnly || undefined}
+      onClick={selectionMode && !readOnly ? (e) => { e.stopPropagation(); onToggleSelect?.(); } : undefined}
+      className={`overflow-hidden rounded-lg border bg-card ${selectionMode && !readOnly ? "cursor-pointer" : ""} ${selected ? "ring-2 ring-primary" : ""} ${readOnly ? "opacity-90" : ""}`}
+    >
       <div className="relative aspect-square w-full bg-muted">
-        {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : (
-          <div className="flex h-full w-full items-center justify-center text-[11px] leading-snug text-muted-foreground">No foto</div>
+        {url ? (
+          <img src={url} alt="" className="h-full w-full object-cover" />
+        ) : photoMissing ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-center text-ms-2xs leading-snug text-destructive">
+            <span className="font-semibold">Foto hilang</span>
+            <span className="text-muted-foreground">File sudah dihapus dari penyimpanan</span>
+            {!readOnly && (
+              <button
+                type="button"
+                ref={(el) => { deleteReturnElRef.current = el; }}
+                onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}
+                className="mt-1 rounded border border-destructive/60 bg-destructive/10 px-2 py-0.5 text-ms-2xs font-medium text-destructive hover:bg-destructive/20"
+              >
+                Hapus penyiapan
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ms-2xs leading-snug text-muted-foreground">Belum ada foto</div>
         )}
-        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">#{index}</div>
+        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">#{index}</div>
         {prep.created_by === "worker" && (
-          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">Pegawai</div>
+          <div className="absolute right-1 top-1 rounded bg-info/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-medium text-white">Pegawai</div>
+        )}
+        {sold && (
+          <div className="absolute inset-x-1 bottom-1 rounded bg-success/90 px-1.5 py-0.5 text-ms-2xs leading-snug font-semibold text-white">
+            Terkirim{prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
+          </div>
+        )}
+        {selectionMode && !readOnly && (
+          <div className={`absolute right-1 bottom-1 flex h-6 w-6 items-center justify-center rounded-full border-2 ${selected ? "border-primary bg-primary text-primary-foreground" : "border-white/80 bg-black/40 text-white"}`}>
+            {selected ? <CheckCircle2 className="h-4 w-4" /> : null}
+          </div>
         )}
       </div>
-      <div className="space-y-1 p-2">
-        <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
-        {prep.note && <div className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{prep.note}</div>}
-        <div className="flex items-center justify-between gap-1 pt-1">
-          {prep.location_url ? (
-            <a href={prep.location_url} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-0.5 text-[11px] leading-snug text-primary hover:underline">
-              <MapPin className="h-3 w-3" /> Lokasi <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          ) : <span />}
-          <div className="flex gap-0.5">
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onShare}><Share2 className="h-3 w-3" /></Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+      <div className="flex flex-col gap-y-2 p-ms-2">
+        <div className="text-ms-xs font-semibold">{fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}</div>
+        {prep.note && <div className="line-clamp-2 text-ms-2xs leading-snug text-muted-foreground">{prep.note}</div>}
+        {sold && (
+          <details className="group rounded-md border border-success/40 bg-success/10 text-ms-2xs leading-snug text-success dark:text-success">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-1 px-1.5 py-1 font-medium">
+              <span className="truncate">
+                {formatSoldPaymentSummary(
+                  prep.sold_payment_method,
+                  soldValue.total,
+                  Number(prep.sold_paid_amount ?? 0),
+                )}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0 transition-transform group-open:rotate-180" />
+            </summary>
+            {prep.sold_at && (
+              <div className="px-1.5 pb-1 text-ms-2xs opacity-90">
+                <div>
+                  Nilai penjualan: <b>{soldValue.label}</b>
+                  {soldValue.fromSales && (
+                    <span className="ml-1 opacity-80">(dari catatan penjualan)</span>
+                  )}
+                </div>
+                {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                {prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
+              </div>
+            )}
+          </details>
+        )}
+        <div className="@container/prepactions">
+          <div className="flex min-h-8 flex-col gap-y-2 @[200px]/prepactions:grid @[200px]/prepactions:grid-cols-[minmax(0,1fr)_auto] @[200px]/prepactions:items-center @[200px]/prepactions:gap-x-2 @[200px]/prepactions:gap-y-0">
+            {prep.location_url ? (
+              <a href={prep.location_url} target="_blank" rel="noreferrer"
+                className="inline-flex min-w-0 items-center gap-1 self-start text-ms-2xs leading-snug text-primary hover:underline @[200px]/prepactions:self-center">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">Lokasi</span>
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+              </a>
+            ) : <span className="min-w-0" />}
+            {(() => {
+              // Target sentuh tidak boleh mengecil saat ruang sempit — justru
+              // di layar 360px risiko salah tekan paling tinggi. Ukuran visual
+              // tetap 32px, area sentuh efektif diperluas ke 44px via app-hit-area.
+              const btnCls = "app-hit-area inline-flex h-8 w-8 shrink-0 items-center justify-center p-0 leading-none";
+              const iconCls = "h-4 w-4 shrink-0";
+              return (
+                <div className="flex shrink-0 items-center justify-end gap-1.5 @[200px]/prepactions:justify-self-end">
+                  {!readOnly && (
+                    <>
+                      <Button size="icon" variant="ghost" className={btnCls} aria-label="Verifikasi bayar" title="Buka dialog verifikasi pembayaran" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className={iconCls} /></Button>
+                      <Button size="icon" variant="ghost" className={btnCls} aria-label="Edit penyiapan" title="Edit penyiapan" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }}><Edit3 className={iconCls} /></Button>
+                    </>
+                  )}
+                  {readOnly && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className={btnCls}
+                      aria-label="Kirim ulang"
+                      title="Kirim ulang ke WhatsApp — tidak mengubah stok, kartu tetap di Riwayat Terkirim"
+                      onClick={(e) => { e.stopPropagation(); void onShare(); }}
+                    >
+                      <Share2 className={iconCls} />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" className={btnCls} aria-label={readOnly ? "Hapus arsip" : "Hapus penyiapan"} title={readOnly ? "Hapus arsip dari Riwayat Terkirim" : "Hapus penyiapan"} onClick={(e) => { e.stopPropagation(); deleteReturnElRef.current = e.currentTarget; void onDelete(); }}><Trash2 className={`${iconCls} text-destructive`} /></Button>
+                </div>
+              );
+            })()}
           </div>
         </div>
-        <div className="text-[11px] leading-snug text-muted-foreground">
+        <div className="text-ms-2xs leading-snug text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
         {shareDiag && (
-          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] leading-snug">
-            <div className="flex items-center justify-between gap-1">
+          <div className="mt-2 space-y-1.5 rounded border border-destructive/40 bg-destructive/5 p-ms-2 text-ms-2xs leading-snug">
+            <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
               <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
               <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
             </div>
-            <div>Jaringan: <span className={shareDiag.online ? "text-emerald-600" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
+            <div>Jaringan: <span className={shareDiag.online ? "text-success" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
             <div>Web Share API: {shareDiag.hasWebShare ? "ya" : "tidak"}{shareDiag.canShareFiles !== null && ` · file: ${shareDiag.canShareFiles ? "didukung" : "tidak"}`}</div>
             {shareDiag.photoFetch && (
               <div>
@@ -1270,15 +2725,246 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
             <div className="break-all">wa.me: {shareDiag.waUrl}</div>
             <div className="break-all">Hasil: {JSON.stringify(shareDiag.result)}</div>
             {shareDiag.error && <div className="text-destructive">Error: {shareDiag.error}</div>}
-            <div className="flex gap-1 pt-1">
-              <button type="button" onClick={copyDiag} className="rounded border px-2 py-0.5 hover:bg-accent">Salin detail</button>
-              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-2 py-0.5 hover:bg-accent">Buka wa.me</a>
-              <button type="button" onClick={onShare} className="rounded border px-2 py-0.5 hover:bg-accent">Coba lagi</button>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button type="button" onClick={copyDiag} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Salin detail</button>
+              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-ms-2 py-0.5 hover:bg-accent">Buka wa.me</a>
+              <button type="button" onClick={onShare} className="rounded border px-ms-2 py-0.5 hover:bg-accent">Coba lagi</button>
             </div>
           </div>
         )}
       </div>
+      {editOpen && (
+        <PrepEditDialog
+          prep={prep}
+          title={title}
+          itemName={itemName}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => {
+            setEditOpen(false);
+            onChanged();
+            onTitleUpdated();
+          }}
+        />
+      )}
+      <AlertDialog
+        open={deleteOpen}
+        onOpenChange={(o) => {
+          if (deleteBusy) return; // jangan tutup saat proses jalan
+          setDeleteOpen(o);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{readOnly ? "Hapus arsip terkirim?" : "Hapus penyiapan ini?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {readOnly ? (
+                <>
+                  Kartu ini akan hilang dari <span className="font-semibold">Riwayat Terkirim</span>.
+                  Catatan penjualan, pembayaran, dan piutang <span className="font-semibold">tidak</span> ikut dibatalkan —
+                  stok tetap seperti setelah terjual. Foto di penyimpanan ikut dihapus.
+                </>
+              ) : (
+                <>
+                  Stok <span className="font-semibold">{itemName ?? title.name}</span> akan
+                  dikembalikan sebanyak{" "}
+                  <span className="font-semibold">
+                    {fmtWeight(Number(prep.actual_grams), displayUnit(itemName, title.unit_label))}
+                  </span>
+                  . Foto di penyimpanan juga ikut dihapus.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {deleteBusy && (
+            <div className="rounded-lg border border-border/60 bg-muted/40 p-ms-2 text-ms-2xs leading-snug">
+              <div className="mb-2 flex items-center justify-between gap-2 font-medium">
+                <div className="flex items-center gap-2">
+                  {deleteStep === "done" ? (
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                  ) : (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  )}
+                  <span>
+                    {deleteStep === "photo" && "Menghapus foto…"}
+                    {deleteStep === "record" && "Menghapus data & mengembalikan stok…"}
+                    {deleteStep === "refresh" && "Menyegarkan daftar…"}
+                    {deleteStep === "done" && "Selesai"}
+                  </span>
+                </div>
+                <span className="text-muted-foreground">
+                  {deleteStep === "photo" && "1/4"}
+                  {deleteStep === "record" && "2/4"}
+                  {deleteStep === "refresh" && "3/4"}
+                  {deleteStep === "done" && "4/4"}
+                </span>
+              </div>
+              <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  style={{
+                    width: deleteStep === "photo" ? "25%" : deleteStep === "record" ? "50%" : deleteStep === "refresh" ? "75%" : "100%",
+                  }}
+                />
+              </div>
+              <ul className="space-y-1 pl-0.5">
+                <li className={deleteStep === "photo" ? "text-primary" : (deleteStep === "record" || deleteStep === "refresh" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {prep.photo_path
+                    ? (deleteStep === "photo" ? "→ Menghapus foto dari penyimpanan…" : (deleteStep === "record" || deleteStep === "refresh" || deleteStep === "done") ? "✓ Foto dihapus" : "• Hapus foto")
+                    : "• (tanpa foto)"}
+                </li>
+                <li className={deleteStep === "record" ? "text-primary" : (deleteStep === "refresh" || deleteStep === "done") ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "record" ? "→ Menghapus data & mengembalikan stok…" : (deleteStep === "refresh" || deleteStep === "done") ? "✓ Data dihapus" : "• Hapus data & kembalikan stok"}
+                </li>
+                <li className={deleteStep === "refresh" ? "text-primary" : deleteStep === "done" ? "text-success" : "text-muted-foreground"}>
+                  {deleteStep === "refresh" ? "→ Menyegarkan daftar penyiapan…" : deleteStep === "done" ? "✓ Daftar diperbarui" : "• Segarkan daftar"}
+                </li>
+              </ul>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteBusy}
+              onClick={(e) => { e.preventDefault(); void confirmDelete(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBusy ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Menghapus…
+                </span>
+              ) : (
+                "Hapus penyiapan"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+function PrepEditDialog({
+  prep, title, itemName, onClose, onSaved,
+}: {
+  prep: EcerPreparation;
+  title: EcerTitle;
+  itemName?: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [actual, setActual] = useState(String(prep.actual_grams));
+  const [locUrl, setLocUrl] = useState(prep.location_url ?? "");
+  const [note, setNote] = useState(prep.note ?? "");
+  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(
+    prep.gps_lat != null && prep.gps_lng != null ? { lat: Number(prep.gps_lat), lng: Number(prep.gps_lng) } : null,
+  );
+  const [locBusy, setLocBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function takeLocation() {
+    setLocBusy(true);
+    const id = toast.loading("Mengambil lokasi…");
+    try {
+      const { getCurrentLocation } = await import("@/lib/get-location");
+      const { lat, lng } = await getCurrentLocation();
+      setGps({ lat, lng });
+      setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+      toast.success("Lokasi terisi", { id });
+    } catch (e) {
+      const { toGeoError } = await import("@/lib/get-location");
+      const err = toGeoError(e);
+      toast.error(err.message, { id, description: err.hint });
+    } finally {
+      setLocBusy(false);
+    }
+  }
+
+  async function save() {
+    const grams = Number(String(actual).replace(",", "."));
+    if (!Number.isFinite(grams) || grams <= 0) {
+      toast.error("Berat aktual tidak valid");
+      return;
+    }
+    if (locUrl.trim() && !/^https:\/\//i.test(locUrl.trim())) {
+      toast.error("Link lokasi harus diawali https://");
+      return;
+    }
+    if (locUrl.length > 2048) {
+      toast.error("Link lokasi terlalu panjang (maks 2048 karakter)");
+      return;
+    }
+    setBusy(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_preparations")
+        .update({
+          actual_grams: grams,
+          location_url: locUrl.trim() || null,
+          gps_lat: gps?.lat ?? null,
+          gps_lng: gps?.lng ?? null,
+          note: note.trim() || null,
+        })
+        .eq("id", prep.id);
+      if (error) throw error;
+      toast.success("Penyiapan diperbarui");
+      onSaved();
+    } catch (e) {
+      toast.error("Gagal: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit penyiapan</DialogTitle>
+          <DialogDescription>{title.name}</DialogDescription>
+        </DialogHeader>
+        <div className="space-ms-3">
+          <div>
+            <Label className="text-ms-xs">
+              Berat aktual ({displayUnit(itemName, title.unit_label)})
+            </Label>
+            <NumericTextField value={actual} onValueChange={setActual} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+            <div className="mt-1 text-ms-2xs text-muted-foreground">
+              Selisih dengan nilai sebelumnya akan menyesuaikan stok gudang otomatis.
+            </div>
+          </div>
+          <div>
+            <Label className="text-ms-xs">Link lokasi (GPS)</Label>
+            <div className="flex gap-ms-2">
+              <Input
+                value={locUrl}
+                onChange={(e) => setLocUrl(e.target.value)}
+                placeholder="Tempel link Google Maps atau tekan GPS"
+              />
+              <Button variant="outline" onClick={() => void takeLocation()} disabled={locBusy || busy}>
+                {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
+              </Button>
+            </div>
+            {gps && (
+              <div className="mt-1 text-ms-2xs text-muted-foreground">
+                ✓ Koordinat: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}
+              </div>
+            )}
+          </div>
+          <div>
+            <Label className="text-ms-xs">Keterangan</Label>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+          </div>
+        </div>
+        <DialogFooter>
+          <div className="flex w-full justify-end gap-ms-2">
+            <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button onClick={() => void save()} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1310,6 +2996,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [addressBusy, setAddressBusy] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   const addressEditedRef = useRef(false);
+  // Field-pair grid ikut mode `readyEcer` — sama dengan TitleFormDialog.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
   const addressReqIdRef = useRef(0);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -1645,6 +3334,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   }
 
   return (
+    <>
     <Dialog open onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
         className="max-w-md"
@@ -1657,11 +3347,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           <DialogTitle>Penyiapan baru</DialogTitle>
           <DialogDescription>{title.name}</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           {photo ? (
             <div>
-              <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
-                <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
+              <div className="mb-1 flex items-center justify-between gap-ms-2 text-ms-2xs">
+                <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/10 px-ms-2 font-medium leading-none text-success dark:text-success">
                   ✓ Pratinjau foto
                 </span>
                 <span className="min-w-0 truncate text-right leading-none text-muted-foreground tabular-nums">
@@ -1676,7 +3366,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               >
                 <img src={photo.dataUrl} alt="Pratinjau foto penyiapan" className="max-h-72 w-full object-contain" />
               </button>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-ms-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
                   <Edit3 className="h-3 w-3" /> Edit lagi
                 </Button>
@@ -1693,7 +3383,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-ms-2">
               <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
               <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
               <Button type="button" variant="outline" onClick={() => void pasteFromClipboard()}>📋 Tempel</Button>
@@ -1703,19 +3393,19 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               (notably iOS Safari & in-app webviews) ignore programmatic .click() on
               hidden inputs, leaving the Kamera/Galeri buttons unresponsive. */}
           <input ref={cameraRef} type="file" accept="image/*" capture="environment"
-            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
+            tabIndex={-1} aria-hidden className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
           <input ref={galleryRef} type="file" accept="image/*"
-            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
+            tabIndex={-1} aria-hidden className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
-            <Label className="text-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
-            <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
-            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
+            <Label className="text-ms-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
+            <NumericTextField value={actual} onValueChange={setActual} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
+            <div className="mt-1 text-ms-2xs leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
 
           <div>
-            <Label className="text-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
-            <div className="flex gap-2">
+            <Label className="text-ms-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
+            <div className="flex gap-ms-2">
               <Input
                 value={locUrl}
                 onChange={(e) => onLocUrlChange(e.target.value)}
@@ -1732,7 +3422,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
               </Button>
             </div>
-            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
+            <div className="mt-1 text-ms-2xs leading-snug text-muted-foreground">
               {gps
                 ? `✓ Koordinat: ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
                 : locUrl
@@ -1753,7 +3443,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
+                  <div className="flex items-center justify-between gap-ms-2 border-t bg-muted/40 px-ms-2 py-1 text-ms-2xs leading-snug text-muted-foreground">
                     <span>Penanda: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</span>
                     <a href={link} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
                       Buka peta besar
@@ -1763,11 +3453,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               );
             })()}
             {gps && (
-              <div className="mt-2 rounded-md border bg-muted/30 p-2.5">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <Label className="text-[11px]">Alamat (bisa diedit)</Label>
+              <div className="mt-2 rounded-md border bg-muted/30 p-ms-2.5">
+                <div className="mb-1 flex items-center justify-between gap-ms-2">
+                  <Label className="text-ms-2xs">Alamat (bisa diedit)</Label>
                   {addressBusy && (
-                    <span className="flex items-center gap-1 text-[11px] leading-snug text-muted-foreground">
+                    <span className="flex items-center gap-ms-1 text-ms-2xs leading-snug text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" /> Mencari alamat…
                     </span>
                   )}
@@ -1781,7 +3471,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                   }}
                   placeholder={addressBusy ? "Mencari alamat dari koordinat…" : "Ketik atau perbaiki alamat di sini"}
                 />
-                <div className="mt-1 flex flex-wrap items-center gap-2">
+                <div className="mt-1 flex flex-wrap items-center gap-ms-2">
                   <Button
                     type="button"
                     size="sm"
@@ -1823,16 +3513,16 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     <RotateCw className="mr-1 h-3 w-3" /> Ambil ulang
                   </Button>
                   {addressError && (
-                    <span className="text-[11px] leading-snug text-destructive">{addressError}</span>
+                    <span className="text-ms-2xs leading-snug text-destructive">{addressError}</span>
                   )}
                 </div>
               </div>
             )}
             {locProblem && (
-              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-snug text-destructive">
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-2.5 text-ms-2xs leading-snug text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
                 {locProblem.hint && <div className="mt-1 text-destructive/90">{locProblem.hint}</div>}
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-ms-2">
                   <Button type="button" size="sm" variant="outline" onClick={() => void takeLocation()} disabled={locBusy}>
                     {locBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />} Coba lagi
                   </Button>
@@ -1840,9 +3530,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     Salin detail GPS
                   </Button>
                 </div>
-                <details className="mt-2 text-[11px] leading-snug text-muted-foreground">
+                <details className="mt-2 text-ms-2xs leading-snug text-muted-foreground">
                   <summary className="cursor-pointer">Detail teknis</summary>
-                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2">
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-ms-2">
                     {JSON.stringify(locProblem, null, 2)}
                   </pre>
                 </details>
@@ -1853,19 +3543,19 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               <button
                 type="button"
                 onClick={() => setManualOpen((v) => !v)}
-                className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                className="text-ms-2xs font-medium text-primary underline-offset-2 hover:underline"
                 aria-expanded={manualOpen}
               >
                 {manualOpen ? "Tutup input manual" : "Isi lokasi manual (lat/lng/nama)"}
               </button>
               {manualOpen && (
-                <div className="mt-2 space-y-2 rounded-md border bg-muted/40 p-2.5">
-                  <div className="text-[11px] text-muted-foreground">
+                <div className="mt-2 space-ms-2 rounded-md border bg-muted/40 p-ms-2.5">
+                  <div className="text-ms-2xs text-muted-foreground">
                     Gunakan ini jika GPS gagal. Anda bisa salin koordinat dari Google Maps:
                     tahan titik di peta → muncul lat,lng di kotak pencarian.
                   </div>
                   <div>
-                    <Label className="text-[11px]">Nama lokasi (opsional)</Label>
+                    <Label className="text-ms-2xs">Nama lokasi (opsional)</Label>
                     <Input
                       value={manualName}
                       onChange={(e) => setManualName(e.target.value)}
@@ -1873,9 +3563,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                       maxLength={120}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className={pairClass}>
                     <div>
-                      <Label className="text-[11px]">Latitude *</Label>
+                      <Label className="text-ms-2xs">Latitude *</Label>
                       <Input
                         inputMode="decimal"
                         value={manualLat}
@@ -1884,7 +3574,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                       />
                     </div>
                     <div>
-                      <Label className="text-[11px]">Longitude *</Label>
+                      <Label className="text-ms-2xs">Longitude *</Label>
                       <Input
                         inputMode="decimal"
                         value={manualLng}
@@ -1894,9 +3584,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     </div>
                   </div>
                   {manualError && (
-                    <div className="text-[11px] font-medium text-destructive">{manualError}</div>
+                    <div className="text-ms-2xs font-medium text-destructive">{manualError}</div>
                   )}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-ms-2">
                     <Button type="button" size="sm" onClick={applyManualLocation}>
                       Terapkan
                     </Button>
@@ -1920,21 +3610,21 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           </div>
 
           <div>
-            <Label className="text-xs">Keterangan</Label>
+            <Label className="text-ms-xs">Keterangan</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan tentang produk / penyiapan…" rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full flex-col gap-ms-2">
             {progress && (
               <div
                 role="status"
                 aria-live="polite"
-                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-[11px] ${
+                className={`flex items-center gap-ms-2 rounded-md border px-ms-2 py-1.5 text-ms-2xs ${
                   progress.step === "error"
                     ? "border-destructive/40 bg-destructive/10 text-destructive"
                     : progress.step === "done"
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    ? "border-success/40 bg-success/10 text-success dark:text-success"
                     : "border-border bg-muted text-foreground"
                 }`}
               >
@@ -1956,7 +3646,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
               </div>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-ms-2">
               <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
               <Button onClick={save} disabled={busy}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -1966,17 +3656,12 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           </div>
         </DialogFooter>
 
-        {editorOpen && editorSrc && (
-          <PhotoEditor src={editorSrc} onCancel={() => setEditorOpen(false)}
-            onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }} />
-        )}
-
         {zoomOpen && photo && (
           <Dialog open onOpenChange={(o) => { if (!o) setZoomOpen(false); }}>
-            <DialogContent className="max-w-3xl p-2">
-              <DialogHeader className="px-2 pt-1">
-                <DialogTitle className="text-sm">Pratinjau foto</DialogTitle>
-                <DialogDescription className="text-[11px]">Periksa hasil foto sebelum menyimpan.</DialogDescription>
+            <DialogContent className="max-w-3xl p-ms-2">
+              <DialogHeader className="px-ms-2 pt-1">
+                <DialogTitle className="text-ms-sm">Pratinjau foto</DialogTitle>
+                <DialogDescription className="text-ms-2xs">Periksa hasil foto sebelum menyimpan.</DialogDescription>
               </DialogHeader>
               <img src={photo.dataUrl} alt="Pratinjau foto besar" className="max-h-[75vh] w-full rounded-md object-contain" />
             </DialogContent>
@@ -1984,6 +3669,18 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         )}
       </DialogContent>
     </Dialog>
+    {/* PhotoEditor di-hoist ke luar DialogContent agar `fixed inset-0`-nya
+        mengacu ke viewport (bukan ke DialogContent yang memakai transform +
+        focus trap Radix), sehingga toolbar & kanvas selalu bisa disentuh
+        di Android. */}
+    {editorOpen && editorSrc && (
+      <PhotoEditor
+        src={editorSrc}
+        onCancel={() => setEditorOpen(false)}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+      />
+    )}
+    </>
   );
 }
 
@@ -2002,20 +3699,33 @@ function NewProductDialog({ onClose, onCreated }: {
   const [packageSize, setPackageSize] = useState("1000");
   const [busy, setBusy] = useState(false);
 
-  const baseUnit: "g" | "pcs" = packageType === "pcs" || packageType === "botol" || packageType === "sachet"
-    ? (packageType === "pcs" ? "pcs" : "g")
-    : "g";
+  // SSOT: botol dihitung per-botol (base='pcs', size=1) — sama seperti
+  // konvensi GS di seluruh app. gram/sachet tetap base='g'.
+  const baseUnit: "g" | "pcs" =
+    packageType === "pcs" || packageType === "botol" ? "pcs" : "g";
+  // Label satuan untuk field "Isi/kemasan": ikut Jenis kemasan supaya
+  // sinkron (mis. botol → "botol", gram → "g", sachet → "g").
+  const sizeUnitLabel = packageType === "botol" ? "botol" : baseUnit;
+  // Field Isi/kemasan hanya relevan saat isi kemasan bisa berbeda-beda
+  // (curah gram / sachet). Untuk botol & pcs, 1 kemasan = 1 unit.
+  const showSizeField = packageType === "gram" || packageType === "sachet";
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
-    const size = packageType === "pcs" ? 1 : Number(String(packageSize).replace(",", "."));
-    if (packageType !== "pcs" && (!Number.isFinite(size) || size <= 0)) {
+    const size = showSizeField
+      ? Number(String(packageSize).replace(",", "."))
+      : 1;
+    if (showSizeField && (!Number.isFinite(size) || size <= 0)) {
       toast.error("Isi/kemasan harus > 0"); return;
     }
     setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    const userId = u.user?.id;
-    if (!userId) { toast.error("Sesi tidak valid"); setBusy(false); return; }
+    let userId: string;
+    try { userId = (await ensureFreshSession()).userId; }
+    catch (e) { toast.error((e as Error).message || "Sesi berakhir. Silakan login ulang."); setBusy(false); return; }
+    try { await assertStorageAccess(userId); }
+    catch (e) { toast.error((e as Error).message); setBusy(false); return; }
     const { data, error } = await supabase.from("warehouse_items").insert({
       user_id: userId,
       name: name.trim(),
@@ -2023,7 +3733,7 @@ function NewProductDialog({ onClose, onCreated }: {
       package_type: packageType,
       package_size: size,
       base_unit: baseUnit,
-    }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").single();
+        }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").single();
     setBusy(false);
     if (error || !data) { toast.error("Gagal: " + (error?.message ?? "tidak ada data")); return; }
     toast.success("Produk gudang dibuat");
@@ -2037,22 +3747,22 @@ function NewProductDialog({ onClose, onCreated }: {
           <DialogTitle>Produk gudang baru</DialogTitle>
           <DialogDescription>Setelah dibuat, akan langsung dibuatkan judul ecer untuk produk ini.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div>
-            <Label className="text-xs">Nama produk</Label>
+            <Label className="text-ms-xs">Nama produk</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. KRISTAL" autoCapitalize="characters" />
           </div>
           <div>
-            <Label className="text-xs">Kategori (opsional)</Label>
+            <Label className="text-ms-xs">Kategori (opsional)</Label>
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={pairClass}>
             <div>
-              <Label className="text-xs">Jenis kemasan</Label>
+              <Label className="text-ms-xs">Jenis kemasan</Label>
               <select
                 value={packageType}
                 onChange={(e) => setPackageType(e.target.value as PkgType)}
-                className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+                className="mt-1 h-9 w-full rounded-md border bg-background px-ms-2 text-ms-sm"
               >
                 <option value="gram">gram (curah)</option>
                 <option value="botol">botol</option>
@@ -2060,14 +3770,14 @@ function NewProductDialog({ onClose, onCreated }: {
                 <option value="pcs">pcs</option>
               </select>
             </div>
-            {packageType !== "pcs" && (
+            {showSizeField && (
               <div>
-                <Label className="text-xs">Isi/kemasan ({baseUnit})</Label>
-                <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+                <Label className="text-ms-xs">Isi/kemasan ({sizeUnitLabel})</Label>
+                <NumericTextField value={packageSize} onValueChange={setPackageSize} step={0.01} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" />
               </div>
             )}
           </div>
-          <div className="rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
+          <div className="rounded-md border border-dashed bg-muted/30 p-ms-2 text-ms-2xs text-muted-foreground">
             Stok awal = 0. Tambah stok dari halaman Gudang (catat pembelian) setelah produk dibuat.
           </div>
         </div>
@@ -2079,5 +3789,1297 @@ function NewProductDialog({ onClose, onCreated }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ---- Histori pengiriman WA/Chat per judul ecer ----
+type EcerSendEvent = {
+  id: string;
+  created_at: string;
+  party_name: string | null;
+  party_contact: string | null;
+  channel: string;
+  outcome: string;
+  total_amount: number | null;
+  paid_amount: number | null;
+  payment_method: string | null;
+  note: string | null;
+  caption_preview: string | null;
+  photo_count: number;
+  prep_count: number;
+  error_message: string | null;
+};
+
+function EcerSendHistorySection({ titleId }: { titleId: string }) {
+  const [rows, setRows] = useState<EcerSendEvent[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<EcerSendEvent | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<EcerSendEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  // Pengurutan & filter dipegang di state komponen, jadi tetap konsisten
+  // setelah refresh otomatis (fokus window / event kirim / setelah hapus).
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "status">("newest");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  // Filter kategori (kanal kirim) + rentang tanggal. Diterapkan server-side
+  // supaya paging & hitungan total tetap benar walau histori ribuan baris.
+  const [channelFilter, setChannelFilter] = useState<"all" | "wa" | "chat" | "copy">("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Halaman kecil supaya histori tetap ringan walau datanya ribuan baris.
+  const PAGE_SIZE = 20;
+
+  const fetchPage = useCallback(async (offset: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return withSupabaseQueryTimeout<SupabaseQueryResult<EcerSendEvent[]> & { count: number | null }>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (signal) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let q = (supabase.from as any)("ecer_send_events")
+          .select(
+            "id, created_at, party_name, party_contact, channel, outcome, total_amount, paid_amount, payment_method, note, caption_preview, photo_count, prep_count, error_message",
+            { count: "exact" },
+          )
+          .eq("title_id", titleId);
+        if (channelFilter !== "all") q = q.eq("channel", channelFilter);
+        if (dateFrom) q = q.gte("created_at", new Date(`${dateFrom}T00:00:00`).toISOString());
+        if (dateTo) q = q.lte("created_at", new Date(`${dateTo}T23:59:59.999`).toISOString());
+        return q
+          .order("created_at", { ascending: false })
+          .range(offset, offset + PAGE_SIZE - 1)
+          .abortSignal(signal);
+      },
+      "ecer_send_events",
+    );
+  }, [titleId, channelFilter, dateFrom, dateTo]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error, count } = await fetchPage(0);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows(page);
+        setTotal(typeof count === "number" ? count : null);
+        setHasMore(page.length === PAGE_SIZE && (typeof count !== "number" || count > page.length));
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchPage]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || loading || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { data, error, count } = await fetchPage(rows.length);
+      if (!error) {
+        const page = (data ?? []) as EcerSendEvent[];
+        setRows((prev) => {
+          const seen = new Set(prev.map((x) => x.id));
+          const merged = prev.concat(page.filter((x) => !seen.has(x.id)));
+          setHasMore(
+            page.length === PAGE_SIZE &&
+            (typeof count !== "number" || count > merged.length),
+          );
+          return merged;
+        });
+        if (typeof count === "number") setTotal(count);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [fetchPage, hasMore, loading, loadingMore, rows.length]);
+
+  // Muat sekali saat mount supaya badge jumlah histori langsung terlihat
+  // tanpa harus membuka panel dulu.
+  useEffect(() => { void load(); }, [load]);
+
+  // Infinite scroll: muat halaman berikutnya saat sentinel terlihat.
+  useEffect(() => {
+    if (!open || !hasMore) return;
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) void loadMore();
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, hasMore, loadMore]);
+
+  useEffect(() => {
+    // Refresh saat window fokus lagi + saat SendEcerPrepsDialog memancarkan
+    // event "ecer-send-history:changed" agar histori terisi otomatis sesaat
+    // setelah tombol Kirim WA/Chat dijalankan (tidak perlu tap refresh).
+    const onVis = () => { if (document.visibilityState === "visible") void load(); };
+    const onChanged = (e: Event) => {
+      const detail = (e as CustomEvent<{ titleId?: string }>).detail;
+      if (!detail?.titleId || detail.titleId === titleId) {
+        void load();
+        setOpen(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("ecer-send-history:changed", onChanged as EventListener);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("ecer-send-history:changed", onChanged as EventListener);
+    };
+  }, [load, titleId]);
+
+  const channelLabel = (c: string) =>
+    c === "wa" ? "WA" : c === "chat" ? "Chat" : c === "copy" ? "Salin" : c;
+  const outcomeStyle = (o: string) =>
+    o === "sent" ? "bg-success/10 text-success border-success/30"
+    : o === "failed" ? "bg-destructive/10 text-destructive border-destructive/30"
+    : o === "cancelled" ? "bg-warning/10 text-warning border-warning/30"
+    : "bg-muted text-muted-foreground border-border";
+  const outcomeLabel = (o: string) =>
+    o === "sent" ? "Terkirim" : o === "failed" ? "Gagal" : o === "cancelled" ? "Dibatalkan" : o === "copied" ? "Disalin" : o;
+
+  const outcomeRank = (o: string) =>
+    o === "failed" ? 0 : o === "cancelled" ? 1 : o === "sent" ? 2 : 3;
+
+  const visibleRows = useMemo(() => {
+    const filtered = statusFilter === "all" ? rows : rows.filter((r) => r.outcome === statusFilter);
+    const sorted = [...filtered].sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      if (sortBy === "oldest") return ta - tb;
+      if (sortBy === "status") {
+        const d = outcomeRank(a.outcome) - outcomeRank(b.outcome);
+        if (d !== 0) return d;
+        return tb - ta;
+      }
+      return tb - ta;
+    });
+    return sorted;
+  }, [rows, sortBy, statusFilter]);
+
+  const statusOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) counts.set(r.outcome, (counts.get(r.outcome) ?? 0) + 1);
+    return [{ key: "all", label: "Semua", count: total ?? rows.length }].concat(
+      Array.from(counts.entries())
+        .sort((a, b) => outcomeRank(a[0]) - outcomeRank(b[0]))
+        .map(([key, count]) => ({ key, label: outcomeLabel(key), count })),
+    );
+  }, [rows, total]);
+
+  const confirmDeleteEvent = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_send_events")
+        .delete()
+        .eq("id", pendingDelete.id);
+      if (error) throw error;
+      setRows((prev) => prev.filter((x) => x.id !== pendingDelete.id));
+      setDetail((d) => (d && d.id === pendingDelete.id ? null : d));
+      setPendingDelete(null);
+      toast.success("Riwayat pengiriman dihapus");
+      // Ambil ulang dari server supaya daftar & badge jumlah selalu sinkron
+      // (mis. ada baris baru dari perangkat lain, atau hapus gagal diam-diam).
+      await load();
+    } catch (e) {
+      toast.error("Gagal menghapus riwayat", {
+        description: e instanceof Error ? e.message : "Coba lagi sebentar.",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="mt-5 border-t pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-ms-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+        aria-expanded={open}
+      >
+        <ChevronRight className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
+        Histori Verifikasi & Pengiriman
+        {(total ?? rows.length) > 0 && (
+          <span className="rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium normal-case text-muted-foreground">
+            {total ?? rows.length}
+          </span>
+        )}
+        <span className="ml-auto flex items-center gap-ms-1 normal-case">
+          {open && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); void load(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void load(); } }}
+              className="rounded p-ms-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Refresh histori"
+            >
+              🔄
+            </span>
+          )}
+        </span>
+      </button>
+      {open && (
+        <div className="mt-ms-2 space-y-ms-1.5">
+          {/* Filter kategori (kanal) + rentang tanggal — dikirim ke server
+              sehingga hitungan total & infinite scroll ikut terfilter. */}
+          <div className="rounded-md border bg-muted/20 p-ms-1.5 space-y-ms-1.5">
+            <div className="flex flex-wrap items-center gap-ms-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Kategori
+              </span>
+              {([
+                { key: "all", label: "Semua" },
+                { key: "wa", label: "WA" },
+                { key: "chat", label: "Chat" },
+                { key: "copy", label: "Salin" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setChannelFilter(opt.key)}
+                  aria-pressed={channelFilter === opt.key}
+                  className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${
+                    channelFilter === opt.key
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-background text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-ms-1 sm:flex sm:flex-wrap">
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Tanggal
+              </span>
+              <div className="flex min-w-0 flex-wrap items-center gap-ms-1">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  aria-label="Tanggal mulai histori"
+                  className="h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]"
+                />
+                <span className="text-[10px] text-muted-foreground">–</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  aria-label="Tanggal akhir histori"
+                  className="h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]"
+                />
+                {(channelFilter !== "all" || dateFrom || dateTo || statusFilter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setChannelFilter("all");
+                      setDateFrom("");
+                      setDateTo("");
+                      setStatusFilter("all");
+                    }}
+                    className="rounded-md border border-border bg-background px-ms-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                  >
+                    Reset filter
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          {rows.length > 0 && (
+            <div className="flex flex-wrap items-center gap-ms-1">
+              {statusOptions.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setStatusFilter(opt.key)}
+                  aria-pressed={statusFilter === opt.key}
+                  className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${
+                    statusFilter === opt.key
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/30 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {opt.label} ({opt.count})
+                </button>
+              ))}
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "newest" | "oldest" | "status")}
+                aria-label="Urutkan histori"
+                className="ml-auto h-6 rounded-md border border-border bg-background px-1 text-[10px] text-muted-foreground"
+              >
+                <option value="newest">Terbaru dulu</option>
+                <option value="oldest">Terlama dulu</option>
+                <option value="status">Status</option>
+              </select>
+            </div>
+          )}
+          {loading && rows.length === 0 ? (
+            <div className="text-ms-2xs text-muted-foreground">Memuat histori…</div>
+          ) : rows.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
+              {channelFilter !== "all" || dateFrom || dateTo
+                ? "Tidak ada histori pada kategori/rentang tanggal ini."
+                : "Belum ada histori pengiriman untuk paket ini."}
+            </div>
+          ) : visibleRows.length === 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 px-ms-3 py-ms-3 text-center text-ms-2xs text-muted-foreground">
+              Tidak ada histori dengan status ini.
+            </div>
+          ) : (
+            visibleRows.map((r) => {
+              const dt = new Date(r.created_at);
+              return (
+                <div key={r.id} className="rounded-md border bg-card px-ms-2 py-ms-1.5 text-ms-2xs transition hover:border-primary/40 hover:bg-muted/30">
+                  <button
+                    type="button"
+                    onClick={() => setDetail(r)}
+                    aria-label={`Lihat detail histori ${r.party_name || "tanpa nama"}`}
+                    className="flex w-full items-start gap-ms-2 text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-ms-1">
+                        <span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(r.outcome)}`}>
+                          {outcomeLabel(r.outcome)}
+                        </span>
+                        <span className="rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {channelLabel(r.channel)}
+                        </span>
+                        <span className="font-medium">{r.party_name || "Tanpa nama"}</span>
+                        {r.party_contact && <span className="text-muted-foreground">· {r.party_contact}</span>}
+                      </div>
+                      <div className="mt-0.5 text-muted-foreground">
+                        {dt.toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        {" · "}{r.prep_count} kotak · {r.photo_count} foto
+                        {r.total_amount != null && <> · <span className="tabular-nums">{rupiah(Number(r.total_amount))}</span></>}
+                        {r.payment_method === "hutang" && <> · Hutang</>}
+                        {r.payment_method === "partial" && <> · Bayar sebagian</>}
+                        {r.payment_method === "kas" && <> · Lunas</>}
+                      </div>
+                    </div>
+                    <ChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  </button>
+                  <div className="mt-ms-1 flex justify-end gap-ms-1">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDetail(r); }}
+                      className="inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    >
+                      Detail
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Hapus riwayat pengiriman ${r.party_name || "tanpa nama"}`}
+                      title="Hapus riwayat"
+                      onClick={(e) => { e.stopPropagation(); setPendingDelete(r); }}
+                      className="inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" /> Hapus
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          {rows.length > 0 && (
+            <div ref={sentinelRef} className="pt-ms-1">
+              {hasMore ? (
+                <button
+                  type="button"
+                  onClick={() => void loadMore()}
+                  disabled={loadingMore}
+                  className="flex w-full items-center justify-center gap-ms-1 rounded-md border border-dashed bg-muted/20 px-ms-2 py-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-60"
+                >
+                  {loadingMore ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                  {loadingMore ? "Memuat…" : "Muat lebih banyak"}
+                </button>
+              ) : (
+                <div className="text-center text-[10px] text-muted-foreground">
+                  Menampilkan semua {total ?? rows.length} catatan.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <Dialog open={!!detail} onOpenChange={(o) => { if (!o) setDetail(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-ms-2">
+              <Send className="h-4 w-4 text-primary" aria-hidden />
+              Detail histori pengiriman
+            </DialogTitle>
+            <DialogDescription>
+              Rincian lengkap catatan verifikasi &amp; pengiriman paket ecer ini.
+            </DialogDescription>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-ms-2 text-ms-2xs">
+              <div className="flex flex-wrap items-center gap-ms-1">
+                <span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${outcomeStyle(detail.outcome)}`}>
+                  {outcomeLabel(detail.outcome)}
+                </span>
+                <span className="rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {channelLabel(detail.channel)}
+                </span>
+                <span className="text-muted-foreground">
+                  {new Date(detail.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-ms-2 space-y-ms-1">
+                <div className="flex justify-between gap-ms-2">
+                  <span className="text-muted-foreground">Penerima</span>
+                  <span className="font-medium text-right">{detail.party_name || "Tanpa nama"}</span>
+                </div>
+                {detail.party_contact && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Kontak</span>
+                    <span className="text-right tabular-nums">{detail.party_contact}</span>
+                  </div>
+                )}
+                <div className="flex justify-between gap-ms-2">
+                  <span className="text-muted-foreground">Isi paket</span>
+                  <span className="text-right">{detail.prep_count} kotak · {detail.photo_count} foto</span>
+                </div>
+                {detail.total_amount != null && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="text-right font-semibold tabular-nums">{rupiah(Number(detail.total_amount))}</span>
+                  </div>
+                )}
+                {detail.paid_amount != null && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Dibayar</span>
+                    <span className="text-right tabular-nums">{rupiah(Number(detail.paid_amount))}</span>
+                  </div>
+                )}
+                {detail.payment_method && (
+                  <div className="flex justify-between gap-ms-2">
+                    <span className="text-muted-foreground">Pembayaran</span>
+                    <span className="text-right">
+                      {detail.payment_method === "hutang" ? "Hutang"
+                        : detail.payment_method === "partial" ? "Bayar sebagian"
+                        : detail.payment_method === "kas" ? "Lunas" : detail.payment_method}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {detail.note && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
+                  <div className="whitespace-pre-wrap break-words">{detail.note}</div>
+                </div>
+              )}
+              {detail.error_message && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-destructive">Error</div>
+                  <div className="whitespace-pre-wrap break-words text-destructive">{detail.error_message}</div>
+                </div>
+              )}
+              {detail.caption_preview && (
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pesan terkirim</div>
+                  <pre className="mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-ms-1.5 font-sans text-[11px] leading-relaxed">
+{detail.caption_preview}
+                  </pre>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-ms-1.5 pt-ms-1">
+                {detail.caption_preview && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => { void copyText(detail.caption_preview ?? ""); toast.success("Pesan disalin"); }}
+                  >
+                    Salin pesan
+                  </Button>
+                )}
+                {detail.party_contact && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => { void copyText(detail.party_contact ?? ""); toast.success("Kontak disalin"); }}
+                    >
+                      Salin kontak
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        window.open(
+                          buildWhatsAppUrl(detail.caption_preview ?? "", detail.party_contact ?? ""),
+                          "_blank",
+                          "noopener",
+                        );
+                      }}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Buka WhatsApp
+                    </Button>
+                  </>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setPendingDelete(detail)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Hapus
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDetail(null)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => { if (!o && !deleting) setPendingDelete(null); }}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-ms-2">
+              <Trash2 className="h-4 w-4 text-destructive" aria-hidden />
+              Hapus catatan histori ini?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Periksa dulu detail catatan di bawah. Tindakan ini tidak bisa dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {pendingDelete && (
+            <div className="space-y-ms-3">
+              <div className="space-y-ms-1 rounded-lg border bg-muted/30 p-ms-3 text-ms-xs">
+                <div className="flex flex-wrap items-center gap-ms-1">
+                  <span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(pendingDelete.outcome)}`}>
+                    {outcomeLabel(pendingDelete.outcome)}
+                  </span>
+                  <span className="rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {channelLabel(pendingDelete.channel)}
+                  </span>
+                  <span className="font-semibold">{pendingDelete.party_name || "Tanpa nama"}</span>
+                  {pendingDelete.party_contact && (
+                    <span className="text-muted-foreground">· {pendingDelete.party_contact}</span>
+                  )}
+                </div>
+                <div className="text-muted-foreground">
+                  {new Date(pendingDelete.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </div>
+                <div className="text-muted-foreground">
+                  {pendingDelete.prep_count} kotak · {pendingDelete.photo_count} foto
+                  {pendingDelete.total_amount != null && (
+                    <> · <span className="tabular-nums font-medium text-foreground">{rupiah(Number(pendingDelete.total_amount))}</span></>
+                  )}
+                  {pendingDelete.payment_method === "hutang" && <> · Hutang</>}
+                  {pendingDelete.payment_method === "partial" && <> · Bayar sebagian</>}
+                  {pendingDelete.payment_method === "kas" && <> · Lunas</>}
+                </div>
+              </div>
+
+              <div className="space-y-ms-1 text-ms-xs">
+                <p className="font-semibold text-muted-foreground">Dampak penghapusan</p>
+                <ul className="space-y-ms-1">
+                  <li className="flex gap-ms-2">
+                    <span className="text-destructive" aria-hidden>−</span>
+                    <span>Baris histori ini hilang permanen, termasuk salinan pesan yang terkirim dan catatan error.</span>
+                  </li>
+                  <li className="flex gap-ms-2">
+                    <span className="text-success" aria-hidden>✓</span>
+                    <span>Paket penyiapan, stok, foto, dan data pembayaran/piutang <strong>tidak</strong> ikut terhapus.</span>
+                  </li>
+                  <li className="flex gap-ms-2">
+                    <span className="text-success" aria-hidden>✓</span>
+                    <span>Pesan yang sudah dikirim ke pelanggan tetap ada di WhatsApp/chat mereka.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); void confirmDeleteEvent(); }}
+            >
+              {deleting ? "Menghapus…" : "Hapus histori"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+// ---- Send ecer preps batch to customer ----
+function SendEcerPrepsDialog({
+  open, onClose, preps, title, itemName, customers, onSent, onLocationSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  preps: EcerPreparation[];
+  title: EcerTitle;
+  itemName?: string;
+  customers: Array<{ id: string; name: string; contact: string | null }>;
+  onSent: () => void;
+  /** Dipanggil setelah owner berhasil menyimpan `location_url` dari
+   * banner peringatan di modal preview WA/Chat. Parent WAJIB melakukan
+   * refetch preps supaya caption terbaru langsung tampil. */
+  onLocationSaved?: () => void | Promise<void>;
+}) {
+  const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
+  const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
+  const [manualName, setManualName] = useState("");
+  const [totalStr, setTotalStr] = useState("");
+  // Metode bayar WAJIB dipilih eksplisit oleh owner sebelum tombol
+  // "Kirim ke pembeli" aktif. Default `null` (belum dipilih) — bukan "kas" —
+  // supaya tidak ada jalur tembus dimana owner main tekan Kirim tanpa
+  // sadar mencatat penjualan sebagai Lunas.
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial" | null>(null);
+  const [paidStr, setPaidStr] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  // Wizard 3 langkah: 1) Pelanggan  2) Verifikasi bayar  3) Konfirmasi & Kirim.
+  // Tombol kirim ke pembeli (WA/Chat) hanya muncul di langkah 3, dan hanya
+  // aktif setelah langkah 2 lulus validasi (metode + nominal). Ini mencegah
+  // owner main tekan Kirim tanpa memverifikasi Lunas / Hutang / Bayar sebagian.
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const prepIdsKey = useMemo(() => preps.map((p) => p.id).sort().join("|"), [preps]);
+  const waTpl = useWaTemplate();
+
+  useEffect(() => {
+    if (!open) return;
+    setMode(customers.length > 0 ? "link" : "manual");
+    setCustomerId(customers[0]?.id ?? "");
+    setManualName("");
+    setTotalStr("");
+    setPayMethod(null);
+    setPaidStr("");
+    setNote("");
+    setStep(1);
+    setPreviewOpen(false);
+  }, [open, customers, title.id, prepIdsKey]);
+
+  const totalAmount = useMemo(() => {
+    return parsePaymentAmountInput(totalStr);
+  }, [totalStr]);
+  const paidAmount = useMemo(() => {
+    return parsePaymentAmountInput(paidStr);
+  }, [paidStr]);
+  const payment = useMemo(
+    () => getPaymentBreakdown(payMethod ?? "kas", totalAmount, paidAmount),
+    [payMethod, totalAmount, paidAmount],
+  );
+  const remaining = payment.remaining;
+  const partialValid = payment.partialValid;
+
+  const party = useMemo(() => {
+    if (mode === "link") {
+      const c = customers.find((x) => x.id === customerId);
+      return { id: c?.id ?? null, name: c?.name ?? "", contact: c?.contact ?? null };
+    }
+    return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
+  }, [mode, customerId, manualName, customers]);
+
+  // Payment-first gate: tombol Kirim hanya aktif kalau metode bayar
+  // sudah dipilih (Lunas / Hutang / Bayar sebagian) DAN validasi lain
+  // lolos. Ini yang mencegah WA benar-benar terkirim tanpa verifikasi.
+  const canSend =
+    payMethod !== null &&
+    !!party.name &&
+    totalAmount > 0 &&
+    preps.length > 0 &&
+    !busy &&
+    partialValid;
+
+  // Gate transisi antar langkah:
+  //  - Langkah 1 → 2: nama pelanggan sudah ada.
+  //  - Langkah 2 → 3: total > 0, metode bayar dipilih, dan (khusus
+  //    "sebagian") nominal dibayar valid (>0 dan < total).
+  const canGoStep2 = !!party.name;
+  const canGoStep3 =
+    payMethod !== null && totalAmount > 0 && partialValid;
+
+  // Validasi nominal per metode untuk pesan error yang informatif di
+  // langkah 2. Dipakai untuk menampilkan alasan kenapa tombol Lanjut
+  // dinonaktifkan, sehingga owner tahu apa yang perlu diperbaiki.
+  const payValidationMessage: string | null = (() => {
+    if (totalAmount <= 0) return "Isi total harga dulu (harus > 0).";
+    if (payMethod === null) return "Pilih metode bayar: Lunas, Hutang, atau Bayar sebagian.";
+    if (payMethod === "partial") {
+      if (paidAmount <= 0) return "Isi jumlah yang sudah dibayar (harus > 0).";
+      if (paidAmount >= totalAmount) return "Dibayar tidak boleh ≥ total. Pilih Lunas kalau memang lunas.";
+    }
+    return null;
+  })();
+
+  async function resolvePhotoUrl(prep: EcerPreparation) {
+    if (!prep.photo_path) return null;
+    const primary = prep.created_by === "worker" ? prepSignedUrl : ecerSignedUrl;
+    const secondary = prep.created_by === "worker" ? ecerSignedUrl : prepSignedUrl;
+    const a = await primary(prep.photo_path, 600);
+    if (a) return a;
+    return await secondary(prep.photo_path, 600);
+  }
+
+  function buildCaption(): string {
+    // Template & format diatur oleh owner di /pengaturan-pesan-wa.
+    // Blok pembayaran + placeholder lokasi tetap dari SSOT payment-summary.
+    const unit = displayUnit(itemName, title.unit_label);
+    const firstLoc = preps.find((p) => (p.location_url ?? "").trim())?.location_url?.trim() ?? "";
+    return renderWaCaption(waTpl.template, waTpl.options, {
+      title: title.name,
+      items: preps.map((p) => ({ label: "", qty: p.actual_grams, unit })),
+      payment,
+      locationUrl: firstLoc,
+      note: note.trim() || null,
+      customerName: party.name || null,
+    });
+  }
+
+  async function handleSend() {
+    if (!canSend) return;
+    if (!party.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
+    if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
+
+    const methodLabel =
+      payment.method === "hutang" ? `Hutang — sisa ${formatPaymentRupiah(payment.remaining)} piutang`
+      : payment.method === "partial" ? `Bayar sebagian — dibayar ${formatPaymentRupiah(payment.paid)}, sisa ${formatPaymentRupiah(payment.remaining)} piutang`
+      : "Lunas";
+    const summary = [
+      `Pelanggan: ${party.name}${party.contact ? ` (${party.contact})` : ""}`,
+      `Kotak: ${preps.length} × dari ${title.name}`,
+      `Total: ${rupiah(totalAmount)}`,
+      `Metode: ${methodLabel}`,
+      note.trim() ? `Catatan: ${note.trim()}` : null,
+      "",
+      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke pembeli via WA/Chat.",
+    ].filter(Boolean).join("\n");
+    const ok = await confirm({
+      title: "Konfirmasi pembayaran",
+      description: summary,
+      confirmText: "Kirim ke pembeli",
+      cancelText: "Periksa lagi",
+    });
+    if (!ok) return;
+
+    setBusy(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase as any).rpc("send_ecer_preps_to_customer", {
+        _prep_ids: preps.map((p) => p.id),
+        _customer_id: party.id,
+        _party_name: party.name,
+        _total_amount: payment.total,
+        _paid_amount: payment.method === "partial" ? payment.paid : null,
+        _payment_method: payment.method,
+        _note: note.trim() || null,
+      });
+      if (rpcErr) throw rpcErr;
+
+      // Broadcast agar semua panel (ReadyEcerSection di /index, badge produk,
+      // panel Piutang) refetch — realtime tidak dipasang di semua permukaan,
+      // jadi event ini adalah sabuk pengaman supaya UI konsisten setelah kirim
+      // batch (baik Lunas, Hutang, maupun Bayar sebagian).
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: payment.method === "kas",
+        amount: payment.remaining,
+        partyId: party.id ?? null,
+        at: Date.now(),
+      });
+
+      toast.success(
+        payment.method === "hutang"
+          ? "Terkirim — penjualan & piutang tercatat"
+          : payment.method === "partial"
+            ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
+            : "Terkirim — penjualan tercatat",
+      );
+      // Log histori verifikasi & pengiriman (WA/Chat) per transaksi.
+      // Baris awal ditulis segera setelah RPC sukses supaya jejak tidak
+      // hilang kalau WebView pause saat pindah ke WhatsApp. Outcome +
+      // photo_count di-update setelah share benar-benar berjalan.
+      const captionPreview = (() => {
+        try { return buildCaption(); } catch { return null; }
+      })();
+      let sendEventId: string | null = null;
+      try {
+        const { data: uData } = await supabase.auth.getUser();
+        const uid = uData.user?.id ?? null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: evt } = await (supabase as any)
+          .from("ecer_send_events")
+          .insert({
+            user_id: uid,
+            title_id: title.id,
+            prep_ids: preps.map((p) => p.id),
+            prep_count: preps.length,
+            customer_id: party.id ?? null,
+            party_name: party.name || null,
+            party_contact: party.contact || null,
+            channel: "wa",
+            outcome: "sent",
+            total_amount: payment.total,
+            paid_amount: payment.method === "partial" ? payment.paid : (payment.method === "kas" ? payment.total : 0),
+            payment_method: payment.method,
+            note: note.trim() || null,
+            caption_preview: captionPreview,
+            photo_count: 0,
+          })
+          .select("id")
+          .single();
+        sendEventId = (evt as { id?: string } | null)?.id ?? null;
+        if (sendEventId) {
+          try {
+            window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+          } catch { /* ignore */ }
+        }
+      } catch (logErr) {
+        console.warn("[ecer:send-history] gagal catat awal", logErr);
+      }
+      // Urutan penting: DULU siapkan file + buka WA (memindahkan app ke
+      // background), BARU panggil onSent() saat visibility kembali "visible".
+      // Alasan: kalau onSent() dipanggil duluan, parent memicu refetch tepat
+      // saat WebView Android dipause karena app pindah ke WhatsApp. Fetch
+      // yang menggantung sering ter-resume dengan payload rusak dan memicu
+      // render-throw → error boundary global ("Memuat ulang halaman…").
+      // Kirim WA di latar; hasil dilaporkan lewat toast dari notifyShareResult.
+      let sentCalled = false;
+      const callSentOnce = () => {
+        if (sentCalled) return;
+        sentCalled = true;
+        try { onSent(); } catch (err) { console.error("[ecer:onSent]", err); }
+      };
+      // Fallback: kalau share tidak pernah membuka WA (mis. cancel awal),
+      // tetap refresh setelah 4 detik supaya UI tidak stuck.
+      const fallbackTimer = window.setTimeout(callSentOnce, 4000);
+      // Trigger refresh saat user kembali dari WhatsApp — momen paling aman
+      // untuk refetch karena WebView sudah active kembali.
+      const onVis = () => {
+        if (document.visibilityState === "visible") {
+          document.removeEventListener("visibilitychange", onVis);
+          window.clearTimeout(fallbackTimer);
+          // Beri 1 tick supaya WebView benar-benar siap menerima fetch baru.
+          window.setTimeout(callSentOnce, 250);
+        }
+      };
+      document.addEventListener("visibilitychange", onVis);
+
+      void (async () => {
+        try {
+          const files: File[] = [];
+          for (const p of preps) {
+            const signed = await resolvePhotoUrl(p);
+            if (!signed) continue;
+            const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
+            if (f) files.push(f);
+          }
+          const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
+          notifyShareResult(res);
+          if (sendEventId) {
+            const failed = res.status === "failed";
+            const cancelled = res.status === "cancelled";
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from("ecer_send_events")
+              .update({
+                photo_count: files.length,
+                outcome: failed ? "failed" : cancelled ? "cancelled" : "sent",
+                error_message: failed ? (res as { error?: string }).error ?? null : null,
+              })
+              .eq("id", sendEventId);
+            try {
+              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+            } catch { /* ignore */ }
+          }
+        } catch (e) {
+          toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
+          if (sendEventId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (supabase as any)
+              .from("ecer_send_events")
+              .update({
+                outcome: "failed",
+                error_message: (e as { message?: string })?.message ?? String(e),
+              })
+              .eq("id", sendEventId);
+            try {
+              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+            } catch { /* ignore */ }
+          }
+          // Kalau share error sebelum sempat memicu visibility hidden,
+          // pastikan UI tetap ter-refresh.
+          callSentOnce();
+        }
+      })();
+    } catch (e) {
+      toast.error("Gagal kirim: " + ((e as { message?: string })?.message ?? String(e)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const totalQty = preps.reduce((s, p) => s + Number(p.actual_grams || 0), 0);
+
+  return (
+    <>
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-ms-2 text-ms-base">
+            <Send className="h-4 w-4 text-primary" /> Verifikasi pembayaran
+            <span className="ml-auto text-ms-2xs font-normal text-muted-foreground">
+              Langkah {step} / 3
+            </span>
+          </DialogTitle>
+          <DialogDescription>
+            {preps.length} kotak <b>{title.name}</b> · {totalQty} {displayUnit(itemName, title.unit_label)}. Verifikasi pembayaran dulu, lalu kirim pesan + foto ke pembeli via <b>WA/Chat</b>. Stok & piutang tercatat otomatis.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Progress bar tipis — memberi sinyal visual owner sedang di langkah mana */}
+        <div className="mb-1 flex items-center gap-ms-1">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                s <= step ? "bg-primary" : "bg-muted"
+              }`}
+              aria-hidden
+            />
+          ))}
+        </div>
+        <div className="mb-2 flex items-center justify-between text-ms-2xs font-medium">
+          <span className={step === 1 ? "text-primary" : "text-muted-foreground"}>
+            1. Pelanggan
+          </span>
+          <span className={step === 2 ? "text-primary" : "text-muted-foreground"}>
+            2. Verifikasi bayar
+          </span>
+          <span className={step === 3 ? "text-primary" : "text-muted-foreground"}>
+            3. Kirim ke pembeli
+          </span>
+        </div>
+
+        {/* Ringkasan alur & pilihan channel — memperjelas bahwa WA/Chat baru
+            dipakai setelah pembayaran terverifikasi. */}
+        <div className="mb-3 rounded-md border border-primary/30 bg-primary/5 p-ms-2 text-ms-2xs text-foreground">
+          <div className="mb-1 flex items-center gap-ms-1 font-semibold text-primary">
+            <MessageCircle className="h-3.5 w-3.5" /> Alur kirim ke pembeli
+          </div>
+          <ol className="ml-4 list-decimal space-y-0.5">
+            <li>Pilih pelanggan (dari kontak atau isi manual).</li>
+            <li>Verifikasi pembayaran: <b>Lunas</b>, <b>Hutang</b>, atau <b>Bayar sebagian</b>.</li>
+            <li>Setelah terverifikasi, pesan & foto dikirim ke pembeli via <b>WA/Chat</b>.</li>
+          </ol>
+        </div>
+
+        <div className="space-ms-3 text-ms-xs">
+          <div className="rounded-md border bg-muted/30 p-ms-2">
+            <div className="mb-1 font-semibold">{preps.length} kotak dipilih</div>
+            <div className="flex flex-wrap gap-ms-1">
+              {preps.map((p, i) => (
+                <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-medium text-primary">
+                  #{i + 1} · {fmtWeight(Number(p.actual_grams), displayUnit(itemName, title.unit_label))}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {step === 1 && (
+          <div>
+            <label className="mb-1 block text-ms-2xs font-medium">Pelanggan</label>
+            <div className="mb-1 flex gap-ms-1 text-ms-2xs">
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >Dari kontak</button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className={`flex-1 rounded-md border px-ms-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >Manual</button>
+            </div>
+            {mode === "link" ? (
+              customers.length === 0 ? (
+                <div className="rounded-md border border-dashed p-ms-2 text-ms-2xs text-muted-foreground">
+                  Belum ada pelanggan. Gunakan mode Manual atau tambahkan pelanggan dulu.
+                </div>
+              ) : (
+                <select
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-card px-ms-2 text-ms-xs"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.contact ? ` · ${c.contact}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            ) : (
+              <Input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Nama pelanggan"
+                className="h-9 text-ms-xs"
+                maxLength={100}
+              />
+            )}
+            {!canGoStep2 && (
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
+                Pilih pelanggan dari kontak atau isi nama manual dulu sebelum lanjut.
+              </div>
+            )}
+          </div>
+          )}
+
+          {step === 2 && (
+          <>
+          <div>
+            <label className="mb-1 block text-ms-2xs font-medium">Total harga (Rp)</label>
+            <NumericTextField
+              value={totalStr}
+              onValueChange={setTotalStr}
+              decimal={false}
+              placeholder="Contoh: 25000"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            />
+            {totalAmount > 0 && <div className="mt-1 text-ms-2xs text-muted-foreground">= {rupiah(totalAmount)}</div>}
+          </div>
+
+          <div>
+            <label className="mb-1 flex items-center gap-ms-1 text-ms-2xs font-medium">
+              Metode bayar <span className="text-destructive">*</span>
+              {payMethod === null && (
+                <span className="ml-1 text-ms-2xs font-normal text-destructive">
+                  wajib dipilih
+                </span>
+              )}
+            </label>
+            <div className="flex gap-ms-1">
+              <button
+                type="button"
+                onClick={() => setPayMethod("kas")}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <Wallet className="h-3.5 w-3.5" /> Lunas
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("hutang")}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Hutang
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("partial")}
+                className={`flex flex-1 items-center justify-center gap-ms-1 rounded-md border px-ms-2 py-1.5 text-ms-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Sebagian
+              </button>
+            </div>
+            {payMethod === null && (
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
+                Pilih Lunas / Hutang / Bayar sebagian dulu — pesan ke pembeli (WA/Chat) baru bisa dikirim setelah pembayaran dicatat.
+              </div>
+            )}
+            {payMethod === "partial" && (
+              <div className="mt-2 space-y-1">
+                <label className="text-ms-2xs text-muted-foreground">Dibayar sekarang (Rp)</label>
+                <NumericTextField
+                  value={paidStr}
+                  onValueChange={setPaidStr}
+                  decimal={false}
+                  placeholder="Contoh: 10000"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 tabular-nums text-ms-xs ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+                <div className="text-ms-2xs text-muted-foreground">
+                  {paidAmount > 0 && totalAmount > 0
+                    ? paidAmount >= totalAmount
+                      ? <span className="text-destructive">Dibayar tidak boleh ≥ total. Pilih Lunas.</span>
+                      : <>Sisa {rupiah(remaining)} akan dicatat sebagai piutang atas <b>{party.name || "-"}</b>.</>
+                    : "Isi jumlah yang dibayar sekarang; sisanya masuk piutang."}
+                </div>
+              </div>
+            )}
+            {payMethod === "hutang" && (
+              <div className="mt-2 rounded-md border border-warning/40 bg-warning/10 p-ms-1.5 text-ms-2xs text-warning dark:text-warning">
+                Seluruh total dicatat sebagai piutang atas <b>{party.name || "-"}</b>.
+              </div>
+            )}
+            {payMethod === "kas" && totalAmount > 0 && (
+              <div className="mt-2 rounded-md border border-success/40 bg-success/10 p-ms-1.5 text-ms-2xs text-success dark:text-success">
+                Tercatat lunas — {rupiah(totalAmount)} langsung masuk kas.
+              </div>
+            )}
+          </div>
+          {payValidationMessage && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-ms-1.5 text-ms-2xs text-destructive">
+              {payValidationMessage}
+            </div>
+          )}
+          </>
+          )}
+
+          {step === 3 && (
+          <>
+          {/* Ringkasan hasil verifikasi — read-only. Owner memastikan
+              sekali lagi sebelum pesan & foto dikirim ke pembeli via WA/Chat. */}
+          <div className="rounded-md border bg-card p-ms-2 text-ms-2xs">
+            <div className="mb-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Ringkasan verifikasi
+            </div>
+            <div className="grid grid-cols-[80px_1fr] gap-y-1">
+              <span className="text-muted-foreground">Pelanggan</span>
+              <span className="font-medium">{party.name || "-"}{party.contact ? ` · ${party.contact}` : ""}</span>
+              <span className="text-muted-foreground">Total</span>
+              <span className="font-medium tabular-nums">{rupiah(totalAmount)}</span>
+              <span className="text-muted-foreground">Metode</span>
+              <span className="font-medium">
+                {payment.label}
+                {payment.method === "partial" && (
+                  <span className="text-muted-foreground">
+                    {" "}· Dibayar {rupiah(payment.paid)} · Sisa {rupiah(payment.remaining)}
+                  </span>
+                )}
+                {payment.method === "hutang" && (
+                  <span className="text-muted-foreground"> · Piutang {rupiah(payment.remaining)}</span>
+                )}
+              </span>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-ms-2xs font-medium">Catatan (opsional)</label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="text-ms-xs"
+              placeholder="Mis. antar sore, titip di warung, dsb."
+              maxLength={500}
+            />
+          </div>
+          {/* Preview teks WA/Chat — owner bisa periksa isi pesan sebelum
+              menekan konfirmasi. Otomatis update saat catatan/metode diubah. */}
+          <details className="rounded-md border bg-muted/30 p-ms-2 text-ms-2xs" open>
+            <summary className="cursor-pointer select-none font-semibold uppercase tracking-wide text-muted-foreground">
+              Preview pesan WA/Chat
+            </summary>
+            <pre className="mt-ms-1.5 max-h-56 overflow-auto whitespace-pre-wrap break-words rounded bg-background p-ms-1.5 font-sans text-ms-2xs leading-relaxed">
+{buildCaption()}
+            </pre>
+            <div className="mt-ms-1 text-[10px] text-muted-foreground">
+              Foto paket ikut terkirim bersama pesan ini.
+            </div>
+          </details>
+          </>
+          )}
+        </div>
+
+        <DialogFooter className="flex-col gap-ms-2 sm:flex-col">
+          <div className="grid w-full grid-cols-2 gap-ms-2">
+            {step === 1 ? (
+              <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>
+                Batal
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStep((s) => (s === 3 ? 2 : 1))}
+                disabled={busy}
+              >
+                <ChevronLeft className="mr-1 h-3.5 w-3.5" /> Kembali
+              </Button>
+            )}
+            {step === 1 && (
+              <Button
+                size="sm"
+                onClick={() => setStep(2)}
+                disabled={!canGoStep2}
+              >
+                Lanjut <ChevronRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            )}
+            {step === 2 && (
+              <Button
+                size="sm"
+                onClick={() => setStep(3)}
+                disabled={!canGoStep3}
+              >
+                {canGoStep3 ? "Verifikasi & Lanjut" : "Lengkapi bayar dulu"}
+                <ChevronRight className="ml-1 h-3.5 w-3.5" />
+              </Button>
+            )}
+            {step === 3 && (
+              <Button size="sm" onClick={() => setPreviewOpen(true)} disabled={!canSend}>
+                {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+                {payment.method === "hutang"
+                  ? "Kirim ke pembeli & catat piutang"
+                  : payment.method === "partial"
+                    ? "Kirim ke pembeli & catat sebagian"
+                    : "Kirim ke pembeli & catat lunas"}
+              </Button>
+            )}
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <CaptionPreviewDialog
+      open={previewOpen}
+      onOpenChange={setPreviewOpen}
+      caption={(() => { try { return buildCaption(); } catch { return ""; } })()}
+      channel="wa"
+      photoCount={preps.length}
+      busy={busy}
+      locationMissing={!preps.some((p) => (p.location_url ?? "").trim())}
+      locationHint="Buka kartu penyiapan Ecer (Ready) → isi kolom Lokasi ambil (link Google Maps), lalu ulangi Verifikasi bayar."
+      onSaveLocation={async (url) => {
+        // Isi lokasi untuk semua kartu penyiapan dalam batch ini yang belum
+        // punya `location_url`. Kartu yang sudah punya lokasi tidak diubah.
+        const ids = preps.filter((p) => !(p.location_url ?? "").trim()).map((p) => p.id);
+        if (ids.length === 0) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("ecer_preparations")
+          .update({ location_url: url })
+          .in("id", ids);
+        if (error) throw error;
+        await Promise.resolve(onLocationSaved?.());
+      }}
+      confirmLabel={
+        payment.method === "hutang"
+          ? "Kirim WA & catat piutang"
+          : payment.method === "partial"
+            ? "Kirim WA & catat sebagian"
+            : "Kirim WA & catat lunas"
+      }
+      onConfirm={() => { setPreviewOpen(false); void handleSend(); }}
+    />
+    </>
   );
 }

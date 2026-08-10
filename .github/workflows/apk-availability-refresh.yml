@@ -1,0 +1,58 @@
+name: APK Availability Refresh E2E
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/components/DownloadChatApkShortcut.tsx"
+      - "src/components/DownloadStorageApkShortcut.tsx"
+      - "src/components/CopyChatApkLinksButton.tsx"
+      - "src/routes/lovable.visual.apk-availability-shortcuts.tsx"
+      - "tests/e2e/apk-availability-refresh.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/apk-availability-refresh.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apk-availability-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          until curl -sf http://localhost:4173 > /dev/null; do
+            sleep 1
+          done
+
+      - name: Run APK availability refresh suite
+        run: bunx playwright test --project=apk-availability-refresh-e2e --reporter=list,html
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-apk-availability-refresh
+          path: playwright-report
+          retention-days: 14

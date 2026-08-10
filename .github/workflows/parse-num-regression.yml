@@ -1,0 +1,58 @@
+name: parse-num-regression
+
+# Guard regresi bug parsing gram × harga (mis. "0,9 × 900.000 = 8.100.000").
+# Menjalankan seluruh test yang mengunci parseNum + perhitungan total
+# di setiap pull request dan push ke main.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/components/SellSelfPrepDialog.tsx"
+      - "src/components/SellSelfPrepDialog.parseNum.test.ts"
+      - "src/components/SellSelfPrepDialog.parseNum.fuzz.test.ts"
+      - "src/components/SellSelfPrepDialog.pipeline.test.tsx"
+      - "src/components/NumericDraftInput.tsx"
+      - "src/components/NumericTextField.canonical-parity.test.ts"
+      - "src/lib/payment-summary.ts"
+      - "src/lib/formatNumberID.ts"
+      - "package.json"
+      - "bun.lockb"
+      - "vitest.config.ts"
+      - ".github/workflows/parse-num-regression.yml"
+  pull_request:
+    paths:
+      - "src/components/SellSelfPrepDialog.tsx"
+      - "src/components/SellSelfPrepDialog.parseNum.test.ts"
+      - "src/components/SellSelfPrepDialog.parseNum.fuzz.test.ts"
+      - "src/components/SellSelfPrepDialog.pipeline.test.tsx"
+      - "src/components/NumericDraftInput.tsx"
+      - "src/components/NumericTextField.canonical-parity.test.ts"
+      - "src/lib/payment-summary.ts"
+      - "src/lib/formatNumberID.ts"
+      - "package.json"
+      - "bun.lockb"
+      - "vitest.config.ts"
+      - ".github/workflows/parse-num-regression.yml"
+  workflow_dispatch:
+
+jobs:
+  parse-num-regression:
+    name: parseNum + total pipeline (fail on any regression)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: parseNum unit test (kontrak canonical vs display id-ID)
+        run: bunx vitest run src/components/SellSelfPrepDialog.parseNum.test.ts
+      - name: parseNum property/fuzz test (kosong, null, spasi, angka besar, campuran)
+        run: bunx vitest run src/components/SellSelfPrepDialog.parseNum.fuzz.test.ts
+      - name: NumericTextField display ↔ canonical parity
+        run: bunx vitest run src/components/NumericTextField.canonical-parity.test.ts
+      - name: Pipeline total end-to-end (Gram × Harga → subtotal → total)
+        run: bunx vitest run src/components/SellSelfPrepDialog.pipeline.test.tsx

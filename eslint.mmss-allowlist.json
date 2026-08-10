@@ -1,0 +1,10 @@
+{
+  "$schema": "./eslint.mmss-allowlist.schema.json",
+  "description": "Allowlist untuk aturan mm:ss di src/components/chat/**. Setiap entri WAJIB menyertakan `reason` yang menjelaskan mengapa file tersebut tidak memakai formatDurationMMSS. File test (*.test.ts, *.test.tsx) otomatis dikecualikan.",
+  "files": [
+    {
+      "path": "src/components/chat/AttachMenu.tsx",
+      "reason": "Menampilkan elapsed waktu upload attachment, bukan durasi media. Formatter mm:ss ad-hoc di sini tidak relevan dengan kontrak durasi voice-note/audio."
+    }
+  ]
+}

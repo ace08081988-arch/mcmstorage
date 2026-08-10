@@ -1,5 +1,7 @@
+import { inspectImageBlob } from "./upload-image-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
+import { compressImage } from "@/lib/prep-image-compress";
 
 export const PREP_BUCKET = "prep-photos";
 
@@ -36,10 +38,152 @@ export async function signedUrl(path: string | null | undefined, expiresIn = 60 
   return data?.signedUrl ?? null;
 }
 
-export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: Blob, ext = "jpg", client: StorageClient = supabase): Promise<string | null> {
-  const path = `${taskToken}/${itemId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await client.storage.from(PREP_BUCKET).upload(path, blob, {
-    contentType: blob.type || "image/jpeg",
+// Ambang re-kompresi safety-net di lapisan upload. stageFile() sudah
+// mengompres saat file dipilih user, tapi:
+//   • hasil edit PhotoEditor bisa lebih besar dari input (mis. rotasi
+//     ulang atau crop di zoom tinggi meninggalkan area kosong),
+//   • blob dari alur lain (mis. drag-drop di masa depan) belum tentu
+//     lewat stageFile.
+// Threshold 1.5 MB dipilih karena RPC/storage lancar di bawahnya dan foto
+// bukti timbangan tetap tajam pada quality 0.8 sisi 2048 px.
+const UPLOAD_COMPRESS_THRESHOLD = 1.5 * 1024 * 1024;
+const UPLOAD_QUALITY = 0.8;
+const UPLOAD_MAX_DIM = 2048;
+
+// SPRINT 5 (High) — pagar ukuran akhir. Bucket prep-photos bisa ditulis oleh
+// sesi anon (portal pegawai) dan Storage belum punya file_size_limit per
+// bucket, jadi batas keras ditegakkan di sini: apa pun yang lolos kompresi
+// tapi masih > 12 MB ditolak, bukan dikirim ke storage.
+const UPLOAD_HARD_MAX_BYTES = 12 * 1024 * 1024;
+
+// Peta MIME → ekstensi file. Batasi hanya ke format raster yang benar-benar
+// bisa dihasilkan pipeline stageFile / PhotoEditor supaya tidak ada file
+// aneh (mis. HEIC mentah) yang lolos ke storage.
+const MIME_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+function extFromMime(mime: string | undefined | null): string {
+  const m = (mime || "").toLowerCase();
+  return MIME_EXT[m] ?? "jpg";
+}
+
+function mimeFromExt(ext: string): string {
+  const e = ext.toLowerCase().replace(/^\./, "");
+  if (e === "png") return "image/png";
+  if (e === "webp") return "image/webp";
+  return "image/jpeg";
+}
+
+export type UploadPrepPhotoOptions = {
+  /** Ekstensi override; default: turunkan dari MIME blob (fallback "jpg"). */
+  ext?: string;
+  /**
+   * Nama file yang dikirim ke storage backend. Jika `blob` sudah `File`,
+   * dipakai apa adanya; jika tidak, blob dibungkus jadi `File(name, type)`
+   * dengan nama unik + ekstensi yang konsisten. Nama ini juga muncul di
+   * header `Content-Disposition` sehingga owner bisa mengenali foto saat
+   * mengunduh dari dashboard.
+   */
+  fileName?: string;
+  /**
+   * Nonaktifkan safety-net kompresi (mis. saat test) — normalnya biarkan
+   * `undefined` supaya foto > 1.5 MB otomatis dipangkas ke JPEG q=0.8.
+   */
+  skipCompress?: boolean;
+};
+
+export async function uploadPrepPhoto(
+  taskToken: string,
+  itemId: string,
+  blob: Blob,
+  extOrOpts: string | UploadPrepPhotoOptions = {},
+  client: StorageClient = supabase,
+): Promise<string | null> {
+  const opts: UploadPrepPhotoOptions =
+    typeof extOrOpts === "string" ? { ext: extOrOpts } : (extOrOpts ?? {});
+
+  // 0) Tolak lebih awal apa pun yang bukan gambar (PDF, zip, video, dsb).
+  //    MIME gambar non-standar seperti image/heic tetap diterima karena
+  //    dinormalisasi ke JPEG di langkah kompresi/ekstensi di bawah. Blob
+  //    tanpa MIME (kamera native Android) juga diteruskan.
+  const inMime = (blob.type || "").toLowerCase();
+  if (inMime && !inMime.startsWith("image/")) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(pre-check)", source: "uploadPrepPhoto" },
+      new Error(`format tidak didukung: ${inMime}`),
+    );
+    return null;
+  }
+
+  // 1) Safety-net kompresi. compressImage() sendiri sudah menerapkan aturan
+  //    "skip bila < minBytes / hasil >= asli", jadi aman dipanggil dua
+  //    kali (di stageFile & di sini) tanpa risiko re-encode berulang.
+  let out: Blob = blob;
+  if (!opts.skipCompress) {
+    try {
+      const compressed = await compressImage(out, {
+        maxDim: UPLOAD_MAX_DIM,
+        quality: UPLOAD_QUALITY,
+        minBytes: UPLOAD_COMPRESS_THRESHOLD,
+        mimeType: "image/jpeg",
+      });
+      if (compressed && compressed.size > 0) out = compressed;
+    } catch {
+      // biarkan blob asli
+    }
+  }
+
+  // 2) Tentukan ekstensi & MIME final. Prioritas: opts.ext > MIME blob >
+  //    "jpg". MIME final selalu konsisten dengan ekstensi (jangan sampai
+  //    file `.jpg` diupload dengan Content-Type `image/heic`).
+  const ext = (opts.ext ?? extFromMime(out.type)).toLowerCase().replace(/^\./, "");
+  const contentType = mimeFromExt(ext);
+
+  // 2b) Validasi isi file (magic byte + dimensi). MIME klien tidak dipercaya.
+  const guard = await inspectImageBlob(out, {
+    declaredMime: contentType,
+    maxBytes: UPLOAD_HARD_MAX_BYTES,
+  });
+  if (!guard.ok) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(magic-byte)", source: "uploadPrepPhoto" },
+      new Error(`file ditolak: ${guard.reason}`),
+    );
+    return null;
+  }
+
+  if (out.size > UPLOAD_HARD_MAX_BYTES) {
+    logStorageError(
+      { bucket: PREP_BUCKET, op: "upload", path: "(pre-check)", source: "uploadPrepPhoto" },
+      new Error(`file terlalu besar: ${out.size} byte`),
+    );
+    return null;
+  }
+
+  // 3) Bungkus jadi File dengan nama pasti supaya storage & unduhan owner
+  //    tetap punya nama file yang bermakna. `blob` yang datang dari
+  //    stageFile umumnya sudah File, tapi kita tetap normalisasi agar
+  //    MIME dan nama ekstensi selalu sinkron.
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const fileName = opts.fileName ?? `${itemId}-${stamp}.${ext}`;
+  const path = `${taskToken}/${itemId}/${stamp}.${ext}`;
+
+  let payload: Blob = out;
+  const FileCtor = (globalThis as unknown as { File?: typeof File }).File;
+  if (typeof FileCtor === "function") {
+    try {
+      payload = new FileCtor([out], fileName, { type: contentType });
+    } catch {
+      payload = out;
+    }
+  }
+
+  const { error } = await client.storage.from(PREP_BUCKET).upload(path, payload, {
+    contentType,
     upsert: false,
   });
   if (error) {
@@ -50,9 +194,10 @@ export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: B
 }
 
 // Format token share: base64url 24 byte ≈ 32 char ([A-Za-z0-9_-]).
-// Validasi defensif sebelum membentuk URL agar tidak mengarahkan pegawai
-// ke halaman gagal saat token kosong/rusak.
-const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{16,128}$/;
+// Form pembuatan tugas memperbolehkan 8–48 karakter agar owner bisa
+// memakai token yang mudah dikenali; URL publik harus sinkron dengan
+// batasan tersebut agar tombol salin link tidak menolak token valid.
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{8,128}$/;
 
 export function isValidShareToken(token: unknown): token is string {
   return typeof token === "string" && SHARE_TOKEN_RE.test(token);

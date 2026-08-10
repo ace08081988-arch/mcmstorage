@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://gpojxigebcyhojlphqnq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "mcm-storage-mcp",
+      "version": "0.1.0",
+      "title": "Ace Storage"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Siapa saya",
+        "description": "Mengembalikan identitas user Ace Storage yang sedang terhubung via MCP (id, email, dan role admin bila ada). Berguna untuk verifikasi koneksi.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_produk",
+        "title": "Daftar produk / stok",
+        "description": "Mengambil daftar produk (stok) milik user Ace Storage yang sedang terhubung. Filter opsional lewat query pencarian pada nama.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "maxLength": 120,
+              "description": "Kata kunci pencarian nama produk (opsional)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Jumlah baris maksimum. Default 25, maksimum 100."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "ringkasan_piutang",
+        "title": "Ringkasan piutang",
+        "description": "Mengembalikan ringkasan piutang (single source of truth) untuk user Ace Storage yang sedang terhubung — total outstanding, jumlah pelanggan berhutang, dan waktu perhitungan terakhir.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "detail_piutang",
+        "title": "Detail piutang",
+        "description": "Daftar piutang per pelanggan (bukan ringkasan) untuk user Ace Storage yang sedang terhubung. Menggabungkan sales (payment_method='hutang') dan debts (kind='piutang'), dikurangi pembayaran masing-masing. Mendukung filter rentang tanggal (from/to, ISO YYYY-MM-DD), status ('outstanding'|'paid'|'all'), pencarian nama pelanggan, dan limit hasil.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Tanggal mulai (inklusif), format YYYY-MM-DD."
+            },
+            "to": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "Tanggal akhir (inklusif), format YYYY-MM-DD."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "outstanding",
+                "paid",
+                "all"
+              ],
+              "description": "Filter status; default 'outstanding'."
+            },
+            "customer_search": {
+              "type": "string",
+              "description": "Cari nama pelanggan (case-insensitive substring)."
+            },
+            "limit": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "description": "Maksimum baris pelanggan; default 50, maksimum 200."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "preview_pesan_kirim",
+        "title": "Preview pesan WA/Chat",
+        "description": "Menghasilkan preview teks WhatsApp/Chat yang akan dikirim ke pembeli untuk suatu transaksi paket ecer. Formatnya identik dengan yang dipakai tombol 'Verifikasi bayar → Kirim ke pembeli' di aplikasi (judul paket, rincian kotak, total, metode bayar, catatan, lokasi ambil). Gunakan sebelum benar-benar mengirim untuk memastikan copy pesan sesuai.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nama/judul paket, contoh: 'Kacang tanah 500g'."
+            },
+            "unit_label": {
+              "type": "string",
+              "description": "Satuan tampilan per kotak (misal 'g', 'ml', 'pcs'). Default 'g'."
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "grams": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "description": "Isi kotak dalam satuan unit_label."
+                  }
+                },
+                "required": [
+                  "grams"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1,
+              "description": "Daftar kotak/paket yang dikirim (urut sesuai tampilan #1, #2, ...)."
+            },
+            "total_amount": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Total harga (Rupiah)."
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "kas",
+                "hutang",
+                "partial"
+              ],
+              "description": "Metode bayar: 'kas' = Lunas, 'hutang' = Piutang penuh, 'partial' = Bayar sebagian."
+            },
+            "paid_amount": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Nominal yang sudah dibayar; wajib > 0 dan < total_amount saat payment_method='partial'."
+            },
+            "customer_name": {
+              "type": "string",
+              "description": "Nama pembeli. Kalau kosong baris 'Untuk:' dihilangkan."
+            },
+            "note": {
+              "type": "string",
+              "description": "Catatan tambahan untuk pembeli."
+            },
+            "location_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "URL Google Maps titik ambil. Kalau kosong blok 'Lokasi ambil' dihilangkan."
+            }
+          },
+          "required": [
+            "title",
+            "items",
+            "total_amount",
+            "payment_method"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

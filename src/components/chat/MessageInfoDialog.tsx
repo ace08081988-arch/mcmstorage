@@ -20,25 +20,25 @@ export function MessageInfoDialog({
   const read = readAtMs && readAtMs >= sent.getTime();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Info pesan</DialogTitle>
         </DialogHeader>
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Pengirim</dt><dd className="text-right">{senderName}</dd></div>
-          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Dikirim</dt><dd className="text-right">{sent.toLocaleString("id-ID")}</dd></div>
+        <dl className="space-ms-2 text-ms-sm">
+          <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">Pengirim</dt><dd className="text-right">{senderName}</dd></div>
+          <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">Dikirim</dt><dd className="text-right">{sent.toLocaleString("id-ID")}</dd></div>
           {message.edited_at ? (
-            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Diedit</dt><dd className="text-right">{new Date(message.edited_at).toLocaleString("id-ID")}</dd></div>
+            <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">Diedit</dt><dd className="text-right">{new Date(message.edited_at).toLocaleString("id-ID")}</dd></div>
           ) : null}
-          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Status</dt><dd className="text-right">{message.deleted_at ? DELETED_PLACEHOLDER : read ? "Dibaca" : "Terkirim"}</dd></div>
+          <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">Status</dt><dd className="text-right">{message.deleted_at ? DELETED_PLACEHOLDER : read ? "Dibaca" : "Terkirim"}</dd></div>
           {readAtMs ? (
-            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Dibaca</dt><dd className="text-right">{new Date(readAtMs).toLocaleString("id-ID")}</dd></div>
+            <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">Dibaca</dt><dd className="text-right">{new Date(readAtMs).toLocaleString("id-ID")}</dd></div>
           ) : null}
-          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">ID</dt><dd className="break-all text-right font-mono text-[11px]">{message.id}</dd></div>
+          <div className="flex justify-between gap-ms-3"><dt className="text-muted-foreground">ID</dt><dd className="break-all text-right font-mono text-ms-2xs">{message.id}</dd></div>
           {message.attachment_path ? (
-            <div className="flex justify-between gap-3">
+            <div className="flex justify-between gap-ms-3">
               <dt className="text-muted-foreground">Lampiran</dt>
-              <dd className="break-all text-right text-[11px]">
+              <dd className="break-all text-right text-ms-2xs">
                 {message.deleted_at ? <em className="text-muted-foreground">{DELETED_ATTACHMENT_PLACEHOLDER}</em> : (message.attachment_name ?? message.attachment_path)}
               </dd>
             </div>

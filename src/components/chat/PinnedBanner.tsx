@@ -18,21 +18,21 @@ export function PinnedBanner({
   const pinMut = usePinMessage(conversationId);
   if (pinned.length === 0) return null;
   return (
-    <div className="border-b bg-amber-50 dark:bg-amber-950/30">
+    <div className="chat-preview-panel-warning border-b bg-warning dark:bg-warning/30">
       {pinned.map((m) => {
         const deleted = isDeleted(m);
         const text = messagePreviewText(m) || "Lampiran";
         return (
-          <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
-            <Pin className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+          <div key={m.id} className="flex items-center gap-ms-2 px-ms-3 py-1.5 text-ms-xs">
+            <Pin className="chat-preview-label h-3.5 w-3.5 shrink-0" />
             <button
               type="button"
               onClick={() => onJump(m.id)}
               className="flex-1 truncate text-left hover:underline"
               title={text}
             >
-              <span className="font-semibold text-amber-700 dark:text-amber-300">Disematkan · </span>
-              <span className={deleted ? "italic text-muted-foreground" : "text-foreground"}>{text}</span>
+              <span className="chat-preview-label font-semibold">Disematkan · </span>
+              <span className={deleted ? "chat-preview-text italic" : "chat-preview-label"}>{text}</span>
             </button>
             {canUnpin ? (
               <Button

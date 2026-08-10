@@ -106,7 +106,7 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
           if (slackUrl) {
             try {
               const isDiscord = /discord(app)?\.com\/api\/webhooks\//i.test(slackUrl)
-              const text = `🛡️ *MCM Storage — Scan Keamanan Harian*\nDitemukan ${findings.length} temuan terbuka:\n${summary}`
+              const text = `🛡️ *Ace Storage — Scan Keamanan Harian*\nDitemukan ${findings.length} temuan terbuka:\n${summary}`
               const body = isDiscord ? { content: text } : { text }
               const res = await fetch(slackUrl, {
                 method: 'POST',

@@ -13,10 +13,16 @@
  */
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/current-user";
 
 const DEVICE_ID_KEY = "device-session:device-id:v1";
-const HEARTBEAT_MS = 5 * 60 * 1000; // 5 menit
-const REVOCATION_POLL_MS = 60 * 1000; // 1 menit
+// M20: satu-satunya interval untuk sesi perangkat. `heartbeatOnce` sudah
+// menggabungkan pemeriksaan `revoked_at` DAN penulisan `last_seen_at`;
+// sebelumnya ada dua interval terpisah (`HEARTBEAT_MS` 5 mnt dan
+// `REVOCATION_POLL_MS` 1 mnt) yang keduanya memanggil fungsi yang sama →
+// permintaan ke `device_sessions` menjadi ~2× lipat tanpa manfaat.
+// Interval tunggal 1 menit menjaga latensi deteksi pencabutan tetap sama.
+const SESSION_POLL_MS = 60 * 1000;
 
 export function getOrCreateDeviceId(): string {
   if (typeof window === "undefined") return "ssr";
@@ -54,28 +60,43 @@ function describeDevice(): { label: string; userAgent: string; platform: string 
   return { label: `${browser} di ${os}`, userAgent: ua, platform };
 }
 
-export async function registerDeviceSession(userId: string): Promise<void> {
+export type RegisterDeviceSessionOptions = {
+  /**
+   * SPRINT 5 (High): hanya login BARU yang boleh menghidupkan kembali sesi
+   * yang sudah dicabut. Reload halaman / cold start dengan sesi yang masih
+   * tersimpan bukan login baru — kalau tetap mengosongkan `revoked_at`,
+   * perangkat yang baru saja dicabut akan aktif lagi hanya dengan refresh.
+   */
+  clearRevocation?: boolean;
+};
+
+export async function registerDeviceSession(
+  userId: string,
+  opts: RegisterDeviceSessionOptions = {},
+): Promise<void> {
   const deviceId = getOrCreateDeviceId();
   const info = describeDevice();
-  // Upsert: kalau perangkat ini pernah login, perbarui `last_seen_at` +
-  // hapus `revoked_at` (user memang login lagi secara sah).
+  const row: Record<string, unknown> = {
+    user_id: userId,
+    device_id: deviceId,
+    label: info.label,
+    user_agent: info.userAgent,
+    platform: info.platform,
+    last_seen_at: new Date().toISOString(),
+  };
+  // `revoked_at` hanya ikut dikirim saat login baru. Kalau tidak dikirim,
+  // PostgREST tidak menyentuh kolom itu pada konflik → status "dicabut"
+  // bertahan melewati reload.
+  if (opts.clearRevocation) row["revoked_at"] = null;
   await supabase
     .from("device_sessions")
-    .upsert(
-      {
-        user_id: userId,
-        device_id: deviceId,
-        label: info.label,
-        user_agent: info.userAgent,
-        platform: info.platform,
-        last_seen_at: new Date().toISOString(),
-        revoked_at: null,
-      },
-      { onConflict: "user_id,device_id" },
-    );
+    .upsert(row as never, { onConflict: "user_id,device_id" });
 }
 
-async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
+async function heartbeatOnce(
+  userId: string,
+  opts: { touch?: boolean } = {},
+): Promise<"ok" | "revoked"> {
   const deviceId = getOrCreateDeviceId();
   // Periksa status sesi perangkat ini DULU. Kalau sudah dicabut dari tempat
   // lain, jangan menulis `last_seen_at` baru — supaya tidak mengaburkan jejak
@@ -87,6 +108,7 @@ async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
     .eq("device_id", deviceId)
     .maybeSingle();
   if (data?.revoked_at) return "revoked";
+  if (opts.touch === false) return "ok";
   await supabase
     .from("device_sessions")
     .update({ last_seen_at: new Date().toISOString() })
@@ -103,13 +125,11 @@ async function heartbeatOnce(userId: string): Promise<"ok" | "revoked"> {
 export function useDeviceSessionGuard() {
   useEffect(() => {
     let cancelled = false;
-    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-    let revokeTimer: ReturnType<typeof setInterval> | null = null;
+    let sessionTimer: ReturnType<typeof setInterval> | null = null;
     let activeUserId: string | null = null;
 
     const stopTimers = () => {
-      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
-      if (revokeTimer) { clearInterval(revokeTimer); revokeTimer = null; }
+      if (sessionTimer) { clearInterval(sessionTimer); sessionTimer = null; }
     };
 
     const checkRevocation = async () => {
@@ -126,12 +146,26 @@ export function useDeviceSessionGuard() {
       } catch { /* offline / transient */ }
     };
 
-    const start = async (userId: string) => {
+    const start = async (userId: string, fresh: boolean) => {
       activeUserId = userId;
-      try { await registerDeviceSession(userId); } catch { /* ignore */ }
+      if (!fresh) {
+        // Cold start / reload: periksa dulu. Perangkat yang sudah dicabut
+        // tidak boleh menulis apa pun (termasuk `last_seen_at`) dan langsung
+        // dikeluarkan.
+        try {
+          const status = await heartbeatOnce(userId, { touch: false });
+          if (status === "revoked") {
+            await supabase.auth.signOut();
+            if (typeof window !== "undefined") window.location.replace("/auth?revoked=1");
+            return;
+          }
+        } catch { /* offline: lanjut, poll berikutnya yang menegakkan */ }
+      }
+      try {
+        await registerDeviceSession(userId, { clearRevocation: fresh });
+      } catch { /* ignore */ }
       stopTimers();
-      heartbeatTimer = setInterval(() => { void checkRevocation(); }, HEARTBEAT_MS);
-      revokeTimer = setInterval(() => { void checkRevocation(); }, REVOCATION_POLL_MS);
+      sessionTimer = setInterval(() => { void checkRevocation(); }, SESSION_POLL_MS);
       // Periksa segera setelah register supaya cabut yang terjadi saat tab
       // offline langsung dieksekusi begitu kembali online.
       void checkRevocation();
@@ -139,14 +173,18 @@ export function useDeviceSessionGuard() {
 
     // Inisialisasi: user mungkin sudah login saat hook mount.
     void (async () => {
-      const { data } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (cancelled) return;
-      if (data.user) void start(data.user.id);
+      if (user) void start(user.id, false);
     })();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
-        void start(session.user.id);
+        // supabase-js kadang memancarkan SIGNED_IN lagi saat token refresh /
+        // tab kembali fokus. Hanya emisi pertama untuk user ini yang dihitung
+        // sebagai login baru, supaya refresh tidak membatalkan pencabutan.
+        const fresh = activeUserId !== session.user.id;
+        void start(session.user.id, fresh);
       } else if (event === "SIGNED_OUT") {
         activeUserId = null;
         stopTimers();

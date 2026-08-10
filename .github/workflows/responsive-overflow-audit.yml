@@ -1,0 +1,50 @@
+name: Responsive overflow audit
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/lovable.visual.**"
+      - "src/routes/_authenticated.ecer.tsx"
+      - "src/routes/t.$token.tsx"
+      - "src/components/photo-editor/**"
+      - "src/components/AppSidebar.tsx"
+      - "scripts/responsive-overflow-audit.mjs"
+      - ".github/workflows/responsive-overflow-audit.yml"
+  workflow_dispatch: {}
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: latest }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: bun install --frozen-lockfile
+      - run: |
+          python -m pip install --no-cache-dir playwright
+          python -m playwright install --with-deps chromium
+      - name: Start dev server
+        run: |
+          bun run dev > /tmp/dev.log 2>&1 &
+          echo $! > /tmp/dev.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then break; fi
+            sleep 1
+          done
+      - name: Run audit
+        env:
+          BASE_URL: http://localhost:8080
+          AUDIT_OUT: ${{ github.workspace }}/audit-out
+        run: python scripts/responsive_overflow_audit.py
+      - name: Stop dev server
+        if: always()
+        run: kill $(cat /tmp/dev.pid) || true
+      - name: Upload report + screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: responsive-audit
+          path: audit-out

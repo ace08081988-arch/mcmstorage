@@ -1,0 +1,357 @@
+name: Build & Release AAB
+
+# Jalankan manual dari tab Actions → "Build & Release AAB" → Run workflow.
+# Mode default = dry-run: build AAB + verifikasi versionCode vs Play Console,
+# TIDAK upload. Matikan `dry_run` untuk benar-benar upload ke track.
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: "Varian app"
+        type: choice
+        default: full
+        options: [full, chat]
+      track:
+        description: "Play Console track"
+        type: choice
+        default: internal
+        options: [internal, alpha, beta, production]
+      release_status:
+        description: "Release status"
+        type: choice
+        default: draft
+        options: [draft, inProgress, halted, completed]
+      dry_run:
+        description: "Dry-run (build + cek versi, TANPA upload)"
+        type: boolean
+        default: true
+      skip_version_check:
+        description: "Lewati cek versionCode vs Play (TIDAK direkomendasikan)"
+        type: boolean
+        default: false
+      expected_version_code:
+        description: "Opsional — versionCode yang Anda harapkan (mis. 5). Kosongkan untuk skip. Kalau diisi & tidak cocok, workflow gagal."
+        type: string
+        default: ""
+      expected_version_name:
+        description: "Opsional — versionName yang Anda harapkan (mis. 1.2.0). Kosongkan untuk skip."
+        type: string
+        default: ""
+
+  # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: aab-release-${{ github.ref }}-${{ github.event.inputs.variant || 'full' }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: aab:release (${{ github.event.inputs.variant || 'full' }} → ${{ github.event.inputs.track || 'internal' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # Kredensial keystore — dibaca oleh scripts/validate-keystore.mjs
+      # dan scripts/aab-to-apk.mjs. Tidak pernah muncul di log (secrets di-mask).
+      KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+      KEYSTORE_STORE_PASS: ${{ secrets.KEYSTORE_STORE_PASS }}
+      KEYSTORE_KEY_PASS: ${{ secrets.KEYSTORE_KEY_PASS }}
+      # Service account Play Developer API — dibaca oleh scripts/upload-play.mjs.
+      PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON_B64 }}
+      # CI=true → validate-keystore.mjs skip prompt interaktif otomatis.
+      CI: "true"
+      # Path tempat scripts/upload-play.mjs menulis ringkasan JSON.
+      # Dipakai step "Notify Slack" di bawah.
+      UPLOAD_PLAY_SUMMARY_JSON: ${{ github.workspace }}/dist/upload-play-summary.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Early validate Android scaffold
+        run: |
+          if [ ! -d "android" ]; then
+            echo "::error::Folder android/ belum ada. Jalankan 'bunx cap add android' di lokal, commit, dan push ke repo."
+            exit 1
+          fi
+          if [ ! -f "android/app/build.gradle" ]; then
+            echo "::error::android/app/build.gradle tidak ditemukan. Pastikan 'bunx cap add android' berhasil dan file sudah di-commit."
+            exit 1
+          fi
+          if [ ! -f "android/build.gradle" ]; then
+            echo "::error::android/build.gradle (top-level) tidak ditemukan. Scaffold Capacitor tidak lengkap — jalankan ulang 'bunx cap add android'."
+            exit 1
+          fi
+          if [ ! -f "android/gradle.properties" ]; then
+            echo "::error::android/gradle.properties tidak ditemukan. Scaffold Capacitor tidak lengkap — jalankan ulang 'bunx cap add android'."
+            exit 1
+          fi
+          # Minimal config check: android/build.gradle harus punya buildscript + classpath Android Gradle Plugin.
+          if ! grep -q "com.android.tools.build:gradle" android/build.gradle; then
+            echo "::error::android/build.gradle tidak memuat classpath 'com.android.tools.build:gradle'. File rusak atau bukan hasil scaffold Capacitor yang valid."
+            exit 1
+          fi
+          # Minimal config check: android/gradle.properties harus mengaktifkan AndroidX (wajib untuk Capacitor).
+          if ! grep -q "^android.useAndroidX=true" android/gradle.properties; then
+            echo "::error::android/gradle.properties tidak memuat 'android.useAndroidX=true'. Capacitor wajib pakai AndroidX — perbaiki file lalu commit ulang."
+            exit 1
+          fi
+          echo "✓ Android scaffold lengkap: android/, android/build.gradle, android/gradle.properties, android/app/build.gradle"
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Show & validate app version (SSOT android/version.properties)
+        id: appver
+        env:
+          EXPECTED_VC: ${{ github.event.inputs.expected_version_code || '' }}
+          EXPECTED_VN: ${{ github.event.inputs.expected_version_name || '' }}
+        run: |
+          set -euo pipefail
+          # SSOT tunggal — script ini hanya MEMBACA (tidak pernah bump).
+          VC=$(node scripts/read-app-version.mjs --field versionCode)
+          VN=$(node scripts/read-app-version.mjs --field versionName)
+          node scripts/read-app-version.mjs
+
+          echo "versionCode=$VC" >> "$GITHUB_OUTPUT"
+          echo "versionName=$VN" >> "$GITHUB_OUTPUT"
+
+          MISMATCH=0
+          if [ -n "$EXPECTED_VC" ] && [ "$EXPECTED_VC" != "$VC" ]; then
+            echo "::error::versionCode di android/version.properties ($VC) TIDAK cocok dengan yang Anda harapkan ($EXPECTED_VC). Jalankan 'bun run version:bump' lalu commit, atau perbaiki input workflow."
+            MISMATCH=1
+          fi
+          if [ -n "$EXPECTED_VN" ] && [ "$EXPECTED_VN" != "$VN" ]; then
+            echo "::error::versionName di android/version.properties ($VN) TIDAK cocok dengan yang Anda harapkan ($EXPECTED_VN)."
+            MISMATCH=1
+          fi
+
+          {
+            echo "## 🔢 Versi yang akan di-build"
+            echo ""
+            echo "| Field | Nilai di \`android/version.properties\` | Yang Anda harapkan | Status |"
+            echo "| --- | --- | --- | --- |"
+            vc_status="—"
+            vn_status="—"
+            [ -n "$EXPECTED_VC" ] && { [ "$EXPECTED_VC" = "$VC" ] && vc_status="✅ cocok" || vc_status="❌ beda"; }
+            [ -n "$EXPECTED_VN" ] && { [ "$EXPECTED_VN" = "$VN" ] && vn_status="✅ cocok" || vn_status="❌ beda"; }
+            echo "| versionCode | \`$VC\` | \`${EXPECTED_VC:-(tidak dicek)}\` | $vc_status |"
+            echo "| versionName | \`$VN\` | \`${EXPECTED_VN:-(tidak dicek)}\` | $vn_status |"
+            echo ""
+            echo "> Workflow ini TIDAK menaikkan versi. Bump dilakukan eksplisit lewat \`bun run version:bump\` + commit."
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$MISMATCH" -eq 1 ]; then
+            echo "::error::Versi tidak cocok dengan input. Workflow dihentikan sebelum build."
+            exit 1
+          fi
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Sanity check — required secrets present
+        run: |
+          missing=()
+          for name in KEYSTORE_BASE64 KEYSTORE_ALIAS KEYSTORE_STORE_PASS KEYSTORE_KEY_PASS PLAY_SERVICE_ACCOUNT_JSON_B64; do
+            if [ -z "${!name:-}" ]; then
+              # KEYSTORE_BASE64 baru dipakai di step berikutnya — cek dari secrets langsung.
+              if [ "$name" = "KEYSTORE_BASE64" ] && [ -z "${SECRET_KEYSTORE_BASE64:-}" ]; then
+                missing+=("$name")
+              elif [ "$name" != "KEYSTORE_BASE64" ]; then
+                missing+=("$name")
+              fi
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Secret berikut belum di-set di repo settings → Secrets and variables → Actions:"
+            printf '  - %s\n' "${missing[@]}"
+            echo ""
+            echo "Cara set:"
+            echo "  KEYSTORE_BASE64            = base64 -w0 android/mcm.keystore"
+            echo "  KEYSTORE_ALIAS             = alias di dalam keystore (mis. mcm)"
+            echo "  KEYSTORE_STORE_PASS        = password store"
+            echo "  KEYSTORE_KEY_PASS          = password key"
+            echo "  PLAY_SERVICE_ACCOUNT_JSON_B64 = base64 -w0 service-account.json"
+            exit 1
+          fi
+        env:
+          SECRET_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Materialize keystore file
+        run: |
+          mkdir -p android
+          echo "$KEYSTORE_BASE64" | base64 -d > android/mcm.keystore
+          # keystore.properties: storeFile + alias saja. Password tetap dari env
+          # var supaya tidak pernah tersimpan di file yang di-archive.
+          cat > android/keystore.properties <<EOF
+          storeFile=mcm.keystore
+          keyAlias=$KEYSTORE_ALIAS
+          EOF
+          ls -la android/mcm.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Validate keystore
+        run: bun run aab:validate-keystore -- --non-interactive
+
+      - name: Pre-flight release config
+        run: bun run aab:preflight:strict -- --variant ${{ github.event.inputs.variant || 'full' }}
+
+      - name: Build + release AAB
+        id: release
+        run: |
+          variant='${{ github.event.inputs.variant || 'full' }}'
+          track='${{ github.event.inputs.track || 'internal' }}'
+          status='${{ github.event.inputs.release_status || 'draft' }}'
+          dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
+          skip='${{ github.event.inputs.skip_version_check || 'false' }}'
+
+          args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
+          [ "$dry" = "true" ] && args+=(--upload-dry-run)
+          [ "$skip" = "true" ] && args+=(--skip-version-check)
+
+          echo "▶ node scripts/build-aab.mjs ${args[*]}"
+          node scripts/build-aab.mjs "${args[@]}"
+
+      - name: Job summary header (context)
+        if: always()
+        run: |
+          # scripts/upload-play.mjs sudah append tabel versi/status via
+          # $GITHUB_STEP_SUMMARY. Prepend header konteks + status job biar
+          # halaman ringkasan langsung menampilkan variant/track/mode.
+          variant='${{ github.event.inputs.variant || 'full' }}'
+          track='${{ github.event.inputs.track || 'internal' }}'
+          status='${{ github.event.inputs.release_status || 'draft' }}'
+          dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
+          skip='${{ github.event.inputs.skip_version_check || 'false' }}'
+          release_outcome='${{ steps.release.outcome }}'
+
+          case "$release_outcome" in
+            success) emoji="✅"; label="job berhasil" ;;
+            failure) emoji="❌"; label="job gagal" ;;
+            cancelled) emoji="⏹️"; label="job dibatalkan" ;;
+            *) emoji="ℹ️"; label="$release_outcome" ;;
+          esac
+
+          {
+            echo "# $emoji AAB Release — $label"
+            echo ""
+            echo "| Setting | Nilai |"
+            echo "| --- | --- |"
+            echo "| Trigger | \`${{ github.event_name }}\` |"
+            echo "| Ref | \`${{ github.ref_name }}\` |"
+            echo "| Varian | \`$variant\` |"
+            echo "| Track | \`$track\` |"
+            echo "| Release status | \`$status\` |"
+            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 dry-run (build + cek versi, tanpa upload)' || echo '🚀 upload ke Play Console' ) |"
+            echo "| Skip version check | $skip |"
+            echo "| Actor | @${{ github.actor }} |"
+            echo ""
+            echo "_Detil versi lokal vs Play Console ada di bawah (ditulis oleh \`scripts/upload-play.mjs\`)._"
+            echo ""
+            echo "---"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checksum artefak rilis (SHA-256)
+        if: always()
+        run: |
+          set -uo pipefail
+          mkdir -p dist/checksums
+          OUT=dist/checksums/SHA256SUMS.txt
+          : > "$OUT"
+          found=0
+          for f in android/app/build/outputs/bundle/release/*.aab \
+                   android/app/build/outputs/apk/release/*.apk \
+                   dist/aab/*.aab; do
+            [ -f "$f" ] || continue
+            found=1
+            sha256sum "$f" >> "$OUT"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "Tidak ada artefak rilis untuk di-checksum." | tee -a "$OUT"
+          fi
+          {
+            echo ""
+            echo "### 🔐 SHA-256 artefak"
+            echo ""
+            echo '```'
+            cat "$OUT"
+            echo '```'
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload AAB artifact
+        if: always()
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aab-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            dist/aab/*.aab
+            dist/mapping/*.txt
+            dist/checksums/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Append artifact links to job summary
+        if: always() && steps.upload_artifact.outputs.artifact-url != ''
+        env:
+          ARTIFACT_NAME: aab-${{ github.event.inputs.variant || 'full' }}-${{ github.run_number }}
+          ARTIFACT_URL: ${{ steps.upload_artifact.outputs.artifact-url }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+        run: |
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "### 📦 Artifacts"
+            echo ""
+            echo "| Nama | Link |"
+            echo "| --- | --- |"
+            echo "| \`$ARTIFACT_NAME\` (AAB + mapping.txt) | [Download dari halaman run]($ARTIFACT_URL) |"
+            echo ""
+            echo "_Isi bundle: \`app-release.aab\` (varian aktif) + \`dist/aab/*.aab\` + \`dist/mapping/*.txt\` (ProGuard mapping). Retensi 30 hari._"
+            if [ "$RELEASE_OUTCOME" != "success" ]; then
+              echo ""
+              echo "> ⚠ Release step outcome: \`$RELEASE_OUTCOME\` — artifact mungkin tidak lengkap."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify Slack
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+          VARIANT: ${{ github.event.inputs.variant || 'full' }}
+          TRACK: ${{ github.event.inputs.track || 'internal' }}
+          RELEASE_STATUS: ${{ github.event.inputs.release_status || 'draft' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}
+          SKIP_VERSION_CHECK: ${{ github.event.inputs.skip_version_check || 'false' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ARTIFACT_URL: ${{ steps.upload_artifact.outputs.artifact-url }}
+        run: node scripts/notify-slack-release.mjs
+
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          rm -f android/mcm.keystore android/keystore.properties
+          echo "  ✓ keystore & keystore.properties dihapus dari runner"

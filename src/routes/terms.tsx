@@ -1,23 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { PublicFooter } from "@/components/PublicFooter";
+import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
-    meta: [
-      { title: "Syarat & Ketentuan — MCM Storage" },
-      {
-        name: "description",
-        content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
-      },
-      { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
-      {
-        property: "og:description",
-        content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI.",
-      },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/terms" }],
+    meta: socialMeta({
+      title: "Syarat & Ketentuan — Ace Storage",
+      description:
+        "Syarat dan Ketentuan penggunaan Ace Storage. Aplikasi saat ini gratis tanpa pembayaran daring.",
+      url: "/terms",
+    }),
+    links: [canonical("/terms")],
   }),
   component: TermsPage,
 });
@@ -26,9 +20,9 @@ const UPDATED_AT = "21 Juni 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <div className="mt-2 space-y-2 text-sm text-muted-foreground">{children}</div>
+    <section className="lux-card p-ms-5">
+      <h2 className="text-ms-lg font-semibold text-foreground">{title}</h2>
+      <div className="mt-2 space-ms-2 text-ms-sm text-muted-foreground">{children}</div>
     </section>
   );
 }
@@ -36,24 +30,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function TermsPage() {
   return (
     <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <PublicHeader />
+      <main id="konten-utama" tabIndex={-1} className="mx-auto max-w-3xl px-ms-4 py-10">
         <header className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-ms-3xl font-extrabold tracking-tight text-foreground">
             Syarat &amp; Ketentuan
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-ms-sm text-muted-foreground">
             Terakhir diperbarui: {UPDATED_AT}
           </p>
         </header>
 
-        <div className="space-y-4">
+        <div className="space-ms-4">
           <Section title="1. Penjual">
             <p>
-              Layanan MCM Storage (selanjutnya "<strong>Layanan</strong>")
-              disediakan dan dioperasikan oleh <strong>BAROKAH RIZKI</strong>{" "}
+              Layanan Ace Storage (selanjutnya "<strong>Layanan</strong>")
+              disediakan dan dioperasikan oleh <strong>Ace Storage</strong>{" "}
               (selanjutnya "<strong>kami</strong>", "<strong>kita</strong>",
               atau "<strong>Penjual</strong>"). Dengan menggunakan Layanan,
-              Anda menyatakan berkontrak dengan BAROKAH RIZKI.
+              Anda menyatakan berkontrak dengan Ace Storage.
             </p>
           </Section>
 
@@ -68,7 +63,7 @@ function TermsPage() {
 
           <Section title="3. Deskripsi layanan">
             <p>
-              MCM Storage adalah aplikasi pengelolaan pesanan harian, stok
+              Ace Storage adalah aplikasi pengelolaan pesanan harian, stok
               gudang, hutang–piutang, dan komunikasi cepat ke pelanggan/
               pemasok melalui WhatsApp dan email. Akses dibatasi untuk
               pengguna yang sudah login.
@@ -118,7 +113,7 @@ function TermsPage() {
             <p>
               Semua hak atas Layanan — termasuk perangkat lunak, dokumentasi,
               merek dagang, dan tampilan antarmuka — tetap menjadi milik
-              BAROKAH RIZKI dan pemberi lisensinya. Anda diberikan lisensi
+              Ace Storage dan pemberi lisensinya. Anda diberikan lisensi
               terbatas, non-eksklusif, dan tidak dapat dialihkan untuk
               menggunakan Layanan sesuai paket yang Anda pilih.
             </p>
@@ -126,20 +121,11 @@ function TermsPage() {
 
           <Section title="7. Pembayaran, langganan, dan pajak">
             <p>
-              Untuk paket berbayar, pembayaran, penagihan, perpanjangan
-              langganan, pajak, mata uang, faktur, pembatalan, dan
-              pengembalian dana diproses oleh <strong>Paddle.com</strong>{" "}
-              sebagai <strong>Merchant of Record</strong> kami. Dengan
-              melakukan pembelian, Anda juga menyetujui{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Paddle Checkout Buyer Terms
-              </a>
-              . Detail mengenai pengembalian dana ada di{" "}
+              Saat ini Layanan disediakan tanpa biaya dan tidak ada
+              pembayaran daring di dalam aplikasi. Bila paket berbayar
+              diaktifkan kembali di kemudian hari, syarat penagihan, pajak,
+              dan pengembalian dana akan diumumkan lebih dulu di halaman ini
+              serta di{" "}
               <Link to="/refund" className="underline">
                 Kebijakan Pengembalian
               </Link>
@@ -147,24 +133,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="8. Paddle sebagai Merchant of Record">
-            <p>
-              <em>
-                Our order process is conducted by our online reseller
-                Paddle.com. Paddle.com is the Merchant of Record for all our
-                orders. Paddle provides all customer service inquiries and
-                handles returns.
-              </em>
-            </p>
-            <p>
-              Proses pemesanan kami dijalankan oleh reseller daring kami,
-              Paddle.com. Paddle.com adalah Merchant of Record untuk semua
-              pesanan kami. Paddle menangani pertanyaan layanan pelanggan
-              terkait pembayaran serta proses pengembalian dana.
-            </p>
-          </Section>
-
-          <Section title="9. Ketersediaan layanan">
+          <Section title="8. Ketersediaan layanan">
             <p>
               Layanan diberikan "sebagaimana adanya" dan "sebagaimana
               tersedia". Kami berusaha menjaga ketersediaan dan kinerja,
@@ -173,7 +142,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="10. Konten pengguna">
+          <Section title="9. Konten pengguna">
             <p>
               Data operasional yang Anda masukkan (pesanan, stok, pemasok,
               dsb.) tetap milik Anda. Anda memberikan kami lisensi terbatas
@@ -182,7 +151,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="11. Penangguhan dan pemutusan">
+          <Section title="10. Penangguhan dan pemutusan">
             <p>
               Kami dapat menangguhkan atau mengakhiri akses Anda ke Layanan
               bila terjadi:
@@ -203,7 +172,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="12. Batasan tanggung jawab">
+          <Section title="11. Batasan tanggung jawab">
             <p>
               Sepanjang diizinkan hukum, tanggung jawab agregat kami atas
               klaim apa pun terkait Layanan dibatasi sebesar biaya yang Anda
@@ -215,7 +184,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="13. Hukum yang berlaku">
+          <Section title="12. Hukum yang berlaku">
             <p>
               Syarat ini diatur dan ditafsirkan menurut hukum Republik
               Indonesia. Sengketa yang timbul akan diselesaikan terlebih
@@ -224,7 +193,7 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="14. Perubahan syarat">
+          <Section title="13. Perubahan syarat">
             <p>
               Kami dapat memperbarui Syarat &amp; Ketentuan ini dari waktu
               ke waktu. Versi terbaru selalu tersedia di halaman ini dengan
@@ -232,21 +201,11 @@ function TermsPage() {
             </p>
           </Section>
 
-          <Section title="15. Kontak">
+          <Section title="14. Kontak">
             <p>
               Pertanyaan tentang syarat ini dapat dikirim ke{" "}
               <a href="mailto:admin@mcmstorage.biz" className="underline">
                 admin@mcmstorage.biz
-              </a>
-              . Untuk pertanyaan terkait transaksi atau pengembalian dana,
-              silakan hubungi Paddle melalui{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                paddle.net
               </a>
               .
             </p>

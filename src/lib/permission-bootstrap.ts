@@ -1,94 +1,58 @@
 import { Capacitor } from "@capacitor/core";
-import { Preferences } from "@capacitor/preferences";
 
-const FLAG_KEY = "mcm_permissions_requested_v1";
-const WEB_FLAG_KEY = "mcm_permissions_requested_web_v1";
+export type NativePermissionKey = "push" | "camera" | "photos" | "location";
+export type NativePermissionState = "granted" | "denied" | "prompt" | "unknown";
 
 /**
- * Minta izin notifikasi di web PWA saat aplikasi terpasang
- * (dibuka dari home screen / standalone) — sekali saja.
+ * KEBIJAKAN IZIN (Sprint 4 — Android release readiness)
+ *
+ * Aplikasi TIDAK meminta izin apa pun saat pertama kali dibuka. Google Play
+ * menolak "permission bombing", dan user yang ditodong 4 dialog sekaligus
+ * cenderung menekan Tolak — setelah itu Android menandai izin sebagai
+ * *permanently denied* dan fitur intinya mati permanen.
+ *
+ * Aturannya sekarang:
+ *   • Kamera & galeri  → diminta saat user menekan tombol ambil/pilih foto
+ *                        (Capacitor Camera meminta sendiri saat dipanggil).
+ *   • Lokasi           → diminta saat user menekan tombol GPS
+ *                        (src/lib/get-location.ts).
+ *   • Notifikasi       → diminta setelah user menekan "Aktifkan notifikasi"
+ *                        (src/lib/native-push.ts / PushPermissionPrompt).
+ *
+ * Fungsi di bawah hanya MEMBACA status izin (tanpa dialog) supaya UI bisa
+ * menampilkan alasan + jalan pintas ke Settings kalau izin ditolak permanen.
  */
-async function bootstrapWebPermissions() {
-  if (typeof window === "undefined") return;
-  if (!("Notification" in window)) return;
+export async function bootstrapNativePermissions() {
+  // Sengaja no-op: tidak ada permintaan izin saat startup, baik di web
+  // maupun native. Dipertahankan sebagai satu titik kebijakan agar tidak
+  // ada kode lain yang diam-diam menambahkan prompt startup.
+  return;
+}
 
-  // Hanya minta saat aplikasi dipasang (standalone / minimal-ui / fullscreen),
-  // atau iOS Safari yang sudah ditambahkan ke home screen.
-  const mql = window.matchMedia?.("(display-mode: standalone)");
-  const isStandalone =
-    (mql && mql.matches) ||
-    // iOS legacy
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (navigator as any).standalone === true;
-  if (!isStandalone) return;
-
+/** Baca status izin native tanpa memunculkan dialog sistem. */
+export async function checkNativePermission(
+  key: NativePermissionKey,
+): Promise<NativePermissionState> {
+  if (!Capacitor.isNativePlatform()) return "unknown";
   try {
-    if (localStorage.getItem(WEB_FLAG_KEY) === "1") return;
-  } catch {
-    // Ignore storage errors (private mode dsb.)
-  }
-
-  try {
-    if (Notification.permission === "default") {
-      await Notification.requestPermission();
+    if (key === "push") {
+      const { PushNotifications } = await import("@capacitor/push-notifications");
+      return normalize((await PushNotifications.checkPermissions()).receive);
     }
-  } catch (e) {
-    console.warn("[perm] web notification", e);
-  }
-
-  try {
-    localStorage.setItem(WEB_FLAG_KEY, "1");
+    if (key === "location") {
+      const { Geolocation } = await import("@capacitor/geolocation");
+      return normalize((await Geolocation.checkPermissions()).location);
+    }
+    const { Camera } = await import("@capacitor/camera");
+    const status = await Camera.checkPermissions();
+    return normalize(key === "camera" ? status.camera : status.photos);
   } catch {
-    // ignore
+    return "unknown";
   }
 }
 
-/**
- * Minta semua izin perangkat sekaligus saat pertama kali aplikasi native
- * dibuka. Aman dipanggil di web — tidak melakukan apa-apa di luar Capacitor.
- */
-export async function bootstrapNativePermissions() {
-  if (!Capacitor.isNativePlatform()) {
-    // Di web, minta izin notifikasi saat PWA terpasang.
-    await bootstrapWebPermissions();
-    return;
-  }
-
-  const existing = await Preferences.get({ key: FLAG_KEY });
-  if (existing.value === "1") return;
-
-  // Notifikasi
-  try {
-    const { PushNotifications } = await import("@capacitor/push-notifications");
-    const status = await PushNotifications.checkPermissions();
-    if (status.receive !== "granted") {
-      await PushNotifications.requestPermissions();
-    }
-  } catch (e) {
-    console.warn("[perm] push", e);
-  }
-
-  // Kamera + Galeri (Camera plugin meminta kedua izin)
-  try {
-    const { Camera } = await import("@capacitor/camera");
-    const status = await Camera.checkPermissions();
-    if (status.camera !== "granted" || status.photos !== "granted") {
-      await Camera.requestPermissions({ permissions: ["camera", "photos"] });
-    }
-  } catch (e) {
-    console.warn("[perm] camera", e);
-  }
-
-  // Lokasi
-  try {
-    const { Geolocation } = await import("@capacitor/geolocation");
-    const status = await Geolocation.checkPermissions();
-    if (status.location !== "granted") {
-      await Geolocation.requestPermissions({ permissions: ["location"] });
-    }
-  } catch (e) {
-    console.warn("[perm] geo", e);
-  }
-
-  await Preferences.set({ key: FLAG_KEY, value: "1" });
+function normalize(value: string | undefined): NativePermissionState {
+  if (value === "granted" || value === "denied" || value === "prompt") return value;
+  if (value === "limited") return "granted"; // akses foto parsial Android 14+
+  return "unknown";
 }

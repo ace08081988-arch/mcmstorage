@@ -20,14 +20,14 @@ export function StickerView({ card, mine }: { card: StickerCard; mine: boolean }
   };
   return (
     <div className="inline-block max-w-[260px]">
-      <div className="flex flex-col items-center gap-1 py-1" style={wrapperStyle}>
+      <div className="flex flex-col items-center gap-ms-1 py-1" style={wrapperStyle}>
         {card.kind === "arrow" ? <ArrowSticker c={card} /> : null}
         {card.kind === "bank" ? <BankSticker c={card} mine={mine} /> : null}
         {card.kind === "text" ? <TextSticker c={card} /> : null}
         {card.kind === "ai" ? <AISticker c={card} /> : null}
       </div>
       {card.caption ? (
-        <div className="mt-1 text-center text-[11px] opacity-80">{card.caption}</div>
+        <div className="mt-1 text-center text-ms-2xs opacity-80">{card.caption}</div>
       ) : null}
     </div>
   );
@@ -70,23 +70,23 @@ function BankSticker({ c, mine }: { c: Extract<StickerCard, { kind: "bank" }>; m
   }
   return (
     <div
-      className="w-[240px] rounded-xl px-3 py-2 shadow-md"
+      className="w-[240px] rounded-xl px-ms-3 py-ms-2 shadow-md"
       style={{ background: bg, color }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-widest opacity-70">Rekening</div>
+      <div className="flex items-center justify-between gap-ms-2">
+        <div className="text-ms-2xs uppercase tracking-widest opacity-70">Rekening</div>
         <button
           type="button"
           onClick={copy}
-          className="rounded-md border border-current/20 px-1.5 py-0.5 text-[10px] opacity-80 hover:opacity-100"
+          className="rounded-md border border-current/20 px-1.5 py-0.5 text-ms-2xs opacity-80 hover:opacity-100"
           aria-label="Salin nomor rekening"
         >
           <Copy className="inline h-3 w-3" /> Salin
         </button>
       </div>
-      <div className="mt-0.5 text-base font-bold leading-tight">{c.bank}</div>
-      <div className="mt-1 font-mono text-lg tracking-wider tabular-nums">{formatted}</div>
-      <div className="mt-0.5 text-[11px] opacity-80">a.n. {c.account_name}</div>
+      <div className="mt-0.5 text-ms-base font-bold leading-tight">{c.bank}</div>
+      <div className="mt-1 font-mono text-ms-lg tracking-wider tabular-nums">{formatted}</div>
+      <div className="mt-0.5 text-ms-2xs opacity-80">a.n. {c.account_name}</div>
       {/* mine indicator avoids unused-prop lint */}
       <div className="sr-only">{mine ? "milik saya" : "lawan"}</div>
     </div>
@@ -98,7 +98,7 @@ function TextSticker({ c }: { c: Extract<StickerCard, { kind: "text" }> }) {
   const bg = c.bg ?? "#dc2626";
   return (
     <div
-      className="max-w-[220px] rounded-xl px-3 py-2 text-center text-base font-bold shadow-md"
+      className="max-w-[220px] rounded-xl px-ms-3 py-ms-2 text-center text-ms-base font-bold shadow-md"
       style={{ background: bg, color }}
     >
       {c.text}
@@ -116,7 +116,7 @@ function AISticker({ c }: { c: Extract<StickerCard, { kind: "ai" }> }) {
   return url ? (
     <img src={url} alt={c.prompt ?? "Stiker AI"} className="h-32 w-32 rounded-xl object-contain" />
   ) : (
-    <div className="grid h-32 w-32 animate-pulse place-items-center rounded-xl bg-muted/60 text-[10px] text-muted-foreground">
+    <div className="grid h-32 w-32 animate-pulse place-items-center rounded-xl bg-muted/60 text-ms-2xs text-muted-foreground">
       Memuat stiker…
     </div>
   );

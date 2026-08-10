@@ -1,0 +1,69 @@
+# Pembaruan dependensi otomatis.
+#
+# Catatan repo ini:
+#  - Lockfile-nya `bun.lock` (format teks), jadi ekosistemnya `bun`.
+#  - Security update Dependabot aktif otomatis untuk semua paket yang
+#    punya advisory (tidak perlu didaftarkan satu per satu); blok
+#    `allow`/`groups` di bawah mengatur PR pembaruan versi rutin.
+#  - Setiap PR tetap melewati workflow `Typecheck & Build` dan
+#    `Dependency Audit`, jadi patch tidak bisa masuk tanpa lolos gate.
+version: 2
+updates:
+  - package-ecosystem: "bun"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "02:00"
+      timezone: "Asia/Jakarta"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    groups:
+      # Patch keamanan digabung jadi satu PR supaya cepat direview & merge.
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      # react-email + turunannya (sumber advisory brace-expansion/fast-uri).
+      react-email:
+        applies-to: version-updates
+        patterns:
+          - "react-email"
+          - "@react-email/*"
+          - "brace-expansion"
+          - "fast-uri"
+      # TanStack harus naik bersamaan (router/react-start/router-plugin saling pin);
+      # dipisah = build gagal di `audit:router-versions`.
+      tanstack:
+        applies-to: version-updates
+        patterns:
+          - "@tanstack/*"
+      # Sisanya: patch & minor digabung agar noise PR rendah.
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          - "react-email"
+          - "@react-email/*"
+          - "@tanstack/*"
+
+  # Pin/refresh action di workflow CI (termasuk gate audit).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

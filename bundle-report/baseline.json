@@ -1,0 +1,2312 @@
+{
+  "dir": "dist/client",
+  "at": "2026-07-26T13:09:03.709Z",
+  "total": 7748670,
+  "totalGzip": 2205832,
+  "count": 329,
+  "files": [
+    {
+      "name": "assets/heic2any.js",
+      "raw": 1352148,
+      "gzip": 340832,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/index.js",
+      "raw": 506191,
+      "gzip": 147803,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/SecurityScanReminder.js",
+      "raw": 439653,
+      "gzip": 109340,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/RingkasanChart.js",
+      "raw": 404682,
+      "gzip": 104610,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/jspdf.es.min.js",
+      "raw": 399676,
+      "gzip": 127685,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PhotoEditorV2.js",
+      "raw": 359274,
+      "gzip": 106202,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/styles.css",
+      "raw": 289473,
+      "gzip": 39258,
+      "kind": "css",
+      "parts": 1
+    },
+    {
+      "name": "assets/dist.js",
+      "raw": 262956,
+      "gzip": 76509,
+      "kind": "js",
+      "parts": 18
+    },
+    {
+      "name": "assets/_authenticated.tugas.js",
+      "raw": 211375,
+      "gzip": 54008,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/html2canvas.js",
+      "raw": 199568,
+      "gzip": 46062,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.chat._conversationId.js",
+      "raw": 195942,
+      "gzip": 52446,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.pengaturan.js",
+      "raw": 195367,
+      "gzip": 60830,
+      "kind": "js",
+      "parts": 15
+    },
+    {
+      "name": "assets/_authenticated.gudang.js",
+      "raw": 177576,
+      "gzip": 41015,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/index.es.js",
+      "raw": 151414,
+      "gzip": 48380,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/jsQR.js",
+      "raw": 129984,
+      "gzip": 46455,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/t._token.js",
+      "raw": 123055,
+      "gzip": 31931,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.ecer.js",
+      "raw": 117507,
+      "gzip": 29920,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.request.js",
+      "raw": 106819,
+      "gzip": 29402,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.index.js",
+      "raw": 100023,
+      "gzip": 29470,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.profil.js",
+      "raw": 90721,
+      "gzip": 25779,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/ReadyEcerSection.js",
+      "raw": 79845,
+      "gzip": 20944,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.js",
+      "raw": 77837,
+      "gzip": 22738,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/wa.js",
+      "raw": 74767,
+      "gzip": 21738,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/CallHost.js",
+      "raw": 59355,
+      "gzip": 17884,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.photo.js",
+      "raw": 53536,
+      "gzip": 16138,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.chat.index.js",
+      "raw": 50234,
+      "gzip": 14059,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/pos-kasir.index.js",
+      "raw": 48321,
+      "gzip": 11414,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.hutang.js",
+      "raw": 47223,
+      "gzip": 12243,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.status.js",
+      "raw": 41722,
+      "gzip": 11606,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ProductEditDrawer.js",
+      "raw": 39944,
+      "gzip": 11573,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/chat.js",
+      "raw": 33782,
+      "gzip": 11696,
+      "kind": "js",
+      "parts": 7
+    },
+    {
+      "name": "assets/_authenticated.dashboard.js",
+      "raw": 31456,
+      "gzip": 8320,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/auth.js",
+      "raw": 30307,
+      "gzip": 10595,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/jspdf.plugin.autotable.js",
+      "raw": 29921,
+      "gzip": 9495,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.link.js",
+      "raw": 28991,
+      "gzip": 8464,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.diagnostics.js",
+      "raw": 28327,
+      "gzip": 7035,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/utils.js",
+      "raw": 27562,
+      "gzip": 8846,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/lovable.visual.komponen.js",
+      "raw": 26214,
+      "gzip": 8808,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/purify.es.js",
+      "raw": 26107,
+      "gzip": 10168,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.notifikasi.js",
+      "raw": 25182,
+      "gzip": 7674,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/share.js",
+      "raw": 24021,
+      "gzip": 8184,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/browser.js",
+      "raw": 23467,
+      "gzip": 8741,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/AutoSendDialogs.js",
+      "raw": 23398,
+      "gzip": 6671,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.buku.js",
+      "raw": 22623,
+      "gzip": 7401,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/dropdown.js",
+      "raw": 22045,
+      "gzip": 6249,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/select.js",
+      "raw": 22026,
+      "gzip": 7346,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.dev.press.js",
+      "raw": 20240,
+      "gzip": 6469,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/_authenticated.pembaruan.js",
+      "raw": 16973,
+      "gzip": 5640,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/esm.js",
+      "raw": 16185,
+      "gzip": 6506,
+      "kind": "js",
+      "parts": 10
+    },
+    {
+      "name": "assets/web.js",
+      "raw": 15849,
+      "gzip": 6112,
+      "kind": "js",
+      "parts": 8
+    },
+    {
+      "name": "assets/es2015.js",
+      "raw": 15634,
+      "gzip": 5970,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/QueryClientProvider.js",
+      "raw": 15291,
+      "gzip": 5285,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.admin.worker.js",
+      "raw": 14194,
+      "gzip": 4885,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/download._variant.js",
+      "raw": 13958,
+      "gzip": 4891,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/ClientOnly.js",
+      "raw": 13247,
+      "gzip": 4615,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/diagnostik.paket.js",
+      "raw": 13001,
+      "gzip": 3408,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.label.js",
+      "raw": 12781,
+      "gzip": 3808,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.daftar.js",
+      "raw": 12533,
+      "gzip": 3370,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.kios.js",
+      "raw": 12351,
+      "gzip": 3614,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/CaptionPreviewDialog.js",
+      "raw": 11597,
+      "gzip": 4083,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.ready.js",
+      "raw": 11505,
+      "gzip": 3343,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.kontak.permintaan.js",
+      "raw": 11493,
+      "gzip": 3692,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.kios.riwayat._kind._id.js",
+      "raw": 11471,
+      "gzip": 3100,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/trust.js",
+      "raw": 11197,
+      "gzip": 3443,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/react.js",
+      "raw": 11089,
+      "gzip": 4240,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/_authenticated.kontak.index.js",
+      "raw": 10896,
+      "gzip": 3842,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "sw-push.js",
+      "raw": 10325,
+      "gzip": 3624,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.debug.selector.js",
+      "raw": 10184,
+      "gzip": 3388,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.chat.js",
+      "raw": 10132,
+      "gzip": 3388,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/pos-kasir.ringkasan.js",
+      "raw": 10005,
+      "gzip": 3170,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.kontak.js",
+      "raw": 9991,
+      "gzip": 3949,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/app.js",
+      "raw": 9694,
+      "gzip": 3555,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/press.js",
+      "raw": 9599,
+      "gzip": 3279,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.undang.js",
+      "raw": 9474,
+      "gzip": 3565,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.admin.js",
+      "raw": 9445,
+      "gzip": 3223,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/slider.js",
+      "raw": 9213,
+      "gzip": 3594,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/appearance.js",
+      "raw": 9174,
+      "gzip": 2835,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.design.js",
+      "raw": 9170,
+      "gzip": 2970,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.email.js",
+      "raw": 9146,
+      "gzip": 3082,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.admin.email.js",
+      "raw": 9130,
+      "gzip": 2610,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useBaseQuery.js",
+      "raw": 8837,
+      "gzip": 3234,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.admin.signup.js",
+      "raw": 8806,
+      "gzip": 2539,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.kios.riwayat.js",
+      "raw": 8648,
+      "gzip": 2619,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/tooltip.js",
+      "raw": 8497,
+      "gzip": 3104,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.panggilan.js",
+      "raw": 8492,
+      "gzip": 3590,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/download.js",
+      "raw": 8431,
+      "gzip": 3367,
+      "kind": "js",
+      "parts": 4
+    },
+    {
+      "name": "assets/_authenticated.gudang.pesanan._id.js",
+      "raw": 8404,
+      "gzip": 2587,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.audit.js",
+      "raw": 8391,
+      "gzip": 2912,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ReadyRequestSection.js",
+      "raw": 7958,
+      "gzip": 2799,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.perf.js",
+      "raw": 7766,
+      "gzip": 2630,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/AppLockSetup.js",
+      "raw": 7734,
+      "gzip": 2301,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.rekonsiliasi.js",
+      "raw": 7729,
+      "gzip": 2397,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/terms.js",
+      "raw": 7657,
+      "gzip": 2730,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.sesi.js",
+      "raw": 7197,
+      "gzip": 2747,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/get.js",
+      "raw": 7055,
+      "gzip": 2375,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.admin.portal.js",
+      "raw": 7007,
+      "gzip": 2301,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/worker.js",
+      "raw": 6681,
+      "gzip": 2746,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/radio.js",
+      "raw": 6302,
+      "gzip": 2534,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/_authenticated.status.baru.js",
+      "raw": 6125,
+      "gzip": 2276,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.gudang.pesanan._id.edit.js",
+      "raw": 6113,
+      "gzip": 2005,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/use.js",
+      "raw": 6000,
+      "gzip": 3075,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/_authenticated.status._id.js",
+      "raw": 5932,
+      "gzip": 2200,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.produk.js",
+      "raw": 5771,
+      "gzip": 1854,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.fitur.js",
+      "raw": 5765,
+      "gzip": 2152,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/popover.js",
+      "raw": 5662,
+      "gzip": 2037,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.message.js",
+      "raw": 5528,
+      "gzip": 2079,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/_authenticated.device.js",
+      "raw": 5497,
+      "gzip": 2222,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useStore.js",
+      "raw": 5365,
+      "gzip": 2255,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.gudang.js",
+      "raw": 5294,
+      "gzip": 1975,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.delivery.js",
+      "raw": 5140,
+      "gzip": 1795,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.appearance.js",
+      "raw": 5134,
+      "gzip": 1639,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/link.js",
+      "raw": 5055,
+      "gzip": 2606,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/lovable.visual.press.js",
+      "raw": 5002,
+      "gzip": 1562,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/DownloadChatApkShortcut.js",
+      "raw": 4975,
+      "gzip": 2244,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/QrScannerDialog.js",
+      "raw": 4859,
+      "gzip": 2202,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/CopyChatApkLinksButton.js",
+      "raw": 4745,
+      "gzip": 1870,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/BuildVersionBadge.js",
+      "raw": 4739,
+      "gzip": 1755,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PillsTabs.js",
+      "raw": 4709,
+      "gzip": 1767,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.min.js",
+      "raw": 4709,
+      "gzip": 1617,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/NumericDraftInput.js",
+      "raw": 4637,
+      "gzip": 1774,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/prep.js",
+      "raw": 4583,
+      "gzip": 2177,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/friendly.js",
+      "raw": 4529,
+      "gzip": 1820,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/notif.js",
+      "raw": 4432,
+      "gzip": 1590,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.chat.js",
+      "raw": 4340,
+      "gzip": 1853,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/i._code.js",
+      "raw": 4292,
+      "gzip": 1806,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/org.js",
+      "raw": 4212,
+      "gzip": 1634,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/checkbox.js",
+      "raw": 4174,
+      "gzip": 1783,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.metrik.js",
+      "raw": 4136,
+      "gzip": 1550,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.ecer.js",
+      "raw": 4003,
+      "gzip": 1444,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ChatSkeletons.js",
+      "raw": 3978,
+      "gzip": 1625,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.kemasan.js",
+      "raw": 3942,
+      "gzip": 1043,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.js",
+      "raw": 3939,
+      "gzip": 1886,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/SecurityFindingsBanner.js",
+      "raw": 3840,
+      "gzip": 1612,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/KemasanKonversiBadge.js",
+      "raw": 3834,
+      "gzip": 1329,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/scroll.js",
+      "raw": 3831,
+      "gzip": 1585,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/native.js",
+      "raw": 3781,
+      "gzip": 1959,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/switch.js",
+      "raw": 3744,
+      "gzip": 1601,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.catatan.js",
+      "raw": 3659,
+      "gzip": 1421,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/status.js",
+      "raw": 3621,
+      "gzip": 1235,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/tabs.js",
+      "raw": 3555,
+      "gzip": 1444,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/address.js",
+      "raw": 3524,
+      "gzip": 1269,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/VoiceNotePlayer.js",
+      "raw": 3470,
+      "gzip": 1571,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/refund.js",
+      "raw": 3398,
+      "gzip": 1345,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.tap.js",
+      "raw": 3393,
+      "gzip": 1044,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/invite.js",
+      "raw": 3367,
+      "gzip": 1431,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/MessageInfoDialog.js",
+      "raw": 3337,
+      "gzip": 1055,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ReadySelfPrepSection.js",
+      "raw": 3323,
+      "gzip": 1279,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_authenticated.balas.js",
+      "raw": 3284,
+      "gzip": 1290,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ChatBottomNav.js",
+      "raw": 3279,
+      "gzip": 1505,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.karton.js",
+      "raw": 3230,
+      "gzip": 926,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/phone.js",
+      "raw": 3184,
+      "gzip": 1358,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/DownloadStorageApkShortcut.js",
+      "raw": 3120,
+      "gzip": 1490,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PickChatConversationDialog.js",
+      "raw": 3095,
+      "gzip": 1281,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.auto.js",
+      "raw": 3095,
+      "gzip": 1376,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/error.js",
+      "raw": 3088,
+      "gzip": 1401,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/StatusBadge.js",
+      "raw": 3050,
+      "gzip": 1125,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/LayoutModeToggle.js",
+      "raw": 2946,
+      "gzip": 1246,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/profile.js",
+      "raw": 2919,
+      "gzip": 1302,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.admin.js",
+      "raw": 2795,
+      "gzip": 1047,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/TaskQrCode.js",
+      "raw": 2775,
+      "gzip": 1297,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/avatar.js",
+      "raw": 2748,
+      "gzip": 1223,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.attachment.js",
+      "raw": 2677,
+      "gzip": 1221,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/_._lovable.oauth.consent.js",
+      "raw": 2603,
+      "gzip": 1257,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/lovable.visual.call.js",
+      "raw": 2558,
+      "gzip": 989,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/reset.js",
+      "raw": 2550,
+      "gzip": 1145,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/dialog.js",
+      "raw": 2466,
+      "gzip": 1035,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.two.js",
+      "raw": 2434,
+      "gzip": 944,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.prep.js",
+      "raw": 2398,
+      "gzip": 960,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/build.js",
+      "raw": 2378,
+      "gzip": 1126,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useMutation.js",
+      "raw": 2320,
+      "gzip": 967,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/request.js",
+      "raw": 2174,
+      "gzip": 922,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.voice.js",
+      "raw": 2148,
+      "gzip": 1100,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PatternPad.js",
+      "raw": 2097,
+      "gzip": 1022,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/progress.js",
+      "raw": 2088,
+      "gzip": 1017,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/SaleShareButtons.js",
+      "raw": 2081,
+      "gzip": 871,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PublicHeader.js",
+      "raw": 2061,
+      "gzip": 811,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/sw.js",
+      "raw": 2013,
+      "gzip": 897,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/button.js",
+      "raw": 1891,
+      "gzip": 840,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/apk.js",
+      "raw": 1880,
+      "gzip": 1162,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/lovable.visual.worker.js",
+      "raw": 1865,
+      "gzip": 757,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/push.js",
+      "raw": 1818,
+      "gzip": 861,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/apk.functions.js",
+      "raw": 1802,
+      "gzip": 951,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/appearance-migrator.telemetry.js",
+      "raw": 1785,
+      "gzip": 849,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/SettingsHeader.js",
+      "raw": 1755,
+      "gzip": 775,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useBlocker.js",
+      "raw": 1620,
+      "gzip": 694,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lovable.visual.access.js",
+      "raw": 1534,
+      "gzip": 694,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/package.js",
+      "raw": 1486,
+      "gzip": 927,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/circle.js",
+      "raw": 1459,
+      "gzip": 1245,
+      "kind": "js",
+      "parts": 7
+    },
+    {
+      "name": "assets/lovable.visual.apk.js",
+      "raw": 1332,
+      "gzip": 511,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/pos.js",
+      "raw": 1309,
+      "gzip": 705,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/trigger.js",
+      "raw": 1264,
+      "gzip": 692,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/storage.js",
+      "raw": 1230,
+      "gzip": 680,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/payment.js",
+      "raw": 1225,
+      "gzip": 627,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/createLucideIcon.js",
+      "raw": 1217,
+      "gzip": 706,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/badge.js",
+      "raw": 1206,
+      "gzip": 686,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/preload.js",
+      "raw": 1193,
+      "gzip": 683,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useInfiniteQuery.js",
+      "raw": 1164,
+      "gzip": 493,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/user.js",
+      "raw": 1158,
+      "gzip": 801,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/card.js",
+      "raw": 1150,
+      "gzip": 442,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/mail.js",
+      "raw": 1136,
+      "gzip": 894,
+      "kind": "js",
+      "parts": 4
+    },
+    {
+      "name": "assets/clipboard.js",
+      "raw": 1096,
+      "gzip": 759,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/tslib.es6.js",
+      "raw": 1069,
+      "gzip": 525,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/bell.js",
+      "raw": 1052,
+      "gzip": 788,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/friend.js",
+      "raw": 1035,
+      "gzip": 549,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/definitions.js",
+      "raw": 1029,
+      "gzip": 476,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/current.js",
+      "raw": 996,
+      "gzip": 538,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/beli.js",
+      "raw": 992,
+      "gzip": 529,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/push.functions.js",
+      "raw": 924,
+      "gzip": 470,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/arrow.js",
+      "raw": 911,
+      "gzip": 843,
+      "kind": "js",
+      "parts": 5
+    },
+    {
+      "name": "assets/input.js",
+      "raw": 868,
+      "gzip": 513,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/boxes.js",
+      "raw": 851,
+      "gzip": 400,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/separator.js",
+      "raw": 822,
+      "gzip": 471,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/message.js",
+      "raw": 784,
+      "gzip": 653,
+      "kind": "js",
+      "parts": 3
+    },
+    {
+      "name": "assets/wifi.js",
+      "raw": 740,
+      "gzip": 478,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/settings.js",
+      "raw": 739,
+      "gzip": 451,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/pending.js",
+      "raw": 723,
+      "gzip": 384,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useMatch.js",
+      "raw": 722,
+      "gzip": 428,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/label.js",
+      "raw": 718,
+      "gzip": 440,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/chunk.js",
+      "raw": 694,
+      "gzip": 423,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/eye.js",
+      "raw": 686,
+      "gzip": 471,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/unit.js",
+      "raw": 678,
+      "gzip": 320,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/shield.js",
+      "raw": 673,
+      "gzip": 511,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/textarea.js",
+      "raw": 652,
+      "gzip": 426,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/qr.js",
+      "raw": 650,
+      "gzip": 309,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/sticker.js",
+      "raw": 640,
+      "gzip": 359,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/calendar.js",
+      "raw": 635,
+      "gzip": 453,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/zoom.js",
+      "raw": 633,
+      "gzip": 310,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/image.js",
+      "raw": 632,
+      "gzip": 476,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/shopping.js",
+      "raw": 632,
+      "gzip": 477,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/bug.js",
+      "raw": 628,
+      "gzip": 324,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/redirect.js",
+      "raw": 625,
+      "gzip": 355,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/synapse.js",
+      "raw": 624,
+      "gzip": 313,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/query.js",
+      "raw": 609,
+      "gzip": 404,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/monitor.js",
+      "raw": 585,
+      "gzip": 445,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/client.js",
+      "raw": 562,
+      "gzip": 454,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/users.js",
+      "raw": 559,
+      "gzip": 444,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/Typography.js",
+      "raw": 532,
+      "gzip": 309,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/chevron.js",
+      "raw": 516,
+      "gzip": 563,
+      "kind": "js",
+      "parts": 4
+    },
+    {
+      "name": "assets/piutang.js",
+      "raw": 511,
+      "gzip": 272,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/palette.js",
+      "raw": 510,
+      "gzip": 277,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ensure.js",
+      "raw": 492,
+      "gzip": 275,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/notebook.js",
+      "raw": 476,
+      "gzip": 288,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/star.js",
+      "raw": 472,
+      "gzip": 293,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/sun.js",
+      "raw": 472,
+      "gzip": 259,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useRouterState.js",
+      "raw": 472,
+      "gzip": 298,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/base.js",
+      "raw": 468,
+      "gzip": 319,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/coins.js",
+      "raw": 451,
+      "gzip": 292,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/notif-feed.functions.js",
+      "raw": 436,
+      "gzip": 292,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useServerFn.js",
+      "raw": 430,
+      "gzip": 288,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/jsx.js",
+      "raw": 424,
+      "gzip": 293,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/layers.js",
+      "raw": 421,
+      "gzip": 240,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/lock.js",
+      "raw": 416,
+      "gzip": 383,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/public.js",
+      "raw": 414,
+      "gzip": 356,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/truck.js",
+      "raw": 406,
+      "gzip": 269,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/call.js",
+      "raw": 405,
+      "gzip": 229,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/qss.js",
+      "raw": 397,
+      "gzip": 269,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/hard.js",
+      "raw": 388,
+      "gzip": 259,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/file.js",
+      "raw": 385,
+      "gzip": 251,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/crop.js",
+      "raw": 380,
+      "gzip": 254,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/square.js",
+      "raw": 376,
+      "gzip": 346,
+      "kind": "js",
+      "parts": 2
+    },
+    {
+      "name": "assets/warehouse.js",
+      "raw": 375,
+      "gzip": 255,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/clsx.js",
+      "raw": 368,
+      "gzip": 230,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/debt.js",
+      "raw": 360,
+      "gzip": 262,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/key.js",
+      "raw": 355,
+      "gzip": 259,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/layout.js",
+      "raw": 346,
+      "gzip": 194,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/pin.js",
+      "raw": 346,
+      "gzip": 239,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/accessibility.js",
+      "raw": 343,
+      "gzip": 249,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/camera.js",
+      "raw": 336,
+      "gzip": 251,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/scale.js",
+      "raw": 332,
+      "gzip": 223,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/scan.js",
+      "raw": 331,
+      "gzip": 222,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/cleanup.js",
+      "raw": 330,
+      "gzip": 238,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/trash.js",
+      "raw": 328,
+      "gzip": 215,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/save.js",
+      "raw": 327,
+      "gzip": 223,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/contact.js",
+      "raw": 326,
+      "gzip": 243,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/refresh.js",
+      "raw": 321,
+      "gzip": 221,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/languages.js",
+      "raw": 316,
+      "gzip": 219,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/laptop.js",
+      "raw": 304,
+      "gzip": 234,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/wrench.js",
+      "raw": 303,
+      "gzip": 238,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/flask.js",
+      "raw": 302,
+      "gzip": 232,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/auto.js",
+      "raw": 299,
+      "gzip": 196,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/hash.js",
+      "raw": 296,
+      "gzip": 190,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/smile.js",
+      "raw": 293,
+      "gzip": 216,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/send.js",
+      "raw": 290,
+      "gzip": 230,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/inbox.js",
+      "raw": 286,
+      "gzip": 233,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/wallet.js",
+      "raw": 286,
+      "gzip": 205,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/pen.js",
+      "raw": 277,
+      "gzip": 227,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/pencil.js",
+      "raw": 276,
+      "gzip": 226,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/typeof.js",
+      "raw": 271,
+      "gzip": 169,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/triangle.js",
+      "raw": 265,
+      "gzip": 215,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/zap.js",
+      "raw": 262,
+      "gzip": 209,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/PageContainer.js",
+      "raw": 261,
+      "gzip": 218,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/map.js",
+      "raw": 259,
+      "gzip": 224,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/heart.js",
+      "raw": 258,
+      "gzip": 217,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/external.js",
+      "raw": 251,
+      "gzip": 199,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/banknote.js",
+      "raw": 245,
+      "gzip": 208,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/globe.js",
+      "raw": 242,
+      "gzip": 190,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/timer.js",
+      "raw": 238,
+      "gzip": 185,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/history.js",
+      "raw": 237,
+      "gzip": 194,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/copy.js",
+      "raw": 236,
+      "gzip": 209,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ellipsis.js",
+      "raw": 235,
+      "gzip": 172,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/mic.js",
+      "raw": 235,
+      "gzip": 202,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/activity.js",
+      "raw": 234,
+      "gzip": 200,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/log.js",
+      "raw": 230,
+      "gzip": 189,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/upload.js",
+      "raw": 230,
+      "gzip": 190,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/skeleton.js",
+      "raw": 223,
+      "gzip": 192,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/briefcase.js",
+      "raw": 220,
+      "gzip": 196,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/type.js",
+      "raw": 220,
+      "gzip": 182,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/moon.js",
+      "raw": 217,
+      "gzip": 199,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/admin.js",
+      "raw": 213,
+      "gzip": 178,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/undo.js",
+      "raw": 208,
+      "gzip": 178,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/info.js",
+      "raw": 204,
+      "gzip": 177,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/rotate.js",
+      "raw": 201,
+      "gzip": 183,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/smartphone.js",
+      "raw": 197,
+      "gzip": 182,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/play.js",
+      "raw": 190,
+      "gzip": 180,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/ban.js",
+      "raw": 181,
+      "gzip": 169,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/facebook.js",
+      "raw": 177,
+      "gzip": 179,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/search.js",
+      "raw": 174,
+      "gzip": 168,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useRouter.js",
+      "raw": 173,
+      "gzip": 153,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/clock.js",
+      "raw": 169,
+      "gzip": 166,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/matchContext.js",
+      "raw": 164,
+      "gzip": 138,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/realtime.js",
+      "raw": 159,
+      "gzip": 131,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/back.js",
+      "raw": 156,
+      "gzip": 143,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/x.js",
+      "raw": 154,
+      "gzip": 148,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/plus.js",
+      "raw": 153,
+      "gzip": 150,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/loader.js",
+      "raw": 144,
+      "gzip": 155,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/check.js",
+      "raw": 124,
+      "gzip": 140,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/useQuery.js",
+      "raw": 96,
+      "gzip": 105,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/invariant.js",
+      "raw": 60,
+      "gzip": 80,
+      "kind": "js",
+      "parts": 1
+    },
+    {
+      "name": "assets/root.js",
+      "raw": 32,
+      "gzip": 52,
+      "kind": "js",
+      "parts": 1
+    }
+  ]
+}

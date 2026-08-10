@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "crypto";
 
 const SENDER_DOMAIN = "notify.mcmstorage.biz";
-const FROM_ADDRESS = `MCM Storage <noreply@${SENDER_DOMAIN}>`;
+const FROM_ADDRESS = `Ace Storage <noreply@${SENDER_DOMAIN}>`;
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -26,14 +26,23 @@ function hashCode(code: string, salt: string) {
 }
 
 /**
- * Identitas device = hash dari sidik jari klien saja.
+ * Identitas device = hash sidik jari klien di-garam dengan user id.
+ *
+ * L11: sebelumnya `sha256("device:" + rawClientHash)` — deterministik lintas
+ * user, sehingga fingerprint yang sama menghasilkan hash yang sama di semua
+ * akun. Sekarang: bungkus outer hash dengan `user_id` supaya fingerprint yang
+ * identik menghasilkan `device_hash` berbeda per user, tidak bisa dikorelasikan
+ * antar-akun.
+ *
  * IP TIDAK dimasukkan ke identitas — IP berubah setiap ganti jaringan
- * (WiFi → seluler, ISP rotasi), dan jika ikut di-hash, device akan
- * dianggap "baru" tiap kali dan OTP diminta ulang. IP tetap dicatat
- * sebagai metadata di `last_ip` untuk audit.
+ * (WiFi → seluler, ISP rotasi). IP tetap dicatat sebagai metadata di `last_ip`.
  */
-function deviceIdentityHash(deviceHash: string) {
-  return createHash("sha256").update(`device:${deviceHash}`).digest("hex");
+function deviceIdentityHash(deviceHash: string, userId: string) {
+  const inner = createHash("sha256").update(`device:${deviceHash}`).digest("hex");
+  const outer = createHash("sha256")
+    .update(`v2wrap:${userId}:${inner}`)
+    .digest("hex");
+  return `v2:${outer}`;
 }
 
 export const requestDeviceOtp = createServerFn({ method: "POST" })
@@ -48,7 +57,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -123,9 +132,9 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
       }
     }
 
-    const subject = "Kode verifikasi device — MCM Storage";
+    const subject = "Kode verifikasi device — Ace Storage";
     const html = renderOtpEmail(code, ip, ua);
-    const text = `Kode verifikasi device MCM Storage Anda: ${code}\nBerlaku 10 menit.\nIP: ${ip}\nDevice: ${ua}\nJika bukan Anda, segera ganti kata sandi.`;
+    const text = `Kode verifikasi device Ace Storage Anda: ${code}\nBerlaku 10 menit.\nIP: ${ip}\nDevice: ${ua}\nJika bukan Anda, segera ganti kata sandi.`;
 
     let emailSent = false;
     let emailError: string | null = null;
@@ -186,7 +195,7 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -223,18 +232,59 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
       .update({ consumed_at: new Date().toISOString() })
       .eq("id", ch.id);
 
-    // Upsert device trusted
-    await supabaseAdmin.from("user_devices").upsert(
+    // Upsert device trusted. Jangan abaikan error di sini: sebelumnya OTP bisa
+    // dianggap sukses walau penyimpanan device gagal (mis. batas 1 device pada
+    // paket gratis), lalu user dipantulkan lagi ke /device-verify tanpa akhir.
+    const trustedAt = new Date().toISOString();
+    const trustedPayload = {
+      user_id: userId,
+      device_hash: fullHash,
+      last_ip: ip,
+      last_user_agent: ua,
+      trusted_at: trustedAt,
+      last_seen_at: trustedAt,
+    };
+    const { error: upsertErr } = await supabaseAdmin.from("user_devices").upsert(
       {
-        user_id: userId,
-        device_hash: fullHash,
-        last_ip: ip,
-        last_user_agent: ua,
-        trusted_at: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
+        ...trustedPayload,
       },
       { onConflict: "user_id,device_hash" },
     );
+
+    if (upsertErr) {
+      const isDeviceCap = /pro_required:user_devices/i.test(upsertErr.message ?? "");
+      if (!isDeviceCap) {
+        throw new Error("Kode benar, tapi device gagal disimpan. Coba lagi.");
+      }
+
+      // Paket gratis hanya boleh punya 1 device terpercaya. Setelah OTP benar,
+      // ganti device lama dengan device ini supaya login tidak terkunci oleh
+      // fingerprint yang berubah / install APK baru.
+      const { data: existingDevices, error: existingErr } = await supabaseAdmin
+        .from("user_devices")
+        .select("id")
+        .eq("user_id", userId)
+        .order("last_seen_at", { ascending: true })
+        .limit(1);
+      const replaceId = existingDevices?.[0]?.id;
+      if (existingErr || !replaceId) {
+        throw new Error("Kode benar, tapi device gagal diganti. Coba lagi.");
+      }
+      const { error: replaceErr } = await supabaseAdmin
+        .from("user_devices")
+        .update({
+          device_hash: fullHash,
+          last_ip: ip,
+          last_user_agent: ua,
+          trusted_at: trustedAt,
+          last_seen_at: trustedAt,
+        })
+        .eq("id", replaceId)
+        .eq("user_id", userId);
+      if (replaceErr) {
+        throw new Error("Kode benar, tapi device gagal diganti. Coba lagi.");
+      }
+    }
 
     return { ok: true as const };
   });
@@ -258,16 +308,21 @@ export const isDeviceTrusted = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = deviceIdentityHash(data.deviceHash);
+    const fullHash = deviceIdentityHash(data.deviceHash, userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_devices")
-      .select("id, trusted_at")
+      .select("id, trusted_at, last_seen_at")
       .eq("user_id", userId)
       .eq("device_hash", fullHash)
       .maybeSingle();
     const trusted = !!row?.trusted_at;
-    if (trusted && row) {
+    // Heartbeat di-throttle: `isDeviceTrusted` dipanggil tiap navigasi, dan
+    // UPDATE tanpa rem membanjiri PostgREST (penyebab antrean/timeout).
+    // Cukup segarkan `last_seen_at` maksimal sekali per 5 menit.
+    const lastSeenMs = row?.last_seen_at ? Date.parse(row.last_seen_at) : 0;
+    const staleHeartbeat = !lastSeenMs || Date.now() - lastSeenMs > 5 * 60_000;
+    if (trusted && row && staleHeartbeat) {
       await supabaseAdmin
         .from("user_devices")
         .update({
@@ -321,7 +376,7 @@ function renderOtpEmail(code: string, ip: string, ua: string) {
   <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:24px">
     <h1 style="font-size:18px;margin:0 0 8px">Verifikasi device baru</h1>
     <p style="font-size:14px;color:#475569;margin:0 0 16px">
-      Ada permintaan masuk MCM Storage dari device baru. Masukkan kode berikut untuk melanjutkan.
+      Ada permintaan masuk Ace Storage dari device baru. Masukkan kode berikut untuk melanjutkan.
     </p>
     <div style="font-size:34px;font-weight:700;letter-spacing:8px;text-align:center;background:#f1f5f9;border-radius:8px;padding:16px;margin:16px 0">
       ${code}

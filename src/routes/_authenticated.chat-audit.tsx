@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { ArrowLeft, History, Trash2, EyeOff, Users } from "lucide-react";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { goBackOr } from "@/lib/back-nav";
 
 const searchSchema = z.object({
   c: z.string().uuid().optional(),
@@ -49,6 +50,7 @@ function fmt(iso: string) {
 
 function AuditPage() {
   const { c } = Route.useSearch();
+  const router = useRouter();
 
   const audit = useQuery({
     queryKey: ["chat-delete-audit", c ?? "all"],
@@ -72,58 +74,67 @@ function AuditPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, email")
+        .select("id, display_name, invite_code")
         .in("id", actorIds);
       if (error) throw error;
       const map = new Map<string, { name: string }>();
       for (const p of data ?? []) {
-        map.set(p.id as string, { name: (p as { display_name?: string; email?: string }).display_name || (p as { email?: string }).email || "Pengguna" });
+        const row = p as { display_name?: string | null; invite_code?: string | null };
+        const pin = row.invite_code
+          ? `PIN ${row.invite_code.toUpperCase().replace(/(.{4})(.{4})/, "$1-$2")}`
+          : null;
+        map.set(p.id as string, { name: row.display_name || pin || "Pengguna" });
       }
       return map;
     },
   });
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
-      <div className="flex items-center gap-2">
-        <Button asChild variant="ghost" size="icon" aria-label="Kembali">
-          {c ? (
-            <Link to="/chat/$conversationId" params={{ conversationId: c }}>
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          ) : (
-            <Link to="/chat">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          )}
+    <div className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
+      <div className="flex items-center gap-ms-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Kembali"
+          onClick={() =>
+            goBackOr(
+              router,
+              c
+                ? { to: "/chat/$conversationId", params: { conversationId: c } }
+                : { to: "/chat" },
+            )
+          }
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="flex flex-1 items-center gap-2">
+        <div className="flex flex-1 items-center gap-ms-2">
           <History className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Log hapus pesan</h1>
+          <h1 className="text-ms-lg font-semibold">Log hapus pesan</h1>
         </div>
         {c ? <Badge variant="secondary">Percakapan ini</Badge> : <Badge variant="outline">Semua percakapan</Badge>}
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Aktivitas terbaru</CardTitle>
+          <CardTitle className="text-ms-base">Aktivitas terbaru</CardTitle>
         </CardHeader>
         <CardContent>
           {audit.isLoading ? (
-            <p className="text-sm text-muted-foreground">Memuat…</p>
+            <p className="text-ms-sm text-muted-foreground">Memuat…</p>
           ) : audit.isError ? (
-            <p className="text-sm text-destructive">Gagal memuat log.</p>
+            <p className="text-ms-sm text-destructive">Gagal memuat log.</p>
           ) : (audit.data ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Belum ada aktivitas penghapusan tercatat.</p>
+            <p className="text-ms-sm text-muted-foreground">Belum ada aktivitas penghapusan tercatat.</p>
           ) : (
             <ul className="divide-y">
               {(audit.data ?? []).map((row) => {
                 const who = profiles.data?.get(row.actor_user_id)?.name ?? "Pengguna";
                 return (
-                  <li key={row.id} className="flex items-start gap-3 py-2">
+                  <li key={row.id} className="flex items-start gap-ms-3 py-ms-2">
                     <div className="mt-0.5"><ActionIcon action={row.action} /></div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-ms-sm">
                         <span className="font-medium">{who}</span>
                         <span className="text-muted-foreground">·</span>
                         <span>{ACTION_LABEL[row.action]}</span>
@@ -131,12 +142,12 @@ function AuditPage() {
                           <Badge variant="outline" className="ml-1">{row.count} pesan</Badge>
                         ) : null}
                       </div>
-                      <div className="text-xs text-muted-foreground">{fmt(row.created_at)}</div>
+                      <div className="text-ms-xs text-muted-foreground">{fmt(row.created_at)}</div>
                       {!c ? (
                         <Link
                           to="/chat/$conversationId"
                           params={{ conversationId: row.conversation_id }}
-                          className="text-xs text-primary hover:underline"
+                          className="text-ms-xs text-primary hover:underline"
                         >
                           Buka percakapan
                         </Link>

@@ -1,5 +1,6 @@
 import { Ban } from "lucide-react";
 import type { ReactNode } from "react";
+import { previewText as cardPreviewText } from "./chat-cards";
 
 export const DELETED_PLACEHOLDER = "(pesan dihapus)";
 export const DELETED_ATTACHMENT_PLACEHOLDER = "(lampiran dihapus)";
@@ -29,7 +30,11 @@ export function messagePreviewText(m: DeletableMessage | null | undefined): stri
     return hasAttachment(m) ? `${DELETED_PLACEHOLDER} · ${DELETED_ATTACHMENT_PLACEHOLDER}` : DELETED_PLACEHOLDER;
   }
   const body = m.body?.trim();
-  if (body) return body;
+  if (body) {
+    const rendered = cardPreviewText(body);
+    if (rendered) return rendered;
+    return body;
+  }
   if (m.attachment_name) return `📎 ${m.attachment_name}`;
   if (hasAttachment(m)) return ATTACHMENT_FALLBACK;
   return "";
@@ -47,7 +52,7 @@ export function DeletedPreview({
 }): ReactNode {
   const attach = hasAttachment(message);
   return (
-    <span className={className ?? "inline-flex items-center gap-1 italic"}>
+    <span className={className ?? "inline-flex items-center gap-ms-1 italic"}>
       <Ban className={iconClassName} />
       {DELETED_PLACEHOLDER}
       {attach ? ` · ${DELETED_ATTACHMENT_PLACEHOLDER}` : ""}

@@ -8,8 +8,8 @@ import { StatusBadge } from "@/components/StatusBadge";
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
     meta: [
-      { title: "Audit Rute · MCM Storage" },
-      { name: "description", content: "Laporan otomatis status tiap menu/rute aplikasi pada Mode Ringkas & Mode Normal." },
+      { title: "Audit Rute · Ace Storage" },
+      { name: "description", content: "Halaman audit internal: laporan otomatis status tiap menu/rute pada tampilan Ringkas & Normal. Tidak mengubah data atau environment." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -64,6 +64,12 @@ function AuditPage() {
   const [autoOnToggle, setAutoOnToggle] = useState(true);
   const [log, setLog] = useState<string[]>([]);
   const runIdRef = useRef(0);
+  // L5: pakai ref agar `runAudit` tidak perlu bergantung pada state
+  // `running` (menghindari identitas fungsi berubah → efek/listener
+  // ikut re-bind, dan stale closure saat auto-audit dipicu event).
+  const runningRef = useRef(false);
+  // Guard StrictMode double-mount: audit awal dijalankan sekali per sesi.
+  const initialRanRef = useRef(false);
 
   const appendLog = useCallback((line: string) => {
     setLog((prev) => {
@@ -73,7 +79,8 @@ function AuditPage() {
   }, []);
 
   const runAudit = useCallback(async () => {
-    if (running) return;
+    if (runningRef.current) return;
+    runningRef.current = true;
     const myRun = ++runIdRef.current;
     setRunning(true);
     const mode = currentMode();
@@ -109,7 +116,8 @@ function AuditPage() {
 
     appendLog(`[${nowIso()}] === Audit selesai (mode: ${mode}) ===`);
     setRunning(false);
-  }, [appendLog, router, running]);
+    runningRef.current = false;
+  }, [appendLog, router]);
 
   // Auto-jalankan saat toggle Mode Ringkas/Normal.
   useEffect(() => {
@@ -125,18 +133,21 @@ function AuditPage() {
     return () => window.removeEventListener(COMPACT_MODE_EVENT, onChange);
   }, [autoOnToggle, runAudit, appendLog]);
 
-  // Jalankan sekali saat halaman dibuka.
+  // Jalankan sekali saat halaman dibuka (guard StrictMode double-mount
+  // dan stale closure — dep list eksplisit; ref `initialRanRef` memastikan
+  // tidak looping).
   useEffect(() => {
+    if (initialRanRef.current) return;
+    initialRanRef.current = true;
     void runAudit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [runAudit]);
 
   const okCount = rows.filter((r) => r.status === "ok").length;
   const failCount = rows.filter((r) => r.status === "fail").length;
 
   function exportReport() {
     const mode = currentMode();
-    const header = `MCM Storage — Laporan Audit Rute\nWaktu ekspor: ${nowIso()}\nMode saat ekspor: ${mode}\nOK: ${okCount} · Gagal: ${failCount} · Total: ${rows.length}\n\n`;
+    const header = `Ace Storage — Laporan Audit Rute\nWaktu ekspor: ${nowIso()}\nMode saat ekspor: ${mode}\nOK: ${okCount} · Gagal: ${failCount} · Total: ${rows.length}\n\n`;
     const rowsTxt = rows
       .map((r) =>
         `${(r.status.toUpperCase()).padEnd(7)} ${r.to.padEnd(22)} ${(r.ms ?? "-")}ms  mode=${r.mode ?? "-"}  at=${r.at ?? "-"}` +
@@ -154,38 +165,51 @@ function AuditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-3 py-4">
+    <div className="mx-auto w-full max-w-4xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
       <SecurityFindingsBanner compact />
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <Link to="/" className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground hover:bg-muted">
+      <div className="mb-3 flex flex-wrap items-center gap-ms-2">
+        <Link to="/" className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs text-muted-foreground hover:bg-muted">
           <ChevronLeft className="h-3.5 w-3.5" /> Beranda
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-ms-2">
           <ClipboardCheck className="h-4 w-4 text-primary" />
-          <h1 className="text-base font-semibold">Audit Rute</h1>
+          <h1 className="text-ms-base font-semibold">Audit Rute</h1>
         </div>
-        <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-          mode: {currentMode()}
+        {/* L12: perjelas bahwa "mode" di sini merujuk ke tampilan
+            Ringkas/Normal aplikasi — bukan environment (dev/prod) atau
+            build mode. Prefiks "Tampilan:" dan label "Audit internal"
+            memastikan operator tidak salah baca. */}
+        <span
+          className="ml-2 rounded bg-muted px-1.5 py-0.5 text-ms-2xs uppercase tracking-wide text-muted-foreground"
+          title="Tampilan aplikasi saat audit dijalankan (Ringkas atau Normal)"
+        >
+          Tampilan: {currentMode() === "ringkas" ? "Ringkas" : "Normal"}
+        </span>
+        <span
+          className="rounded border border-dashed border-muted-foreground/40 bg-background px-1.5 py-0.5 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground"
+          title="Halaman internal untuk owner — tidak memengaruhi environment atau data aplikasi."
+        >
+          Audit internal
         </span>
         <button
           onClick={() => void runAudit()}
           disabled={running}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="ml-auto inline-flex h-8 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
           {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           {running ? "Sedang jalan…" : "Jalankan audit"}
         </button>
         <button
           onClick={exportReport}
-          className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
+          className="inline-flex h-8 items-center gap-ms-1 rounded-md border px-ms-2 text-ms-xs hover:bg-muted"
           title="Unduh laporan .txt"
         >
           <Download className="h-3.5 w-3.5" /> Ekspor
         </button>
       </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-3 text-xs">
-        <label className="inline-flex items-center gap-1.5 text-muted-foreground">
+      <div className="mb-3 flex flex-wrap items-center gap-ms-3 text-ms-xs">
+        <label className="inline-flex items-center gap-ms-1.5 text-muted-foreground">
           <input
             type="checkbox"
             checked={autoOnToggle}
@@ -200,43 +224,43 @@ function AuditPage() {
       </div>
 
       <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-xs">
+        <table className="w-full text-ms-xs">
           <thead className="bg-muted/40 text-muted-foreground">
             <tr>
-              <th className="px-2 py-1.5 text-left font-medium">Status</th>
-              <th className="px-2 py-1.5 text-left font-medium">Rute</th>
-              <th className="px-2 py-1.5 text-left font-medium">Durasi</th>
-              <th className="px-2 py-1.5 text-left font-medium">Mode</th>
-              <th className="px-2 py-1.5 text-left font-medium">Timestamp</th>
-              <th className="px-2 py-1.5 text-left font-medium">Detail</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Status</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Rute</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Durasi</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Tampilan</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Timestamp</th>
+              <th className="px-ms-2 py-1.5 text-left font-medium">Detail</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.to} className="border-t">
-                <td className="px-2 py-1.5">
+                <td className="px-ms-2 py-1.5">
                   {r.status === "ok" && (
-                    <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-ms-1 text-success dark:text-success">
                       <CheckCircle2 className="h-3.5 w-3.5" /> OK
                     </span>
                   )}
                   {r.status === "fail" && (
-                    <span className="inline-flex items-center gap-1 text-destructive">
+                    <span className="inline-flex items-center gap-ms-1 text-destructive">
                       <XCircle className="h-3.5 w-3.5" /> Gagal
                     </span>
                   )}
                   {r.status === "running" && (
-                    <span className="inline-flex items-center gap-1 text-primary">
+                    <span className="inline-flex items-center gap-ms-1 text-primary">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" /> …
                     </span>
                   )}
                   {r.status === "pending" && <span className="text-muted-foreground">—</span>}
                 </td>
-                <td className="px-2 py-1.5 font-mono">{r.label} <span className="text-muted-foreground">({r.to})</span></td>
-                <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{r.ms != null ? `${r.ms}ms` : "—"}</td>
-                <td className="px-2 py-1.5 text-muted-foreground">{r.mode ?? "—"}</td>
-                <td className="px-2 py-1.5 tabular-nums text-muted-foreground">{r.at ? new Date(r.at).toLocaleTimeString("id-ID") : "—"}</td>
-                <td className="px-2 py-1.5 text-destructive">{r.error ?? ""}</td>
+                <td className="px-ms-2 py-1.5 font-mono">{r.label} <span className="text-muted-foreground">({r.to})</span></td>
+                <td className="px-ms-2 py-1.5 tabular-nums text-muted-foreground">{r.ms != null ? `${r.ms}ms` : "—"}</td>
+                <td className="px-ms-2 py-1.5 text-muted-foreground">{r.mode ?? "—"}</td>
+                <td className="px-ms-2 py-1.5 tabular-nums text-muted-foreground">{r.at ? new Date(r.at).toLocaleTimeString("id-ID") : "—"}</td>
+                <td className="px-ms-2 py-1.5 text-destructive">{r.error ?? ""}</td>
               </tr>
             ))}
           </tbody>
@@ -244,16 +268,16 @@ function AuditPage() {
       </div>
 
       <div className="mt-3">
-        <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="mb-1 flex items-center gap-ms-2 text-ms-xs text-muted-foreground">
           <span>Log waktu nyata</span>
           <button
             onClick={() => setLog([])}
-            className="ml-auto inline-flex h-6 items-center gap-1 rounded border px-1.5 text-[11px] hover:bg-muted"
+            className="ml-auto inline-flex h-6 items-center gap-ms-1 rounded border px-1.5 text-ms-2xs hover:bg-muted"
           >
             <Trash2 className="h-3 w-3" /> Bersihkan
           </button>
         </div>
-        <pre className="max-h-64 overflow-auto rounded-lg border bg-muted/30 p-2 text-[11px] leading-relaxed">
+        <pre className="max-h-64 overflow-auto rounded-lg border bg-muted/30 p-ms-2 text-ms-2xs leading-relaxed">
 {log.length ? log.join("\n") : "(belum ada log)"}
         </pre>
       </div>

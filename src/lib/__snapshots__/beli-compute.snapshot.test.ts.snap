@@ -1,0 +1,464 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId > existing × karton aktif (hanya berlaku untuk botol) 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 50000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": true,
+      "pkgQ": 100,
+      "price": 100,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 1,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 10,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 1,
+      "price": 10000,
+      "totalCost": 10000,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId > existing × priceMode='base' 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 12500,
+      "totalCost": 25000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 25000,
+      "totalCost": 50000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 25,
+      "totalCost": 50,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 250,
+      "totalCost": 500,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId > mode existing — semua itemId 1`] = `
+[
+  {
+    "id": "botol-500",
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "g",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "gram-1000",
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "pcs-1",
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+  {
+    "id": "sachet-10",
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "g",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+  },
+]
+`;
+
+exports[`snapshot: computeBeliDerived lintas mode × itemId > mode new — semua packageType 1`] = `
+[
+  {
+    "out": {
+      "baseAdded": 1000,
+      "effBaseUnit": "pcs",
+      "effPackageType": "botol",
+      "effectivePkgSize": 500,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "botol",
+  },
+  {
+    "out": {
+      "baseAdded": 2000,
+      "effBaseUnit": "g",
+      "effPackageType": "gram",
+      "effectivePkgSize": 1000,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "gram",
+  },
+  {
+    "out": {
+      "baseAdded": 2,
+      "effBaseUnit": "pcs",
+      "effPackageType": "pcs",
+      "effectivePkgSize": 1,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "pcs",
+  },
+  {
+    "out": {
+      "baseAdded": 20,
+      "effBaseUnit": "pcs",
+      "effPackageType": "sachet",
+      "effectivePkgSize": 10,
+      "kartonActive": false,
+      "pkgQ": 2,
+      "price": 10000,
+      "totalCost": 20000,
+    },
+    "packageType": "sachet",
+  },
+]
+`;
+
+exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode existing — KARTON_ON_NON_BOTOL untuk item non-botol 1`] = `
+[
+  {
+    "id": "gram-1000",
+    "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih gram.",
+      },
+    ],
+  },
+  {
+    "id": "pcs-1",
+    "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih pcs.",
+      },
+      {
+        "code": "PCS_PACKAGE_PRICE",
+        "level": "warn",
+        "message": "Item pcs tidak punya ukuran kemasan; gunakan harga per pcs.",
+      },
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per pcs (10000.00) 233% lebih tinggi dari rata-rata (3000.00).",
+      },
+    ],
+  },
+  {
+    "id": "sachet-10",
+    "warnings": [
+      {
+        "code": "KARTON_ON_NON_BOTOL",
+        "level": "warn",
+        "message": "Mode karton hanya berlaku untuk item botol; item terpilih sachet.",
+      },
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per g (1000.00) 1900% lebih tinggi dari rata-rata (50.00).",
+      },
+    ],
+  },
+]
+`;
+
+exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode existing — pemicu PRICE_PER_BASE_HIGH (harga 3× rata-rata) 1`] = `
+[
+  {
+    "id": "botol-500",
+    "warnings": [
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per g (60.00) 200% lebih tinggi dari rata-rata (20.00).",
+      },
+    ],
+  },
+  {
+    "id": "gram-1000",
+    "warnings": [
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per g (45.00) 200% lebih tinggi dari rata-rata (15.00).",
+      },
+    ],
+  },
+  {
+    "id": "pcs-1",
+    "warnings": [
+      {
+        "code": "PCS_PACKAGE_PRICE",
+        "level": "warn",
+        "message": "Item pcs tidak punya ukuran kemasan; gunakan harga per pcs.",
+      },
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per pcs (9000.00) 200% lebih tinggi dari rata-rata (3000.00).",
+      },
+    ],
+  },
+  {
+    "id": "sachet-10",
+    "warnings": [
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per g (150.00) 200% lebih tinggi dari rata-rata (50.00).",
+      },
+    ],
+  },
+]
+`;
+
+exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode existing — pemicu QTY_ZERO / PRICE_ZERO 1`] = `
+[
+  {
+    "id": "botol-500",
+    "warnings": [
+      {
+        "code": "QTY_ZERO",
+        "level": "error",
+        "message": "Jumlah kemasan belum diisi.",
+      },
+      {
+        "code": "PRICE_ZERO",
+        "level": "error",
+        "message": "Harga belum diisi.",
+      },
+    ],
+  },
+  {
+    "id": "gram-1000",
+    "warnings": [
+      {
+        "code": "QTY_ZERO",
+        "level": "error",
+        "message": "Jumlah kemasan belum diisi.",
+      },
+      {
+        "code": "PRICE_ZERO",
+        "level": "error",
+        "message": "Harga belum diisi.",
+      },
+    ],
+  },
+  {
+    "id": "pcs-1",
+    "warnings": [
+      {
+        "code": "QTY_ZERO",
+        "level": "error",
+        "message": "Jumlah kemasan belum diisi.",
+      },
+      {
+        "code": "PRICE_ZERO",
+        "level": "error",
+        "message": "Harga belum diisi.",
+      },
+      {
+        "code": "PCS_PACKAGE_PRICE",
+        "level": "warn",
+        "message": "Item pcs tidak punya ukuran kemasan; gunakan harga per pcs.",
+      },
+    ],
+  },
+  {
+    "id": "sachet-10",
+    "warnings": [
+      {
+        "code": "QTY_ZERO",
+        "level": "error",
+        "message": "Jumlah kemasan belum diisi.",
+      },
+      {
+        "code": "PRICE_ZERO",
+        "level": "error",
+        "message": "Harga belum diisi.",
+      },
+    ],
+  },
+]
+`;
+
+exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode existing — warnings default (harga normal, qty 2) 1`] = `
+[
+  {
+    "id": "botol-500",
+    "warnings": [],
+  },
+  {
+    "id": "gram-1000",
+    "warnings": [],
+  },
+  {
+    "id": "pcs-1",
+    "warnings": [
+      {
+        "code": "PCS_PACKAGE_PRICE",
+        "level": "warn",
+        "message": "Item pcs tidak punya ukuran kemasan; gunakan harga per pcs.",
+      },
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per pcs (10000.00) 233% lebih tinggi dari rata-rata (3000.00).",
+      },
+    ],
+  },
+  {
+    "id": "sachet-10",
+    "warnings": [
+      {
+        "code": "PRICE_PER_BASE_HIGH",
+        "level": "warn",
+        "message": "Modal per g (1000.00) 1900% lebih tinggi dari rata-rata (50.00).",
+      },
+    ],
+  },
+]
+`;
+
+exports[`snapshot: computeBeliWarnings lintas mode × itemId > mode new — warnings default (tanpa selectedItem) 1`] = `
+[
+  {
+    "packageType": "botol",
+    "warnings": [],
+  },
+  {
+    "packageType": "gram",
+    "warnings": [],
+  },
+  {
+    "packageType": "pcs",
+    "warnings": [
+      {
+        "code": "PCS_PACKAGE_PRICE",
+        "level": "warn",
+        "message": "Item pcs tidak punya ukuran kemasan; gunakan harga per pcs.",
+      },
+    ],
+  },
+  {
+    "packageType": "sachet",
+    "warnings": [],
+  },
+]
+`;

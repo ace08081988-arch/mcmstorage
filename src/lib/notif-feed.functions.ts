@@ -159,6 +159,10 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     let eventsQ = supabase
       .from("order_request_events")
       .select("id, order_id, from_status, to_status, note, created_at")
+      // M7: filter eksplisit ke user pemilik. RLS sudah menerapkan hal yang
+      // sama, tapi filter eksplisit mencegah row leak jika kebijakan berubah
+      // dan mempercepat scan (index (user_id, created_at DESC)).
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(perSource);
     if (before) eventsQ = eventsQ.lt("created_at", before);

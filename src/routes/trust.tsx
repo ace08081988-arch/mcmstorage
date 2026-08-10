@@ -1,22 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { canonical, socialMeta } from "@/lib/seo-meta";
 import { PublicFooter } from "@/components/PublicFooter";
+import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
-    meta: [
-      { title: "Trust & Privacy — MCM Storage" },
-      {
-        name: "description",
-        content:
-          "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
-      },
-      { property: "og:title", content: "Trust & Privacy — MCM Storage" },
-      {
-        property: "og:description",
-        content:
-          "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna.",
-      },
-    ],
+    meta: socialMeta({
+      title: "Keamanan & Privasi — Ace Storage",
+      description:
+        "Bagaimana Ace Storage menjaga data pesanan, pemasok, dan akun pengguna: autentikasi, akses, subprocessor, dan kontak.",
+      url: "/trust",
+    }),
+    links: [canonical("/trust")],
   }),
   component: TrustPage,
 });
@@ -44,9 +39,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-      <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+    <section className="lux-card p-ms-5">
+      <h2 className="text-ms-lg font-semibold text-foreground">{title}</h2>
+      <div className="mt-2 space-ms-2 text-ms-sm text-muted-foreground">
         {children}
       </div>
     </section>
@@ -56,12 +51,13 @@ function Section({
 function TrustPage() {
   return (
     <div className="min-h-screen bg-background">
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <PublicHeader />
+    <main id="konten-utama" tabIndex={-1} className="mx-auto max-w-3xl px-ms-4 py-10">
       <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="text-ms-3xl font-extrabold tracking-tight text-foreground">
           Trust &amp; Privacy
         </h1>
-        <dl className="mt-3 grid gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground sm:grid-cols-3">
+        <dl className="mt-3 grid gap-ms-2 rounded-md border border-border bg-muted/40 p-ms-3 text-ms-xs text-muted-foreground sm:grid-cols-3">
           <div>
             <dt className="font-medium text-foreground">Versi dokumen</dt>
             <dd>v{TRUST_DOC_VERSION}</dd>
@@ -91,23 +87,23 @@ function TrustPage() {
             </dd>
           </div>
         </dl>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Halaman ini dikelola oleh tim MCM Storage untuk menjawab pertanyaan
-          umum seputar keamanan dan privasi aplikasi MCM Storage. Konten di
+        <p className="mt-2 text-ms-sm text-muted-foreground">
+          Halaman ini dikelola oleh tim Ace Storage untuk menjawab pertanyaan
+          umum seputar keamanan dan privasi aplikasi Ace Storage. Konten di
           sini adalah deskripsi praktik kami sendiri dan{" "}
           <strong>bukan sertifikasi atau verifikasi independen</strong> dari
           pihak ketiga.
         </p>
       </header>
 
-      <div className="space-y-4">
+      <div className="space-ms-4">
         <Section title="Penjual & pengendali data">
           <p>
-            Layanan MCM Storage dioperasikan oleh{" "}
-            <strong>BAROKAH RIZKI</strong> (selanjutnya "kami"). Untuk
-            keperluan UU PDP dan GDPR, BAROKAH RIZKI bertindak sebagai{" "}
+            Layanan Ace Storage dioperasikan oleh{" "}
+            <strong>Ace Storage</strong> (selanjutnya "kami"). Untuk
+            keperluan UU PDP dan GDPR, Ace Storage bertindak sebagai{" "}
             <strong>pengendali data (data controller)</strong> atas data
-            pribadi pengguna MCM Storage. Pertanyaan terkait privasi dapat
+            pribadi pengguna Ace Storage. Pertanyaan terkait privasi dapat
             dikirim ke{" "}
             <a href="mailto:admin@mcmstorage.biz" className="underline">
               admin@mcmstorage.biz
@@ -118,7 +114,7 @@ function TrustPage() {
 
         <Section title="Ringkasan kebijakan privasi">
           <p>
-            MCM Storage memproses data operasional bisnis Anda (pesanan,
+            Ace Storage memproses data operasional bisnis Anda (pesanan,
             stok, pemasok, pelanggan) hanya untuk menjalankan fitur
             aplikasi. Akses dibatasi ke akun pemilik melalui Row-Level
             Security, data tidak dijual atau dipakai untuk profil iklan,
@@ -129,7 +125,7 @@ function TrustPage() {
 
         <Section title="Tentang aplikasi">
           <p>
-            MCM Storage adalah aplikasi internal untuk mengelola pesanan
+            Ace Storage adalah aplikasi internal untuk mengelola pesanan
             harian, stok gudang, dan komunikasi cepat ke pelanggan/pemasok
             melalui WhatsApp dan email. Akses dibatasi untuk pengguna yang
             login.
@@ -216,7 +212,7 @@ function TrustPage() {
 
         <Section title="Subprocessor">
           <p>
-            Untuk menjalankan layanan, MCM Storage menggunakan penyedia pihak
+            Untuk menjalankan layanan, Ace Storage menggunakan penyedia pihak
             ketiga berikut:
           </p>
           <ul className="list-disc space-y-1 pl-5">
@@ -232,20 +228,6 @@ function TrustPage() {
               <strong>Lovable</strong> — platform build &amp; hosting
               aplikasi.
             </li>
-            <li>
-              <strong>Paddle.com</strong> — Merchant of Record untuk
-              pembayaran paket berbayar; memproses data pembayaran, faktur,
-              pajak, dan permintaan pengembalian dana. Lihat{" "}
-              <a
-                href="https://www.paddle.com/legal/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Privacy Notice Paddle
-              </a>
-              .
-            </li>
           </ul>
           <p>
             Daftar ini dapat berubah seiring berkembangnya aplikasi. Versi
@@ -253,34 +235,12 @@ function TrustPage() {
           </p>
         </Section>
 
-        <Section title="Pembayaran (Paddle sebagai Merchant of Record)">
+        <Section title="Pembayaran">
           <p>
-            Untuk paket berbayar, transaksi diproses oleh{" "}
-            <strong>Paddle.com</strong> sebagai{" "}
-            <strong>Merchant of Record</strong> kami. Saat Anda melakukan
-            pembayaran, data yang dibutuhkan untuk transaksi (nama, email,
-            alamat tagihan, metode pembayaran) dikumpulkan dan diproses
-            langsung oleh Paddle sesuai{" "}
-            <a
-              href="https://www.paddle.com/legal/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              kebijakan privasi Paddle
-            </a>
-            . Kami hanya menerima informasi minimum yang dibutuhkan untuk
-            mengaktifkan akun (mis. ID pelanggan dan status langganan).
-            Permintaan pengembalian dana diproses melalui{" "}
-            <a
-              href="https://paddle.net"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline"
-            >
-              paddle.net
-            </a>{" "}
-            — lihat juga{" "}
+            Saat ini aplikasi tidak memproses pembayaran daring apa pun, dan
+            kami tidak mengumpulkan data kartu, alamat tagihan, maupun data
+            transaksi pembayaran. Bila paket berbayar diaktifkan kembali,
+            halaman ini akan diperbarui lebih dulu — lihat juga{" "}
             <Link to="/refund" className="underline">
               Kebijakan Pengembalian
             </Link>
@@ -307,8 +267,8 @@ function TrustPage() {
             </li>
             <li>
               <strong>Catatan transaksi pembayaran</strong> — disimpan oleh
-              Paddle sesuai kewajiban akuntansi dan pajak (umumnya 5–10
-              tahun) sesuai kebijakan Paddle.
+              penyedia pembayaran resmi sesuai kewajiban akuntansi dan pajak
+              bila kelak ada transaksi berbayar.
             </li>
             <li>
               <strong>Log keamanan</strong> — disimpan paling lama{" "}
@@ -323,7 +283,7 @@ function TrustPage() {
             Tombol WhatsApp dan Email membuka aplikasi pesan/email di
             perangkat Anda dengan teks yang sudah disiapkan. Pengirimannya
             terjadi dari akun Anda sendiri di WhatsApp / klien email, bukan
-            dari server MCM Storage.
+            dari server Ace Storage.
           </p>
         </Section>
 
@@ -344,7 +304,7 @@ function TrustPage() {
               </a>
             </li>
             <li>
-              <strong>WhatsApp / kanal internal:</strong> hubungi admin MCM
+              <strong>WhatsApp / kanal internal:</strong> hubungi admin Ace Storage
               Storage yang biasa Anda gunakan untuk operasional harian.
             </li>
           </ul>
@@ -357,7 +317,7 @@ function TrustPage() {
         </Section>
       </div>
 
-      <footer className="mt-8 text-xs text-muted-foreground">
+      <footer className="mt-8 text-ms-xs text-muted-foreground">
         <Link to="/" className="underline">
           ← Kembali ke beranda
         </Link>

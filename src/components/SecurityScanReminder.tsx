@@ -2,27 +2,15 @@ import { useEffect, useState } from "react";
 import { ShieldAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Vite reads the migration directory at build time. The latest filename's
-// timestamp prefix becomes our "schema version" — any new migration shipped
-// in a deploy bumps it and re-triggers the reminder banner.
-const migrationModules = import.meta.glob("/supabase/migrations/*.sql", {
-  query: "?url",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
-
-function computeLatestVersion(): string | null {
-  const names = Object.keys(migrationModules)
-    .map((p) => p.split("/").pop() ?? "")
-    .filter(Boolean)
-    .sort();
-  const last = names[names.length - 1];
-  if (!last) return null;
-  const m = last.match(/^(\d{14})/);
-  return m ? m[1] : last;
-}
-
-const LATEST_VERSION = computeLatestVersion();
+// Versi skema dihitung di build time (vite.config.ts → __MIGRATION_VERSION__).
+// Sebelumnya memakai import.meta.glob eager ?url atas 266 file migrasi, yang
+// menyuntikkan ratusan URL aset ke chunk ini (~440 kB raw / 109 kB gzip) dan
+// ikut terunduh di Beranda. Sekarang biayanya satu string.
+declare const __MIGRATION_VERSION__: string;
+const LATEST_VERSION: string | null =
+  typeof __MIGRATION_VERSION__ === "string" && __MIGRATION_VERSION__
+    ? __MIGRATION_VERSION__
+    : null;
 const ACK_KEY = "mcm:security-scan-ack-version";
 
 function formatVersion(v: string): string {
@@ -57,18 +45,18 @@ export function SecurityScanReminder() {
   };
 
   return (
-    <div className="mb-3 rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/40 dark:text-amber-100">
-      <div className="flex items-start gap-3">
+    <div className="mb-3 rounded-lg border border-warning/60 bg-warning p-ms-3 text-warning dark:border-warning/40 dark:bg-warning/40 dark:text-warning">
+      <div className="flex items-start gap-ms-3">
         <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-        <div className="flex-1 text-sm">
+        <div className="flex-1 text-ms-sm">
           <div className="font-medium">
             Schema database berubah ({formatVersion(LATEST_VERSION)})
           </div>
-          <div className="mt-0.5 text-amber-900/80 dark:text-amber-100/80">
+          <div className="mt-0.5 text-warning/80 dark:text-warning/80">
             Jalankan ulang security scan untuk memastikan tidak ada policy atau
             secret yang baru terekspos.
           </div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-ms-2">
             <Button size="sm" variant="outline" onClick={dismiss}>
               Sudah dijalankan
             </Button>
@@ -78,7 +66,7 @@ export function SecurityScanReminder() {
           type="button"
           onClick={dismiss}
           aria-label="Tutup"
-          className="rounded p-1 text-amber-900/70 hover:bg-amber-100 dark:text-amber-100/70 dark:hover:bg-amber-900/40"
+          className="rounded p-ms-1 text-warning/70 hover:bg-warning dark:text-warning/70 dark:hover:bg-warning/40"
         >
           <X className="h-4 w-4" />
         </button>

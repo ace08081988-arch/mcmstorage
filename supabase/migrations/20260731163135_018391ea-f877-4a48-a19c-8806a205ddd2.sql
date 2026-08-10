@@ -1,0 +1,1 @@
+ALTER TABLE public.warehouse_items ADD COLUMN IF NOT EXISTS description TEXT;

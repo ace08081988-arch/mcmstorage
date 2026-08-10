@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
 import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,11 +16,12 @@ import {
   encodePreviewConfigHash,
   type WorkerPortalConfig,
 } from "@/lib/worker-portal-config";
+import { saveWorkerPortalConfig } from "@/lib/worker-portal-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/worker-portal")({
   head: () => ({
     meta: [
-      { title: "Admin · Portal Pegawai · MCM Storage" },
+      { title: "Admin · Portal Pegawai · Ace Storage" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -58,6 +60,7 @@ function buildSchema() {
 }
 
 function AdminWorkerPortalPage() {
+  const saveFn = useServerFn(saveWorkerPortalConfig);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -124,7 +127,7 @@ function AdminWorkerPortalPage() {
         .select("worker_portal_config")
         .eq("id", true)
         .maybeSingle();
-      if (error) toast.error(friendlyError(error));
+      if (error) notifyError(error);
       const raw = (data as { worker_portal_config?: unknown } | null)?.worker_portal_config;
       setForm(toFormState((raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as Partial<WorkerPortalConfig>));
       setLoading(false);
@@ -218,57 +221,62 @@ function AdminWorkerPortalPage() {
     const parsed = schema.safeParse(parsedRaw);
     if (!parsed.success) return; // pengaman ganda — seharusnya tidak terjadi
     setSaving(true);
-    const { error } = await supabase
-      .from("app_settings")
-      .update({ worker_portal_config: parsed.data })
-      .eq("id", true);
-    setSaving(false);
-    if (error) return toast.error(friendlyError(error));
-    toast.success("Konfigurasi portal pegawai disimpan. Perangkat pegawai akan memakai nilai baru pada mount berikutnya.");
+    try {
+      // M22: jalur write dipindah ke server function (`requireSupabaseAuth`
+      // + `has_role` di server). RLS `app_settings` tetap enforcement
+      // terakhir; klien tidak lagi bergantung pada validasi role client-side
+      // untuk keputusan write sensitif.
+      await saveFn({ data: parsed.data as WorkerPortalConfig });
+      toast.success("Konfigurasi portal pegawai disimpan. Perangkat pegawai akan memakai nilai baru pada mount berikutnya.");
+    } catch (err) {
+      notifyError(err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex min-h-[40vh] items-center justify-center text-ms-sm text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
       </div>
     );
   }
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-md px-4 py-12 text-center">
-        <h1 className="text-xl font-semibold">Akses ditolak</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Halaman ini hanya untuk admin.</p>
+      <div className="mx-auto max-w-md px-ms-4 py-12 text-center">
+        <h2 className="text-ms-xl font-semibold">Akses ditolak</h2>
+        <p className="mt-2 text-ms-sm text-muted-foreground">Halaman ini hanya untuk admin.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
-      <header className="space-y-2">
-        <Link to="/" className="inline-flex items-center text-sm text-muted-foreground hover:underline">
+    <div className="mx-auto max-w-3xl space-ms-6 px-ms-4 py-ms-6">
+      <header className="space-ms-2">
+        <Link to="/" className="inline-flex items-center text-ms-sm text-muted-foreground hover:underline">
           <ArrowLeft className="mr-1 h-4 w-4" /> Kembali
         </Link>
-        <div className="flex items-start gap-3">
-          <div className="rounded-md bg-primary/10 p-2 text-primary"><ShieldCheck className="h-5 w-5" /></div>
+        <div className="flex items-start gap-ms-3">
+          <div className="rounded-md bg-primary/10 p-ms-2 text-primary"><ShieldCheck className="h-5 w-5" /></div>
           <div>
-            <h1 className="text-2xl font-bold">Portal pegawai · konfigurasi runtime</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-ms-2xl font-bold">Portal pegawai · konfigurasi runtime</h1>
+            <p className="text-ms-sm text-muted-foreground">
               TTL PIN sesi, jumlah retry, dan ambang sinkron. Perubahan berlaku tanpa edit kode pada mount baru di perangkat pegawai (auto-refresh saat tab dibuka kembali).
             </p>
           </div>
         </div>
       </header>
 
-      <div className="grid gap-4 rounded-lg border bg-card p-4 shadow-sm sm:grid-cols-2">
+      <div className="grid gap-ms-4 rounded-lg border bg-card p-ms-4 shadow-sm sm:grid-cols-2">
         {WORKER_PORTAL_CONFIG_FIELDS.map((f) => {
           const err = errors[f.key] ?? validation.fieldErrors[f.key];
           const def = WORKER_PORTAL_DEFAULTS[f.key];
           return (
             <div key={f.key} className="space-y-1.5">
-              <Label htmlFor={f.key} className="flex items-center justify-between gap-2">
+              <Label htmlFor={f.key} className="flex items-center justify-between gap-ms-2">
                 <span>{f.label}</span>
-                <span className="text-xs font-normal text-muted-foreground">{f.unit}</span>
+                <span className="text-ms-xs font-normal text-muted-foreground">{f.unit}</span>
               </Label>
               <Input
                 id={f.key}
@@ -282,12 +290,12 @@ function AdminWorkerPortalPage() {
                 aria-describedby={err ? `${f.key}-err` : undefined}
                 className={err ? "border-destructive focus-visible:ring-destructive" : undefined}
               />
-              <p className="text-xs text-muted-foreground">{f.help}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-ms-xs text-muted-foreground">{f.help}</p>
+              <p className="text-ms-xs text-muted-foreground">
                 Rentang valid: {f.min.toLocaleString("id-ID")}–{f.max.toLocaleString("id-ID")} · Default: {String(def)}
               </p>
               {err ? (
-                <p id={`${f.key}-err`} role="alert" className="text-xs font-medium text-destructive">
+                <p id={`${f.key}-err`} role="alert" className="text-ms-xs font-medium text-destructive">
                   {err}
                 </p>
               ) : null}
@@ -300,13 +308,13 @@ function AdminWorkerPortalPage() {
         <div
           role="alert"
           aria-live="polite"
-          className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 p-ms-3 text-ms-sm text-destructive"
         >
-          <div className="flex items-center gap-2 font-semibold">
+          <div className="flex items-center gap-ms-2 font-semibold">
             <AlertTriangle className="h-4 w-4" />
             {validation.list.length} input tidak valid · Simpan dinonaktifkan
           </div>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-ms-xs">
             {validation.list.slice(0, 8).map((i, idx) => (
               <li key={idx}>
                 <strong>{i.label}:</strong> {i.message}
@@ -321,7 +329,7 @@ function AdminWorkerPortalPage() {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-ms-2">
         <Button onClick={save} disabled={saving || hasErrors} aria-disabled={hasErrors || undefined}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Simpan konfigurasi
@@ -335,19 +343,19 @@ function AdminWorkerPortalPage() {
       </div>
 
       {testResult ? (
-        <div className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2">
+        <div className="space-ms-3 rounded-lg border bg-card p-ms-4 shadow-sm">
+          <div className="flex items-center gap-ms-2">
             {testResult.ok ? (
-              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <CheckCircle2 className="h-5 w-5 text-success" />
             ) : (
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <AlertTriangle className="h-5 w-5 text-warning" />
             )}
-            <h2 className="text-base font-semibold">
+            <h2 className="text-ms-base font-semibold">
               {testResult.ok ? "Validasi lolos" : "Ada nilai tidak valid"}
             </h2>
           </div>
           {testResult.issues.length > 0 ? (
-            <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
+            <ul className="list-disc space-y-1 pl-5 text-ms-sm text-destructive">
               {testResult.issues.map((i, idx) => (
                 <li key={idx}>
                   {i.key ? <code className="mr-1">{i.key}</code> : null}
@@ -357,7 +365,7 @@ function AdminWorkerPortalPage() {
             </ul>
           ) : null}
           {testResult.invariantsAdjusted.length > 0 ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+            <div className="rounded-md border border-warning bg-warning p-ms-2 text-ms-xs text-warning dark:border-warning/40 dark:bg-warning/30 dark:text-warning">
               <strong>Invariant antar-field disesuaikan:</strong>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 {testResult.invariantsAdjusted.map((m, i) => <li key={i}>{m}</li>)}
@@ -365,18 +373,18 @@ function AdminWorkerPortalPage() {
             </div>
           ) : null}
           <div>
-            <h3 className="mb-2 text-sm font-semibold">Konfigurasi efektif</h3>
-            <p className="mb-2 text-xs text-muted-foreground">
+            <h3 className="mb-2 text-ms-sm font-semibold">Konfigurasi efektif</h3>
+            <p className="mb-2 text-ms-xs text-muted-foreground">
               Nilai inilah yang akan dipakai portal pegawai dengan input saat ini. Kolom <em>Sumber</em> menunjukkan apakah nilai berasal dari form atau fallback ke default.
             </p>
             <div className="overflow-hidden rounded-md border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+              <table className="w-full text-ms-sm">
+                <thead className="bg-muted/40 text-ms-xs uppercase text-muted-foreground">
                   <tr>
-                    <th className="px-2 py-1.5 text-left">Field</th>
-                    <th className="px-2 py-1.5 text-right">Nilai efektif</th>
-                    <th className="px-2 py-1.5 text-right">Default</th>
-                    <th className="px-2 py-1.5 text-right">Sumber</th>
+                    <th className="px-ms-2 py-1.5 text-left">Field</th>
+                    <th className="px-ms-2 py-1.5 text-right">Nilai efektif</th>
+                    <th className="px-ms-2 py-1.5 text-right">Default</th>
+                    <th className="px-ms-2 py-1.5 text-right">Sumber</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -384,14 +392,14 @@ function AdminWorkerPortalPage() {
                     const src = testResult.sources[f.key];
                     return (
                       <tr key={f.key} className="border-t">
-                        <td className="px-2 py-1.5"><code>{f.key}</code> <span className="text-xs text-muted-foreground">({f.unit})</span></td>
-                        <td className="px-2 py-1.5 text-right font-mono">{String(testResult.effective[f.key])}</td>
-                        <td className="px-2 py-1.5 text-right font-mono text-muted-foreground">{String(WORKER_PORTAL_DEFAULTS[f.key])}</td>
-                        <td className="px-2 py-1.5 text-right">
+                        <td className="px-ms-2 py-1.5"><code>{f.key}</code> <span className="text-ms-xs text-muted-foreground">({f.unit})</span></td>
+                        <td className="px-ms-2 py-1.5 text-right font-mono">{String(testResult.effective[f.key])}</td>
+                        <td className="px-ms-2 py-1.5 text-right font-mono text-muted-foreground">{String(WORKER_PORTAL_DEFAULTS[f.key])}</td>
+                        <td className="px-ms-2 py-1.5 text-right">
                           <span className={
                             src === "form"
-                              ? "rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
-                              : "rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                              ? "rounded bg-primary/10 px-1.5 py-0.5 text-ms-xs text-primary"
+                              : "rounded bg-muted px-1.5 py-0.5 text-ms-xs text-muted-foreground"
                           }>{src}</span>
                         </td>
                       </tr>
@@ -401,9 +409,9 @@ function AdminWorkerPortalPage() {
               </table>
             </div>
           </div>
-          <details className="text-xs">
+          <details className="text-ms-xs">
             <summary className="cursor-pointer text-muted-foreground">Lihat JSON</summary>
-            <pre className="mt-2 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(testResult.effective, null, 2)}</pre>
+            <pre className="mt-2 overflow-auto rounded-md bg-muted p-ms-3 text-ms-xs">{JSON.stringify(testResult.effective, null, 2)}</pre>
           </details>
           <PreviewPortalLauncher
             effective={testResult.effective}
@@ -413,7 +421,7 @@ function AdminWorkerPortalPage() {
         </div>
       ) : null}
 
-      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+      <div className="rounded-md border border-warning bg-warning p-ms-3 text-ms-xs text-warning dark:border-warning/40 dark:bg-warning/30 dark:text-warning">
         <strong>Catatan:</strong> Nilai berlaku saat portal pegawai (mis. <code>/t/&lt;token&gt;</code>) dimount ulang. Pegawai yang sudah membuka halaman akan mengambil nilai baru ketika tab dibuka kembali atau halaman di-refresh.
       </div>
     </div>
@@ -455,14 +463,14 @@ function PreviewPortalLauncher({
   }
 
   return (
-    <div className="space-y-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
-      <div className="flex items-center gap-2 font-semibold text-primary">
+    <div className="space-ms-2 rounded-md border border-primary/20 bg-primary/5 p-ms-3 text-ms-sm">
+      <div className="flex items-center gap-ms-2 font-semibold text-primary">
         <ExternalLink className="h-4 w-4" /> Buka preview portal pegawai
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-ms-xs text-muted-foreground">
         Buka <code>/t/&lt;token&gt;</code> di tab baru dengan konfigurasi efektif di atas sebagai override sementara (lewat hash URL). Nilai tersimpan di backend tidak berubah — preview hanya berlaku untuk tab yang dibuka.
       </p>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-ms-2 sm:flex-row sm:items-center">
         <Input
           aria-label="Token tugas"
           placeholder="Token tugas (mis. dari halaman Bagikan PIN)"
@@ -470,7 +478,7 @@ function PreviewPortalLauncher({
           onChange={(e) => setPreviewToken(e.target.value)}
           className="font-mono"
         />
-        <div className="flex gap-2">
+        <div className="flex gap-ms-2">
           <Button size="sm" onClick={open} disabled={!tokenOk}>
             <ExternalLink className="mr-1 h-4 w-4" /> Buka preview
           </Button>
@@ -480,11 +488,11 @@ function PreviewPortalLauncher({
         </div>
       </div>
       {tokenOk ? (
-        <p className="break-all rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+        <p className="break-all rounded bg-muted px-ms-2 py-1 font-mono text-ms-2xs text-muted-foreground">
           {previewUrl}
         </p>
       ) : (
-        <p className="text-xs text-amber-700 dark:text-amber-200">
+        <p className="text-ms-xs text-warning dark:text-warning">
           Masukkan token tugas dulu — token sama yang dipakai di link <code>/t/&lt;token&gt;</code> untuk pegawai.
         </p>
       )}

@@ -1,21 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
+import { ensureFreshSession } from "./ensure-session";
+import { assertStorageAccess } from "./storage-access";
+import { logPartyWriteFailure } from "./contact-telemetry";
 import type { ImportedContact } from "./device-contacts";
 
-export type AddressBookRow = {
-  id: string;
-  user_id: string;
-  name: string;
-  phone: string | null;
-  phone_norm: string | null;
-  email: string | null;
-  email_norm: string | null;
-  source: "device" | "manual" | "app";
-  device_contact_id: string | null;
-  linked_user_id: string | null;
-  note: string | null;
-  created_at: string;
-  updated_at: string;
-};
+export type { AddressBookRow } from "./address-book.types";
+import type { AddressBookRow } from "./address-book.types";
 
 export type ProfileMatch = {
   match_key: string;
@@ -24,16 +14,50 @@ export type ProfileMatch = {
   display_name: string | null;
 };
 
+/**
+ * Normalisasi nomor telepon — HARUS identik dengan fungsi database
+ * `public.normalize_phone()` yang mengisi kolom `phone_norm`. Kalau beda,
+ * pengecekan duplikat di klien lolos tapi database menolak (23505).
+ *
+ * Semua varian ini menjadi satu nilai yang sama:
+ *   0812-3456-7890 · +62 812 3456 7890 · 62 812 3456 7890 ·
+ *   0062 812 3456 7890 · (0812) 34567890 · 81234567890
+ */
 export function normalizePhone(p: string | null | undefined): string | null {
   if (!p) return null;
-  const t = p.trim();
-  if (!t) return null;
-  const digits = t.replace(/[^\d+]/g, "");
-  if (!digits) return null;
-  if (digits.startsWith("+")) return digits.replace(/[^\d]/g, "");
-  const onlyDigits = digits.replace(/[^\d]/g, "");
-  if (onlyDigits.startsWith("0")) return "62" + onlyDigits.slice(1);
-  return onlyDigits;
+  let d = p.replace(/\D/g, "");
+  if (!d) return null;
+
+  if (d.startsWith("00")) d = d.slice(2); // awalan internasional
+  else if (d.startsWith("0")) d = "62" + d.slice(1); // nomor lokal Indonesia
+  else if (d.startsWith("8")) d = "62" + d; // ditulis tanpa awalan
+
+  while (d.startsWith("6262")) d = d.slice(2); // kode negara terulang
+  if (d.startsWith("620")) d = "62" + d.slice(3);
+
+  return d || null;
+}
+
+/**
+ * Normalisasi email — cermin dari `public.normalize_email()`:
+ * huruf kecil, tanpa spasi, label `+tag` dibuang, dan titik pada alamat
+ * Gmail diabaikan (googlemail.com disamakan dengan gmail.com).
+ */
+export function normalizeEmail(e: string | null | undefined): string | null {
+  if (!e) return null;
+  const v = e.trim().replace(/\s/g, "").toLowerCase();
+  if (!v) return null;
+  const at = v.indexOf("@");
+  if (at < 0) return v;
+  let local = v.slice(0, at);
+  let domain = v.slice(at + 1);
+  const plus = local.indexOf("+");
+  if (plus >= 0) local = local.slice(0, plus);
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    local = local.replace(/\./g, "");
+    domain = "gmail.com";
+  }
+  return local ? `${local}@${domain}` : null;
 }
 
 export async function fetchAddressBook(): Promise<AddressBookRow[]> {
@@ -56,16 +80,37 @@ export async function upsertManualEntry(input: {
   phone?: string | null;
   email?: string | null;
   note?: string | null;
+  /** Lewati pra-cek duplikat di klien (dipakai alur konflik "Tetap simpan"). */
+  allowDuplicate?: boolean;
 }): Promise<AddressBookRow> {
   const { data: auth } = await supabase.auth.getUser();
   const uid = auth.user?.id;
   if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const name = input.name.trim();
+  const phone = input.phone?.trim() || null;
+  const email = input.email?.trim() || null;
+  // Cegah kontak ganda: cek nomor / email / nama (untuk kontak tanpa nomor).
+  const dup = input.allowDuplicate
+    ? null
+    : await findDuplicate({
+    uid,
+    name,
+    phone,
+    email,
+    excludeId: input.id ?? null,
+  });
+  if (dup) {
+    throw new Error(
+      `${dupFieldLabel(phone, email)} sudah tersimpan pada kontak "${dup.name}". ` +
+        `Ubah datanya atau buka kontak tersebut.`,
+    );
+  }
   const payload = {
     id: input.id,
     user_id: uid,
-    name: input.name.trim(),
-    phone: input.phone?.trim() || null,
-    email: input.email?.trim() || null,
+    name,
+    phone,
+    email,
     note: input.note?.trim() || null,
     source: "manual" as const,
   };
@@ -74,8 +119,49 @@ export async function upsertManualEntry(input: {
     .upsert(payload, { onConflict: "id" })
     .select("*")
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === "23505") {
+      const m = error.message ?? "";
+      const field = m.includes("phone")
+        ? `Nomor telepon ${phone ?? ""}`.trim()
+        : m.includes("email")
+          ? `Email ${email ?? ""}`.trim()
+          : `Nama "${name}"`;
+      throw new Error(`${field} sudah tersimpan di buku alamat. Data tidak boleh ganda.`);
+    }
+    throw error;
+  }
   return data as AddressBookRow;
+}
+
+function dupFieldLabel(phone: string | null, email: string | null): string {
+  if (phone) return `Nomor telepon ${phone}`;
+  if (email) return `Email ${email}`;
+  return "Nama";
+}
+
+/** Cari kontak yang sudah ada berdasarkan nomor, email, atau nama. */
+export async function findDuplicate(opts: {
+  uid: string;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  excludeId?: string | null;
+}): Promise<Pick<AddressBookRow, "id" | "name"> | null> {
+  const phoneNorm = normalizePhone(opts.phone);
+  const emailNorm = normalizeEmail(opts.email);
+  let q = supabase
+    .from("address_book")
+    .select("id,name")
+    .eq("user_id", opts.uid)
+    .limit(1);
+  if (opts.excludeId) q = q.neq("id", opts.excludeId);
+  if (phoneNorm) q = q.eq("phone_norm", phoneNorm);
+  else if (emailNorm) q = q.eq("email_norm", emailNorm);
+  else q = q.ilike("name", opts.name.trim());
+  const { data, error } = await q.maybeSingle();
+  if (error) return null;
+  return (data as Pick<AddressBookRow, "id" | "name"> | null) ?? null;
 }
 
 /** Import device contacts: one row per (contact x phone-or-email), dedup via device_contact_id. */
@@ -116,17 +202,68 @@ export async function importDeviceContacts(
   // Postgres tidak menerima partial unique index sebagai ON CONFLICT target
   // lewat PostgREST upsert. Lakukan dedup di client: ambil device_contact_id
   // yang sudah ada, lalu insert hanya yang baru dan update yang berubah.
-  const ids = rows.map((r) => r.device_contact_id);
+  // M25: gunakan tipe eksplisit `ExistingRow` sebagai pengganti `any`
+  // supaya perbandingan field aman dari typo/rename dan hasil `.map()` /
+  // `.get()` di bawah tetap typesafe.
+  type ExistingRow = {
+    id: string;
+    device_contact_id: string | null;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    note: string | null;
+  };
+  const ids = rows
+    .map((r) => r.device_contact_id)
+    .filter((v): v is string => !!v);
   const { data: existing, error: exErr } = await supabase
     .from("address_book")
     .select("id,device_contact_id,name,phone,email,note")
     .eq("user_id", uid)
     .in("device_contact_id", ids);
   if (exErr) throw exErr;
-  const byId = new Map(
-    (existing ?? []).map((r: any) => [r.device_contact_id as string, r]),
-  );
-  const toInsert = rows.filter((r) => !byId.has(r.device_contact_id));
+  const byId = new Map<string, ExistingRow>();
+  for (const r of (existing ?? []) as ExistingRow[]) {
+    if (r.device_contact_id) byId.set(r.device_contact_id, r);
+  }
+  // Dedup lintas-kontak: nomor/email/nama yang sudah ada tidak diimpor ulang.
+  const { data: allExisting } = await supabase
+    .from("address_book")
+    .select("phone_norm,email_norm,name")
+    .eq("user_id", uid);
+  const seenPhone = new Set<string>();
+  const seenEmail = new Set<string>();
+  const seenName = new Set<string>();
+  for (const r of (allExisting ?? []) as Array<{
+    phone_norm: string | null;
+    email_norm: string | null;
+    name: string | null;
+  }>) {
+    if (r.phone_norm) seenPhone.add(r.phone_norm);
+    if (r.email_norm) seenEmail.add(r.email_norm);
+    if (!r.phone_norm && !r.email_norm && r.name) {
+      seenName.add(r.name.trim().toLowerCase());
+    }
+  }
+  const toInsert = rows.filter((r) => {
+    if (byId.has(r.device_contact_id)) return false;
+    const p = normalizePhone(r.phone);
+    const e = normalizeEmail(r.email);
+    const n = (r.name ?? "").trim().toLowerCase();
+    if (p) {
+      if (seenPhone.has(p)) return false;
+      seenPhone.add(p);
+      return true;
+    }
+    if (e) {
+      if (seenEmail.has(e)) return false;
+      seenEmail.add(e);
+      return true;
+    }
+    if (!n || seenName.has(n)) return false;
+    seenName.add(n);
+    return true;
+  });
   const toUpdate = rows
     .filter((r) => byId.has(r.device_contact_id))
     .map((r) => ({ existing: byId.get(r.device_contact_id)!, next: r }))
@@ -150,7 +287,7 @@ export async function importDeviceContacts(
         email: u.next.email,
         note: u.next.note,
       })
-      .eq("id", (u.existing as any).id);
+      .eq("id", u.existing.id);
     if (error) throw error;
   }
   return { inserted: toInsert.length, skipped: rows.length - toInsert.length - toUpdate.length };
@@ -205,28 +342,117 @@ export async function applyProfileMatches(
   return ok;
 }
 
+/** Kunci dedup untuk satu kontak: nomor > email > nama. */
+function duplicateKey(r: AddressBookRow): string | null {
+  if (r.phone_norm) return `p:${r.phone_norm}`;
+  const p = normalizePhone(r.phone);
+  if (p) return `p:${p}`;
+  if (r.email_norm) return `e:${r.email_norm}`;
+  const e = normalizeEmail(r.email);
+  if (e) return `e:${e}`;
+  const n = r.name.trim().toLowerCase().replace(/\s+/g, " ");
+  return n ? `n:${n}` : null;
+}
+
+export type DuplicateGroup = {
+  key: string;
+  reason: "phone" | "email" | "name";
+  rows: AddressBookRow[];
+};
+
+/** Kelompokkan kontak yang terdeteksi ganda (nomor / email / nama sama). */
+export function findDuplicateGroups(rows: AddressBookRow[]): DuplicateGroup[] {
+  const map = new Map<string, AddressBookRow[]>();
+  for (const r of rows) {
+    const k = duplicateKey(r);
+    if (!k) continue;
+    const list = map.get(k);
+    if (list) list.push(r);
+    else map.set(k, [r]);
+  }
+  const groups: DuplicateGroup[] = [];
+  for (const [key, list] of map) {
+    if (list.length < 2) continue;
+    const reason = key.startsWith("p:") ? "phone" : key.startsWith("e:") ? "email" : "name";
+    groups.push({
+      key,
+      reason,
+      rows: [...list].sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "")),
+    });
+  }
+  return groups.sort((a, b) => b.rows.length - a.rows.length);
+}
+
+export type MergeFields = {
+  name: string;
+  phone: string | null;
+  email: string | null;
+  note: string | null;
+  linked_user_id: string | null;
+};
+
+/**
+ * Gabungkan beberapa kontak ganda jadi satu. Baris lain dihapus DULU supaya
+ * indeks unik (phone_norm/email_norm/name) tidak bentrok saat baris utama
+ * diperbarui dengan data pilihan pengguna.
+ */
+export async function mergeContacts(opts: {
+  keepId: string;
+  removeIds: string[];
+  fields: MergeFields;
+}): Promise<AddressBookRow> {
+  const removeIds = opts.removeIds.filter((id) => id && id !== opts.keepId);
+  if (removeIds.length > 0) {
+    const { error } = await supabase.from("address_book").delete().in("id", removeIds);
+    if (error) throw error;
+  }
+  const { data, error } = await supabase
+    .from("address_book")
+    .update({
+      name: opts.fields.name.trim(),
+      phone: opts.fields.phone?.trim() || null,
+      email: opts.fields.email?.trim() || null,
+      note: opts.fields.note?.trim() || null,
+      linked_user_id: opts.fields.linked_user_id ?? null,
+    })
+    .eq("id", opts.keepId)
+    .select("*")
+    .single();
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Data gabungan bentrok dengan kontak lain yang sudah tersimpan.");
+    }
+    throw error;
+  }
+  return data as AddressBookRow;
+}
+
 export async function promoteToCustomer(row: AddressBookRow): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id;
-  if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const { userId: uid } = await ensureFreshSession();
+  await assertStorageAccess(uid);
   const { error } = await supabase.from("customers").insert({
     user_id: uid,
     name: row.name,
     contact: row.phone ?? row.email ?? null,
     account_user_id: row.linked_user_id ?? null,
   });
-  if (error) throw error;
+  if (error) {
+    logPartyWriteFailure({ table: "customers", op: "insert", error, source: "promoteToCustomer" });
+    throw error;
+  }
 }
 
 export async function promoteToSupplier(row: AddressBookRow): Promise<void> {
-  const { data: auth } = await supabase.auth.getUser();
-  const uid = auth.user?.id;
-  if (!uid) throw new Error("Tidak ada sesi pengguna.");
+  const { userId: uid } = await ensureFreshSession();
+  await assertStorageAccess(uid);
   const { error } = await supabase.from("suppliers").insert({
     user_id: uid,
     name: row.name,
     contact: row.phone ?? row.email ?? null,
     account_user_id: row.linked_user_id ?? null,
   });
-  if (error) throw error;
+  if (error) {
+    logPartyWriteFailure({ table: "suppliers", op: "insert", error, source: "promoteToSupplier" });
+    throw error;
+  }
 }

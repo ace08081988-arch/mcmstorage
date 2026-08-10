@@ -1,0 +1,13 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`audit head + manifest + aset brand > mengunci nilai brand yang terbaca 1`] = `
+[
+  "/favicon-16.png?v=20260808 16x16",
+  "/favicon-32.png?v=20260808 32x32",
+  "/favicon-48.png?v=20260808 48x48",
+  "/apple-touch-icon.png?v=20260808 180x180",
+  "/icon-192.png?v=20260808 192x192 (any)",
+  "/icon-512.png?v=20260808 512x512 (any)",
+  "/icon-maskable-512.png?v=20260808 512x512 (any maskable)",
+]
+`;

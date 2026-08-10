@@ -1,15 +1,48 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
+import { fetchPiutangSummary } from "@/lib/piutang";
+import { fetchHutangSummary } from "@/lib/hutang";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { useDebtSyncMap, normalizeParty } from "@/lib/chat-debt-sync";
+import { TxOnlyPartyCards } from "@/components/hutang/TxOnlyPartyCards";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
+import { VirtualizedList } from "@/components/VirtualizedList";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  ArrowLeft,
+  Plus,
+  Wallet,
+  Coins,
+  CalendarClock,
+  AlertTriangle,
+  CheckCircle2,
+  Sparkles,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Scale,
+  Search,
+  ChevronsUpDown,
+  Check,
+  Loader2,
+  X,
+} from "lucide-react";
+import { assertDebtSource } from "@/lib/debt-source";
+import { scopedKey } from "@/lib/user-scoped-storage";
 import {
   Dialog,
   DialogContent,
@@ -19,18 +52,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/hutang-piutang")({
   head: () => ({
     meta: [
-      { title: "Hutang & Piutang · MCM Storage" },
+      { title: "Hutang & Piutang · Ace Storage" },
       {
         name: "description",
         content:
@@ -71,8 +97,84 @@ type Party = { id: string; name: string; contact?: string | null };
 const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
 
+type FinanceTone = "emerald" | "rose" | "amber" | "sky" | "danger" | "muted";
+function FinanceStatCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone = "muted",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: FinanceTone;
+}) {
+  const tones: Record<FinanceTone, string> = {
+    emerald: "from-success/15 to-success/5 text-success dark:text-success",
+    rose: "from-rose-500/15 to-rose-500/5 text-rose-600 dark:text-rose-300",
+    amber: "from-warning/15 to-warning/5 text-warning dark:text-warning",
+    sky: "from-sky-500/15 to-sky-500/5 text-sky-600 dark:text-sky-300",
+    danger: "from-destructive/20 to-destructive/5 text-destructive",
+    muted: "from-muted/60 to-muted/20 text-foreground",
+  };
+  return (
+    <div className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+      <div className="flex items-start gap-ms-2">
+        <div
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${tones[tone]}`}
+        >
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground">
+            {label}
+          </div>
+          <div className="mt-0.5 truncate text-ms-sm font-bold leading-tight tabular-nums">
+            {value}
+          </div>
+          {hint && (
+            <div className="mt-0.5 truncate text-[10.5px] text-muted-foreground">{hint}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Baris status pembayaran untuk disisipkan di setiap pesan WA/chat sebagai
+ * verifikasi ringkas. `LUNAS` bila sisa = 0, `BAYAR SEBAGIAN` bila sudah
+ * ada pembayaran namun belum habis, `BELUM BAYAR` bila belum ada pembayaran.
+ * Persentase dibulatkan agar mudah dibaca lawan bicara.
+ */
+function debtStatusLine(total: number, paid: number): string {
+  const t = Math.max(0, Math.round(total));
+  const p = Math.max(0, Math.min(t, Math.round(paid)));
+  const sisa = Math.max(0, t - p);
+  const pct = t > 0 ? Math.round((p / t) * 100) : 0;
+  if (sisa === 0 && t > 0) return `✅ *LUNAS* — ${rupiah(t)} sudah dibayar penuh`;
+  if (p > 0) return `💰 *BAYAR SEBAGIAN* — ${rupiah(p)} dari ${rupiah(t)} (${pct}%) · sisa *${rupiah(sisa)}*`;
+  return `⚠️ *BELUM BAYAR* — ${rupiah(t)} belum ada pembayaran`;
+}
+
 function HutangPiutangPage() {
   const [uid, setUid] = useState<string | null>(null);
+  // Tinggi header halaman diukur nyata (font besar / WebView bisa berbeda)
+  // supaya baris header kolom yang sticky berhenti tepat di bawahnya.
+  const pageHeaderRef = useRef<HTMLElement | null>(null);
+  const [headerH, setHeaderH] = useState(64);
+  useEffect(() => {
+    const el = pageHeaderRef.current;
+    if (!el) return;
+    const apply = () => setHeaderH(Math.round(el.getBoundingClientRect().height));
+    apply();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -87,38 +189,99 @@ function HutangPiutangPage() {
     customerId?: string | null;
   } | null>(null);
   const [payFor, setPayFor] = useState<Debt | null>(null);
+  const [reminderFor, setReminderFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
   const [draftFrom, setDraftFrom] = useState<string>("");
   const [draftTo, setDraftTo] = useState<string>("");
+  /**
+   * SSOT gabungan (RPC `piutang_summary_v1` / `hutang_summary_v1`) —
+   * angka yang sama persis dipakai Dashboard & Gudang. Catatan manual di
+   * daftar bawah hanya salah satu sumbernya, jadi kartu total harus
+   * membaca SSOT, bukan hasil penjumlahan daftar manual.
+   */
+  const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
 
+  const refreshSsot = useCallback(async () => {
+    const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
+    setSsot({ piutang: p.total_outstanding, hutang: h.total_outstanding });
+  }, []);
+
   const refresh = async () => {
     setLoading(true);
+    // H14: cap large tables so page doesn't fetch unbounded rows.
+    // Debts and their payments are already scoped to the user by RLS; we cap
+    // to keep memory + first-render fast.
     const [d, p, s, c] = await Promise.all([
       supabase
         .from("debts")
         .select("*")
-        .order("created_at", { ascending: false }),
-      supabase.from("debt_payments").select("*"),
+        .order("created_at", { ascending: false })
+        .limit(2000),
+      supabase
+        .from("debt_payments")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(5000),
       supabase.from("suppliers").select("id,name,contact").order("name"),
       supabase.from("customers").select("id,name,contact").order("name"),
     ]);
-    if (d.error) toast.error(friendlyError(d.error));
+    if (d.error) notifyError(d.error);
     else setDebts((d.data ?? []) as Debt[]);
     if (p.data) setPayments(p.data as Payment[]);
     if (s.data) setSuppliers(s.data as Party[]);
     if (c.data) setCustomers(c.data as Party[]);
     setLoading(false);
+    void refreshSsot();
   };
 
   useEffect(() => {
     if (uid) void refresh();
+  }, [uid]);
+
+  // Transaksi hutang/piutang dari layar mana pun (Ecer, Kios, Request,
+  // aksi cepat) langsung menyegarkan halaman ini juga.
+  useOnDebtTx(
+    useCallback(() => {
+      if (uid) void refresh();
+    }, [uid]),
+  );
+
+  // H21: realtime — pull fresh data when debts / payments change from another
+  // tab or device so the piutang view isn't stale.
+  useEffect(() => {
+    if (!uid) return;
+    let scheduled: ReturnType<typeof setTimeout> | null = null;
+    const bump = () => {
+      if (scheduled) return;
+      scheduled = setTimeout(() => {
+        scheduled = null;
+        void refresh();
+      }, 400);
+    };
+    const ch = supabase
+      .channel(`hutang-piutang:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "debts", filter: `user_id=eq.${uid}` },
+        bump,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "debt_payments", filter: `user_id=eq.${uid}` },
+        bump,
+      )
+      .subscribe();
+    return () => {
+      if (scheduled) clearTimeout(scheduled);
+      supabase.removeChannel(ch);
+    };
   }, [uid]);
 
   const paidByDebt = useMemo(() => {
@@ -164,6 +327,9 @@ function HutangPiutangPage() {
 
   const activeKind: Kind = tab === "piutang" ? "piutang" : "hutang";
   const filtered = debtsInPeriod.filter((d) => d.kind === activeKind);
+  // SSOT gabungan (manual + transaksi) untuk memunculkan kontak yang
+  // saldonya hanya berasal dari penjualan/pembelian hutang.
+  const { data: ssotParties } = useDebtSyncMap();
 
   const totals = useMemo(() => {
     let total = 0;
@@ -183,8 +349,42 @@ function HutangPiutangPage() {
       if (d.kind === "hutang") hutangSisa += sisa;
       else piutangSisa += sisa;
     }
-    return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
-  }, [debtsInPeriod, paidByDebt]);
+    // Saat periode "semua", pakai SSOT gabungan supaya identik dengan
+    // Dashboard/Gudang/chat. Untuk periode terfilter, angka manual di
+    // periode itu yang relevan (SSOT bersifat all-time).
+    const useSsot = period === "all" && ssot !== null;
+    const h = useSsot ? ssot!.hutang : hutangSisa;
+    const p = useSsot ? ssot!.piutang : piutangSisa;
+    return { hutangSisa: h, piutangSisa: p, net: p - h, fromSsot: useSsot };
+  }, [debtsInPeriod, paidByDebt, period, ssot]);
+
+  const financeStats = useMemo(() => {
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+    let dueToday = 0;
+    let dueTodayCount = 0;
+    let overdueSum = 0;
+    let overdueCount = 0;
+    for (const d of debtsInPeriod) {
+      const sisa = Math.max(0, Number(d.amount) - (paidByDebt.get(d.id) ?? 0));
+      if (sisa <= 0 || !d.due_date) continue;
+      const dueKey = new Date(d.due_date).toISOString().slice(0, 10);
+      if (dueKey === todayKey) {
+        dueToday += sisa;
+        dueTodayCount += 1;
+      } else if (dueKey < todayKey) {
+        overdueSum += sisa;
+        overdueCount += 1;
+      }
+    }
+    let paidThisMonth = 0;
+    for (const p of payments) {
+      const t = new Date(p.paid_at).getTime();
+      if (t >= monthStart) paidThisMonth += Number(p.amount);
+    }
+    return { dueToday, dueTodayCount, overdueSum, overdueCount, paidThisMonth };
+  }, [debtsInPeriod, paidByDebt, payments]);
 
   const removeDebt = async (d: Debt) => {
     if (
@@ -197,7 +397,7 @@ function HutangPiutangPage() {
     )
       return;
     const { error } = await supabase.from("debts").delete().eq("id", d.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else {
       toast.success("Dihapus");
       void refresh();
@@ -244,8 +444,13 @@ function HutangPiutangPage() {
     return digits.length >= 8 ? digits : undefined;
   };
 
-  const sendReminderWA = async (d: Debt) => {
-    const paid = paidByDebt.get(d.id) ?? 0;
+  const sendReminderWA = async (
+    d: Debt,
+    extra?: { amount: number; paidAt: string; note: string } | null,
+  ) => {
+    const paidBefore = paidByDebt.get(d.id) ?? 0;
+    const extraAmt = extra ? Math.max(0, Math.round(extra.amount)) : 0;
+    const paid = paidBefore + extraAmt;
     const sisa = Math.max(0, Number(d.amount) - paid);
     const due = d.due_date
       ? `jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
@@ -254,7 +459,12 @@ function HutangPiutangPage() {
     const body = d.kind === "hutang"
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
-    const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const status = debtStatusLine(Number(d.amount), paid);
+    const extraLine =
+      extra && extraAmt > 0
+        ? `\n\n🧾 *Pembayaran baru dicatat*\n• Tanggal: ${new Date(extra.paidAt).toLocaleDateString("id-ID")}\n• Jumlah: ${rupiah(extraAmt)}${extra.note.trim() ? `\n• Catatan: ${extra.note.trim()}` : ""}`
+        : "";
+    const text = `${greet}\n\n${status}\n\n${body}${extraLine}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
     notifyShareResult(res);
   };
@@ -296,6 +506,7 @@ function HutangPiutangPage() {
         : `Laporan piutang dari ${group.name}`;
     const text = [
       `*${judul}*`,
+      debtStatusLine(total, paid),
       "",
       ...lines,
       "",
@@ -337,9 +548,28 @@ function HutangPiutangPage() {
         `• ${new Date(p.paid_at).toLocaleDateString("id-ID")} · ${d.party_name} · ${arah} ${rupiah(Number(p.amount))}${p.note ? ` — ${p.note}` : ""}`,
       );
     }
+    // Total & terbayar keseluruhan (bukan periode) untuk baris status ringkas
+    // — supaya pembaca tahu posisi utuh hutang/piutang saat pesan diterima.
+    let hutangTotalAll = 0;
+    let piutangTotalAll = 0;
+    for (const d of debts) {
+      if (d.kind === "hutang") hutangTotalAll += Number(d.amount);
+      else piutangTotalAll += Number(d.amount);
+    }
+    let hutangPaidAll = 0;
+    let piutangPaidAll = 0;
+    for (const p of payments) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      if (d.kind === "hutang") hutangPaidAll += Number(p.amount);
+      else piutangPaidAll += Number(p.amount);
+    }
     const text = [
       `*Laporan Hutang & Piutang*`,
       `Periode: ${periodLabel}`,
+      "",
+      `Hutang: ${debtStatusLine(hutangTotalAll, hutangPaidAll)}`,
+      `Piutang: ${debtStatusLine(piutangTotalAll, piutangPaidAll)}`,
       "",
       `Sisa hutang: ${rupiah(overall.hutangSisa)}`,
       `Sisa piutang: ${rupiah(overall.piutangSisa)}`,
@@ -357,36 +587,120 @@ function HutangPiutangPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-6">
+    <div
+      className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30"
+      data-press-scope="on"
+      style={{ ["--hp-sticky-top" as string]: `${headerH}px` }}
+    >
+      <header className="app-sticky-header" ref={pageHeaderRef}>
+        <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
             aria-label="Kembali"
           >
-            ←
+            <ArrowLeft className="h-4 w-4" />
           </Link>
-          <h1 className="flex-1 truncate text-base font-semibold">
-            Hutang & Piutang
-          </h1>
+          <div className="min-w-0">
+            <h1 className="truncate text-ms-base font-semibold leading-tight">
+              Hutang &amp; Piutang
+            </h1>
+            <p className="truncate text-ms-2xs text-muted-foreground">
+              Kelola arus tagihan &amp; pelunasan
+            </p>
+          </div>
           <Button
             size="sm"
+            className="shrink-0 rounded-xl"
             onClick={() => {
               setAddPrefill(null);
               setAddOpen(true);
             }}
+            aria-label={activeKind === "hutang" ? "Tambah hutang" : "Tambah piutang"}
           >
-            {activeKind === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+            <Plus className="mr-1 h-4 w-4" />
+            <span className="hidden sm:inline">
+              {activeKind === "hutang" ? "Tambah hutang" : "Tambah piutang"}
+            </span>
+            <span className="sm:hidden">Tambah</span>
           </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-3 py-4 sm:px-6">
-        <div className="mb-3 rounded-lg border bg-card p-3">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-muted-foreground">Periode:</span>
-            <div className="flex flex-wrap gap-1">
+      <main className="mx-auto max-w-3xl space-ms-4 px-ms-3 py-ms-4 sm:px-ms-6">
+        <section
+          aria-label="Ringkasan keuangan"
+          className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm"
+        >
+          <div className="flex flex-wrap items-center gap-ms-2">
+            <span className="inline-flex items-center gap-ms-1 rounded-full bg-primary/12 px-ms-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-primary">
+              <Sparkles className="h-3 w-3" /> Modul Keuangan
+            </span>
+            <span className="text-ms-2xs text-muted-foreground">
+              Selisih bersih{" "}
+              <span
+                className={
+                  "font-semibold tabular-nums " +
+                  (overall.net >= 0 ? "text-success" : "text-red-600")
+                }
+              >
+                {(overall.net >= 0 ? "+" : "−") + rupiah(Math.abs(overall.net))}
+              </span>
+            </span>
+            <Link
+              to="/audit-saldo"
+              className="ml-auto text-ms-2xs font-medium text-primary underline"
+            >
+              Audit saldo
+            </Link>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-ms-2 sm:grid-cols-3 lg:grid-cols-5">
+            <FinanceStatCard
+              label="Total Piutang"
+              value={rupiah(overall.piutangSisa)}
+              hint={overall.fromSsot
+                ? "Uang belum masuk · catatan + penjualan hutang"
+                : "Uang belum masuk · catatan periode ini"}
+              icon={ArrowDownCircle}
+              tone="emerald"
+            />
+            <FinanceStatCard
+              label="Total Hutang"
+              value={rupiah(overall.hutangSisa)}
+              hint={overall.fromSsot
+                ? "Uang belum keluar · catatan + pembelian hutang"
+                : "Uang belum keluar · catatan periode ini"}
+              icon={ArrowUpCircle}
+              tone="rose"
+            />
+            <FinanceStatCard
+              label="Jatuh Tempo Hari Ini"
+              value={rupiah(financeStats.dueToday)}
+              hint={`${financeStats.dueTodayCount} catatan`}
+              icon={CalendarClock}
+              tone="amber"
+            />
+            <FinanceStatCard
+              label="Terlambat"
+              value={rupiah(financeStats.overdueSum)}
+              hint={`${financeStats.overdueCount} catatan`}
+              icon={AlertTriangle}
+              tone={financeStats.overdueCount > 0 ? "danger" : "muted"}
+            />
+            <FinanceStatCard
+              label="Terbayar Bulan Ini"
+              value={rupiah(financeStats.paidThisMonth)}
+              hint="Arus kas periode ini"
+              icon={CheckCircle2}
+              tone="sky"
+            />
+          </div>
+        </section>
+
+        <div className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+          <div className="flex flex-wrap items-center gap-ms-2 text-ms-xs">
+            <span className="font-medium text-muted-foreground">Periode:</span>
+            <div className="flex flex-wrap gap-ms-1">
               {([
                 { v: "all", l: "Semua" },
                 { v: "week", l: "7 hari" },
@@ -397,11 +711,12 @@ function HutangPiutangPage() {
                   key={opt.v}
                   type="button"
                   onClick={() => setPeriod(opt.v)}
+                  aria-pressed={period === opt.v}
                   className={
-                    "rounded-md border px-2 py-1 text-xs " +
+                    "rounded-full border px-ms-3 py-1 text-ms-xs transition-colors " +
                     (period === opt.v
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "hover:bg-accent")
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-transparent bg-muted/50 text-muted-foreground hover:bg-accent hover:text-foreground")
                   }
                 >
                   {opt.l}
@@ -414,13 +729,13 @@ function HutangPiutangPage() {
                   draftFrom && draftTo && draftFrom > draftTo,
                 );
                 return (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-ms-2">
                 <Input
                   type="date"
                   value={draftFrom}
                   onChange={(e) => setDraftFrom(e.target.value)}
                   className={
-                    "h-8 w-auto text-xs" +
+                    "h-9 w-auto rounded-lg text-ms-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
@@ -430,14 +745,14 @@ function HutangPiutangPage() {
                   value={draftTo}
                   onChange={(e) => setDraftTo(e.target.value)}
                   className={
-                    "h-8 w-auto text-xs" +
+                    "h-9 w-auto rounded-lg text-ms-xs" +
                     (invalidRange ? " border-destructive" : "")
                   }
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 rounded-lg px-ms-3 text-ms-xs"
                   onClick={() => {
                     setCustomFrom(draftFrom);
                     setCustomTo(draftTo);
@@ -453,7 +768,7 @@ function HutangPiutangPage() {
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 rounded-lg px-ms-3 text-ms-xs"
                   onClick={() => {
                     setDraftFrom("");
                     setDraftTo("");
@@ -465,7 +780,7 @@ function HutangPiutangPage() {
                   Reset
                 </Button>
                 {invalidRange && (
-                  <span className="w-full text-xs text-destructive">
+                  <span className="w-full text-ms-xs text-destructive">
                     Tanggal mulai tidak boleh lebih besar dari tanggal selesai.
                   </span>
                 )}
@@ -476,82 +791,112 @@ function HutangPiutangPage() {
           </div>
         </div>
 
-        <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
-          <div>
-            <div className="text-muted-foreground">Sisa hutang</div>
-            <div className="font-semibold text-red-600">
-              {rupiah(overall.hutangSisa)}
-            </div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Sisa piutang</div>
-            <div className="font-semibold text-emerald-600">
-              {rupiah(overall.piutangSisa)}
-            </div>
-          </div>
-          <div>
-            <div className="text-muted-foreground">Selisih bersih</div>
-            <div
-              className={
-                "font-semibold " +
-                (overall.net >= 0 ? "text-emerald-600" : "text-red-600")
-              }
-            >
-              {(overall.net >= 0 ? "+" : "−") +
-                rupiah(Math.abs(overall.net)).replace("Rp ", "Rp ")}
-            </div>
-          </div>
-        </div>
-
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="hutang">Hutang saya</TabsTrigger>
-            <TabsTrigger value="piutang">Piutang saya</TabsTrigger>
-            <TabsTrigger value="laporan">Laporan</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 rounded-xl">
+            <TabsTrigger value="hutang" className="rounded-lg gap-ms-1.5">
+              <ArrowUpCircle className="h-3.5 w-3.5" /> Hutang
+            </TabsTrigger>
+            <TabsTrigger value="piutang" className="rounded-lg gap-ms-1.5">
+              <ArrowDownCircle className="h-3.5 w-3.5" /> Piutang
+            </TabsTrigger>
+            <TabsTrigger value="laporan" className="rounded-lg gap-ms-1.5">
+              <Scale className="h-3.5 w-3.5" /> Laporan
+            </TabsTrigger>
           </TabsList>
 
           {(["hutang", "piutang"] as const).map((k) => (
-            <TabsContent key={k} value={k} className="mt-3 space-y-3">
-              <div className="grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
-                <div>
-                  <div className="text-muted-foreground">Total</div>
-                  <div className="font-semibold">{rupiah(totals.total)}</div>
+            <TabsContent key={k} value={k} className="mt-3 space-ms-3">
+              <div className="grid grid-cols-3 gap-ms-2 rounded-2xl border bg-card p-ms-3 text-center text-ms-xs shadow-sm">
+                <div className="rounded-xl bg-muted/40 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-muted-foreground">
+                    <Wallet className="h-3 w-3" /> Total
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums">{rupiah(totals.total)}</div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Terbayar</div>
-                  <div className="font-semibold text-emerald-600">
+                <div className="rounded-xl bg-success/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-success dark:text-success">
+                    <CheckCircle2 className="h-3 w-3" /> Terbayar
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums text-success">
                     {rupiah(totals.paid)}
                   </div>
                 </div>
-                <div>
-                  <div className="text-muted-foreground">Sisa</div>
-                  <div className="font-semibold text-amber-600">
+                <div className="rounded-xl bg-warning/10 p-ms-2">
+                  <div className="flex items-center justify-center gap-ms-1 text-warning dark:text-warning">
+                    <Coins className="h-3 w-3" /> Sisa
+                  </div>
+                  <div className="mt-0.5 font-semibold tabular-nums text-warning">
                     {rupiah(totals.sisa)}
                   </div>
                 </div>
               </div>
 
               {loading ? (
-                <div className="py-12 text-center text-sm text-muted-foreground">
-                  Memuat…
-                </div>
+                <ul className="space-ms-3" aria-busy="true" aria-live="polite">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <li key={i} className="rounded-2xl border bg-card p-ms-3 shadow-sm">
+                      <div className="flex items-center justify-between gap-ms-3">
+                        <div className="min-w-0 flex-1 space-ms-2">
+                          <Skeleton className="h-4 w-2/5" />
+                          <Skeleton className="h-3 w-1/3" />
+                        </div>
+                        <Skeleton className="h-6 w-20" />
+                      </div>
+                      <Skeleton className="mt-3 h-8 w-full" />
+                    </li>
+                  ))}
+                </ul>
               ) : filtered.length === 0 ? (
-                <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-                  <p>Belum ada catatan {k}.</p>
+                <div className="flex flex-col items-center gap-ms-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-ms-sm text-muted-foreground">
+                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
+                    {k === "hutang" ? (
+                      <ArrowUpCircle className="h-6 w-6" />
+                    ) : (
+                      <ArrowDownCircle className="h-6 w-6" />
+                    )}
+                  </div>
+                  <p className="font-semibold text-foreground">Belum ada catatan {k}</p>
+                  <p className="mx-auto max-w-xs text-ms-xs leading-relaxed">
+                    Catat {k} secara manual atau tunggu {k === "hutang" ? "pembelian" : "penjualan"}{" "}
+                    masuk otomatis.
+                  </p>
                   <Button
                     size="sm"
-                    className="mt-3"
+                    className="mt-1 rounded-xl"
                     onClick={() => {
                       setAddPrefill(null);
                       setAddOpen(true);
                     }}
                   >
-                    {k === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+                    <Plus className="mr-1 h-4 w-4" />
+                    {k === "hutang" ? "Tambah hutang" : "Tambah piutang"}
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {groupedByParty.map((group) => {
+                <>
+                  {/* Header kolom ala tabel — sticky di bawah header halaman
+                      supaya arti kolom tetap terbaca saat daftar panjang
+                      digulir (penting di WebView layar kecil). */}
+                  <div
+                    role="row"
+                    aria-hidden="true"
+                    /* Solid (tanpa transparansi/blur): baris data yang lewat
+                       di belakangnya sempat terbaca dan terlihat seperti
+                       teks dobel saat menggulir. */
+                    className="sticky z-20 -mx-ms-1 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-3 rounded-xl border bg-card px-ms-3.5 py-ms-2 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground shadow-xs"
+                    style={{ top: "var(--hp-sticky-top, 64px)" }}
+                  >
+                    <span className="truncate">Kontak / catatan</span>
+                    <span className="shrink-0 text-right">Jumlah · sisa</span>
+                  </div>
+                <VirtualizedList
+                  cacheKey="hutang-parties"
+                  items={groupedByParty}
+                  getKey={(group) => group.key}
+                  estimateSize={260}
+                  threshold={6}
+                  gap={16}
+                  renderItem={(group) => {
                     let gTotal = 0;
                     let gPaid = 0;
                     for (const it of group.items) {
@@ -559,27 +904,52 @@ function HutangPiutangPage() {
                       gPaid += paidByDebt.get(it.id) ?? 0;
                     }
                     const gSisa = Math.max(0, gTotal - gPaid);
+                    // Kartu per-kontak juga membaca SSOT `party_balance_v1`
+                    // (lewat useDebtSyncMap) supaya angkanya identik dengan
+                    // chip di chat & total halaman. Saat periode difilter,
+                    // SSOT (all-time) tidak berlaku → pakai agregat manual.
+                    const ssotEntry =
+                      period === "all"
+                        ? ssotParties?.get(normalizeParty(group.name))
+                        : undefined;
+                    const ssotSisa = ssotEntry
+                      ? k === "hutang"
+                        ? ssotEntry.hutang
+                        : ssotEntry.piutang
+                      : null;
+                    const displaySisa = ssotSisa ?? gSisa;
                     return (
                       <section
                         key={group.key}
-                        className="rounded-lg border bg-card"
+                        data-testid={`party-card-${normalizeParty(group.name)}`}
+                        className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold">
+                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/40 px-ms-3.5 py-ms-3 sm:flex sm:flex-wrap sm:items-center">
+                          <div className="min-w-0 sm:flex-1">
+                            <div className="truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-[11px] text-muted-foreground">
+                            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                               {group.items.length} catatan · sisa{" "}
-                              <span className="font-medium text-amber-600">
-                                {rupiah(gSisa)}
+                              <span
+                                data-testid="party-card-sisa"
+                                className="font-semibold tabular-nums text-warning"
+                              >
+                                {rupiah(displaySisa)}
                               </span>{" "}
-                              dari {rupiah(gTotal)}
+                              dari <span className="tabular-nums">{rupiah(gTotal)}</span>
+                              {ssotSisa !== null && Math.abs(ssotSisa - gSisa) > 0.01 && (
+                                <span className="ml-1 text-warning">
+                                  · termasuk transaksi ({rupiah(gSisa)} manual)
+                                </span>
+                              )}
                             </div>
                           </div>
+                          <div className="col-start-2 row-span-2 flex shrink-0 flex-wrap items-center justify-end gap-ms-2 sm:contents">
                           <Button
                             size="sm"
                             variant="outline"
+                            className="h-8 shrink-0 rounded-lg"
                             onClick={() => {
                               setAddPrefill({
                                 kind: k,
@@ -591,17 +961,18 @@ function HutangPiutangPage() {
                             }}
                             title={`Tambah ${k} untuk ${group.name}`}
                           >
-                            + Tambah {k}
+                            <Plus className="mr-1 h-3.5 w-3.5" /> Tambah
                           </Button>
                           <Button
                             size="sm"
-                            variant="secondary"
-                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            variant="waSoft"
+                            className="h-8 shrink-0 rounded-lg"
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via WhatsApp"
                           >
-                            Kirim laporan WA
+                            Kirim laporan
                           </Button>
+                          </div>
                         </header>
                         <ul className="divide-y">
                           {group.items.map((d) => {
@@ -615,79 +986,102 @@ function HutangPiutangPage() {
                     return (
                       <li
                         key={d.id}
-                        className="p-3 text-sm"
+                        className={
+                          "px-ms-3.5 py-ms-3 text-ms-sm transition-colors " +
+                          "min-h-[3.5rem] " +
+                          (overdue
+                            ? "bg-destructive/[0.04] hover:bg-destructive/[0.07]"
+                            : "hover:bg-muted/30")
+                        }
                       >
-                        <div className="flex items-start gap-2">
-                          <div className="min-w-0 flex-1">
+                        {/* Kolom nilai turun ke bawah pada layar sangat sempit
+                            (<360px) supaya nominal tidak terpotong. */}
+                        <div className="grid grid-cols-1 items-start gap-x-ms-3 gap-y-ms-1.5 min-[360px]:grid-cols-[minmax(0,1fr)_auto]">
+                          <div className="min-w-0">
                             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                               <span className="min-w-0 max-w-full truncate font-medium">
                                 {d.party_name}
                               </span>
                               {d.source !== "manual" && (
-                                <StatusBadge
-                                  size="xs"
-                                  variant="info"
-                                  className="max-w-[7rem]"
-                                >
+                                <StatusBadge size="xs" variant="info" className="shrink-0">
                                   {d.source === "purchase" ? "Pembelian" : "Penjualan"}
                                 </StatusBadge>
                               )}
                               {lunas ? (
-                                <StatusBadge size="xs" variant="lunas">Lunas</StatusBadge>
+                                <StatusBadge size="xs" variant="lunas" className="shrink-0">Lunas</StatusBadge>
                               ) : overdue ? (
-                                <StatusBadge size="xs" variant="danger">Telat</StatusBadge>
+                                <StatusBadge size="xs" variant="danger" className="shrink-0">Telat</StatusBadge>
                               ) : null}
                             </div>
                             {d.note && (
-                              <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                              <div className="mt-0.5 line-clamp-2 text-ms-xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
                                 {d.note}
                               </div>
                             )}
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {d.due_date
-                                ? `Jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
-                                : "Tanpa jatuh tempo"}
+                            <div
+                              className={
+                                "mt-1 flex min-w-0 items-center gap-ms-1 text-ms-xs " +
+                                (overdue ? "text-destructive" : "text-muted-foreground")
+                              }
+                            >
+                              <CalendarClock className="h-3 w-3 shrink-0" />
+                              <span className="min-w-0 truncate">
+                                {d.due_date
+                                  ? `Jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
+                                  : "Tanpa jatuh tempo"}
+                              </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold">
+                          <div className="min-w-0 shrink-0 whitespace-nowrap leading-tight max-[359px]:flex max-[359px]:flex-wrap max-[359px]:items-baseline max-[359px]:gap-x-ms-2 min-[360px]:text-right">
+                            <div className="font-semibold tabular-nums tracking-tight">
                               {rupiah(Number(d.amount))}
                             </div>
                             {paid > 0 && (
-                              <div className="text-[11px] text-muted-foreground">
+                              <div className="mt-0.5 text-ms-2xs tabular-nums text-muted-foreground">
                                 terbayar {rupiah(paid)}
                               </div>
                             )}
-                            <div className="text-[11px] font-medium text-amber-600">
+                            <div
+                              className={
+                                "mt-0.5 text-ms-2xs font-medium tabular-nums " +
+                                (lunas
+                                  ? "text-success"
+                                  : overdue
+                                    ? "text-destructive"
+                                    : "text-warning")
+                              }
+                            >
                               sisa {rupiah(Math.max(0, sisa))}
                             </div>
                           </div>
                         </div>
-                        <div className="mt-2 flex gap-2">
+                        <div className="mt-ms-2.5 flex flex-wrap items-center gap-ms-1.5 border-t border-border/60 pt-ms-2.5">
                           {!lunas && (
                             <Button
                               size="sm"
                               variant="outline"
+                              className="h-8 rounded-lg"
                               onClick={() => setPayFor(d)}
                             >
-                              + Bayar
+                              <Plus className="mr-1 h-3.5 w-3.5" /> Bayar
                             </Button>
                           )}
                           {!lunas && (
                             <Button
                               size="sm"
-                              variant="secondary"
-                              className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
-                              onClick={() => void sendReminderWA(d)}
+                              variant="waSoft"
+                              className="h-8 rounded-lg"
+                              onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via WhatsApp"
                             >
-                              Tagih via WA
+                              Tagih
                             </Button>
                           )}
                           {d.source === "manual" && (
                             <Button
                               size="sm"
                               variant="ghost"
+                              className="h-8 rounded-lg"
                               onClick={() => setEditFor(d)}
                               title="Edit catatan"
                             >
@@ -697,7 +1091,7 @@ function HutangPiutangPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            className="ml-auto h-8 rounded-lg text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => void removeDebt(d)}
                           >
                             Hapus
@@ -714,13 +1108,23 @@ function HutangPiutangPage() {
                         </ul>
                       </section>
                     );
-                  })}
-                </div>
+                  }}
+                />
+                </>
               )}
+
+              <TxOnlyPartyCards
+                kind={k}
+                ssot={ssotParties}
+                manualNames={groupedByParty.map((g) => g.name)}
+                parties={k === "hutang" ? suppliers : customers}
+                uid={uid}
+                onChanged={() => void refresh()}
+              />
             </TabsContent>
           ))}
 
-          <TabsContent value="laporan" className="mt-3 space-y-3">
+          <TabsContent value="laporan" className="mt-3 space-ms-3">
             <PaymentsReport
               debts={debts}
               payments={payments}
@@ -739,7 +1143,7 @@ function HutangPiutangPage() {
                   .from("debt_payments")
                   .delete()
                   .eq("id", id);
-                if (error) toast.error(friendlyError(error));
+                if (error) notifyError(error);
                 else {
                   toast.success("Pembayaran dihapus");
                   void refresh();
@@ -773,6 +1177,28 @@ function HutangPiutangPage() {
         onSaved={refresh}
       />
 
+      <ReminderDialog
+        debt={reminderFor}
+        uid={uid}
+        sisa={
+          reminderFor
+            ? Math.max(
+                0,
+                Number(reminderFor.amount) -
+                  (paidByDebt.get(reminderFor.id) ?? 0),
+              )
+            : 0
+        }
+        onClose={() => setReminderFor(null)}
+        onSend={async (extra) => {
+          const d = reminderFor;
+          if (!d) return;
+          await sendReminderWA(d, extra);
+          if (extra) await refresh();
+          setReminderFor(null);
+        }}
+      />
+
       <EditDebtDialog
         debt={editFor}
         minAmount={
@@ -800,7 +1226,7 @@ function PaymentHistory({
   const [open, setOpen] = useState(false);
   if (payments.length === 0) return null;
   return (
-    <div className="mt-2 border-t pt-2 text-xs">
+    <div className="mt-2 border-t pt-2 text-ms-xs">
       <button
         type="button"
         className="text-muted-foreground hover:underline"
@@ -816,14 +1242,14 @@ function PaymentHistory({
             .map((p) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-2"
+                className="flex items-center justify-between gap-ms-2"
               >
                 <span>
                   {new Date(p.paid_at).toLocaleDateString("id-ID")}
                   {p.note ? ` · ${p.note}` : ""}
                 </span>
-                <span className="flex items-center gap-2">
-                  <span className="font-medium text-emerald-600">
+                <span className="flex items-center gap-ms-2">
+                  <span className="font-medium text-success">
                     {rupiah(Number(p.amount))}
                   </span>
                   <button
@@ -843,7 +1269,7 @@ function PaymentHistory({
                         .from("debt_payments")
                         .delete()
                         .eq("id", p.id);
-                      if (error) toast.error(friendlyError(error));
+                      if (error) notifyError(error);
                       else {
                         toast.success("Pembayaran dihapus");
                         onChange();
@@ -910,29 +1336,29 @@ function PaymentsReport({
   }, [filtered]);
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-lg border bg-card p-3">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="space-ms-3">
+      <div className="rounded-lg border bg-card p-ms-3">
+        <div className="flex flex-wrap items-center gap-ms-2">
           <div className="flex-1">
-            <div className="text-sm font-semibold">Riwayat pembayaran</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-ms-sm font-semibold">Riwayat pembayaran</div>
+            <div className="text-ms-2xs text-muted-foreground">
               {filtered.length} pembayaran sesuai periode
             </div>
           </div>
           <Button
             size="sm"
-            variant="secondary"
-            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+            variant="waSoft"
+            className=""
             onClick={onSendWA}
             title="Kirim laporan via WhatsApp"
           >
             Kirim laporan WA
           </Button>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="mt-3 grid grid-cols-3 gap-ms-2 text-center text-ms-xs">
           <div>
             <div className="text-muted-foreground">Uang masuk</div>
-            <div className="font-semibold text-emerald-600">
+            <div className="font-semibold text-success">
               {rupiah(totals.masuk)}
             </div>
           </div>
@@ -947,7 +1373,7 @@ function PaymentsReport({
             <div
               className={
                 "font-semibold " +
-                (totals.net >= 0 ? "text-emerald-600" : "text-red-600")
+                (totals.net >= 0 ? "text-success" : "text-red-600")
               }
             >
               {(totals.net >= 0 ? "+" : "−") + rupiah(Math.abs(totals.net))}
@@ -957,14 +1383,20 @@ function PaymentsReport({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border border-dashed py-12 text-center text-ms-sm text-muted-foreground">
           Belum ada pembayaran pada periode ini.
         </div>
       ) : (
-        <div className="space-y-3">
-          {grouped.map(([day, list]) => (
-            <section key={day} className="rounded-lg border bg-card">
-              <header className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+        <VirtualizedList
+          cacheKey="hutang-days"
+          items={grouped}
+          getKey={([day]) => day}
+          estimateSize={180}
+          threshold={5}
+          gap={12}
+          renderItem={([day, list]) => (
+            <section className="rounded-lg border bg-card">
+              <header className="border-b px-ms-3 py-ms-2 text-ms-xs font-medium text-muted-foreground">
                 {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
                   weekday: "long",
                   day: "numeric",
@@ -979,13 +1411,13 @@ function PaymentsReport({
                   return (
                     <li
                       key={p.id}
-                      className="flex items-start gap-2 px-3 py-2 text-sm"
+                      className="flex items-start gap-ms-2 px-ms-3 py-ms-2 text-ms-sm"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">
                           {d?.party_name ?? "—"}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">
+                        <div className="text-ms-2xs text-muted-foreground">
                           {d
                             ? d.kind === "hutang"
                               ? "Bayar hutang"
@@ -998,14 +1430,14 @@ function PaymentsReport({
                         <div
                           className={
                             "font-semibold " +
-                            (isIn ? "text-emerald-600" : "text-red-600")
+                            (isIn ? "text-success" : "text-red-600")
                           }
                         >
                           {(isIn ? "+" : "−") + rupiah(Number(p.amount))}
                         </div>
                         <button
                           type="button"
-                          className="text-[11px] text-destructive hover:underline"
+                          className="text-ms-2xs text-destructive hover:underline"
                           onClick={() => void onRemovePayment(p.id)}
                         >
                           Hapus
@@ -1016,11 +1448,439 @@ function PaymentsReport({
                 })}
               </ul>
             </section>
-          ))}
-        </div>
+          )}
+        />
       )}
     </div>
   );
+}
+
+/**
+ * Dropdown kontak dengan pencarian cepat. Lebih ringan dari cmdk dan
+ * lebih ramah mobile: input tetap terlihat, tap target besar, hasil
+ * difilter secara lokal tanpa request tambahan ke backend.
+ */
+
+/** Riwayat kontak terakhir dipilih (per user + per jenis), max 5 id. */
+const RECENT_LIMIT = 5;
+function recentKey(uid: string | null, kind: Kind) {
+  return scopedKey("mcm:hutangPiutang:recentParty", uid, kind);
+}
+function readRecentParties(uid: string | null, kind: Kind): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(recentKey(uid, kind));
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is string => typeof v === "string").slice(0, RECENT_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+}
+function pushRecentParty(uid: string | null, kind: Kind, id: string): string[] {
+  const next = [id, ...readRecentParties(uid, kind).filter((v) => v !== id)].slice(
+    0,
+    RECENT_LIMIT,
+  );
+  try {
+    window.localStorage.setItem(recentKey(uid, kind), JSON.stringify(next));
+  } catch {
+    /* private mode — abaikan */
+  }
+  return next;
+}
+
+function SearchablePartySelect({
+  options,
+  value,
+  onChange,
+  onOpenChange,
+  placeholder,
+  kind,
+  recentIds = [],
+  uid,
+  onCreate,
+}: {
+  options: Party[];
+  value: string;
+  onChange: (id: string) => void;
+  onOpenChange?: (open: boolean) => void;
+  placeholder?: string;
+  kind: Kind;
+  recentIds?: string[];
+  uid: string | null;
+  onCreate?: (party: Party) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newContact, setNewContact] = useState("");
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const createNameRef = useRef<HTMLInputElement>(null);
+
+  const { recent, rest } = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const match = q
+      ? options.filter(
+          (o) =>
+            o.name.toLowerCase().includes(q) ||
+            (o.contact ?? "").toLowerCase().includes(q),
+        )
+      : options;
+    const rank = new Map(recentIds.map((id, i) => [id, i]));
+    const recentList = match
+      .filter((o) => rank.has(o.id))
+      .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+    return {
+      recent: recentList,
+      rest: match.filter((o) => !rank.has(o.id)),
+    };
+  }, [options, query, recentIds]);
+
+  const selected = options.find((o) => o.id === value);
+
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setCreating(false);
+      setNewName("");
+      setNewContact("");
+      // Fokus input setelah popover ter-render agar keyboard mobile langsung muncul.
+      const t = requestAnimationFrame(() => inputRef.current?.focus());
+      return () => cancelAnimationFrame(t);
+    }
+  }, [open]);
+
+  // Saat masuk mode buat kontak, fokus ke input nama dan isi dengan query saat ini.
+  useEffect(() => {
+    if (creating) {
+      setNewName(query.trim());
+      const t = requestAnimationFrame(() => createNameRef.current?.focus());
+      return () => cancelAnimationFrame(t);
+    }
+  }, [creating, query]);
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    onOpenChange?.(next);
+  };
+
+  const startCreate = () => {
+    if (!uid) {
+      toast.error("Sesi belum siap, coba lagi sebentar.");
+      return;
+    }
+    setCreating(true);
+  };
+
+  const saveContact = async () => {
+    if (!uid) return;
+    const name = newName.trim();
+    const contact = newContact.trim() || null;
+    if (!name) {
+      toast.error("Nama kontak wajib diisi.");
+      return;
+    }
+    setBusy(true);
+    const table = kind === "hutang" ? "suppliers" : "customers";
+    const { data, error } = await supabase
+      .from(table)
+      .insert({ user_id: uid, name, contact })
+      .select("id,name,contact")
+      .single();
+    setBusy(false);
+    if (error || !data) {
+      notifyError(error ?? new Error("Gagal menyimpan kontak"));
+      return;
+    }
+    const party: Party = {
+      id: data.id,
+      name: data.name,
+      contact: data.contact,
+    };
+    onCreate?.(party);
+    onChange(party.id);
+    setOpen(false);
+    onOpenChange?.(false);
+    toast.success(`${kind === "hutang" ? "Supplier" : "Customer"} baru ditambahkan`);
+  };
+
+  const empty = recent.length + rest.length === 0;
+  const totalFound = recent.length + rest.length;
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="truncate">
+            {selected?.name ?? placeholder ?? "Pilih…"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] p-0"
+        align="start"
+      >
+        {!creating ? (
+          <>
+            <div className="flex items-center border-b px-3">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Cari ${kind === "hutang" ? "supplier" : "customer"}…`}
+                className="h-10 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              {query.trim().length > 0 && (
+                <button
+                  type="button"
+                  aria-label="Hapus kata kunci"
+                  onClick={() => {
+                    setQuery("");
+                    requestAnimationFrame(() => inputRef.current?.focus());
+                  }}
+                  className="ml-2 grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {!empty && (
+              <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5 text-ms-2xs text-muted-foreground">
+                <span>
+                  {totalFound} kontak ditemukan
+                  {recent.length > 0 && rest.length > 0 && (
+                    <span className="ml-1 text-muted-foreground/70">
+                      ({recent.length} terakhir, {rest.length} lainnya)
+                    </span>
+                  )}
+                </span>
+                {query.trim() && (
+                  <span className="truncate max-w-[55%] text-right">
+                    cocok “{query.trim()}”
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="max-h-[260px] overflow-y-auto p-1">
+              {empty ? (
+                <div className="px-3 py-5 text-center">
+                  <div className="mx-auto mb-2 grid h-9 w-9 place-items-center rounded-full bg-muted">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-ms-sm font-medium text-foreground">
+                    Tidak ada kontak yang cocok
+                  </div>
+                  <div className="mt-1 text-ms-2xs text-muted-foreground">
+                    {query.trim() ? (
+                      <>
+                        Pencarian untuk "<span className="font-medium text-foreground">{query.trim()}</span>" tidak menemukan nama atau nomor.
+                      </>
+                    ) : (
+                      "Belum ada data " + (kind === "hutang" ? "supplier" : "customer") + " tersimpan."
+                    )}
+                  </div>
+                  {query.trim() && (
+                    <div className="mt-3 space-y-1 text-ms-2xs text-muted-foreground">
+                      <div className="font-medium text-foreground">Saran pencarian:</div>
+                      <ul className="list-disc space-y-0.5 pl-4 text-left">
+                        <li>Coba singkatan atau nama panggilan</li>
+                        <li>Gunakan nomor HP awalan 08 tanpa spasi/titik</li>
+                        <li>Periksa ejaan atau huruf kecil/besar</li>
+                      </ul>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="mt-4 w-full"
+                    onClick={startCreate}
+                  >
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Tambah kontak
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {recent.length > 0 && (
+                    <div className="px-2 pb-1 pt-1.5 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Terakhir dipakai
+                    </div>
+                  )}
+                  {recent.map((o) => (
+                    <PartyOptionRow
+                      key={o.id}
+                      option={o}
+                      selected={value === o.id}
+                      query={query}
+                      onPick={() => {
+                        onChange(o.id);
+                        setOpen(false);
+                        onOpenChange?.(false);
+                      }}
+                    />
+                  ))}
+                  {recent.length > 0 && rest.length > 0 && (
+                    <div className="my-1 border-t" />
+                  )}
+                  {rest.map((o) => (
+                    <PartyOptionRow
+                      key={o.id}
+                      option={o}
+                      selected={value === o.id}
+                      query={query}
+                      onPick={() => {
+                        onChange(o.id);
+                        setOpen(false);
+                        onOpenChange?.(false);
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="p-3">
+            <div className="mb-2 text-ms-sm font-semibold text-foreground">
+              Tambah {kind === "hutang" ? "supplier" : "customer"} baru
+            </div>
+            <div className="space-y-2">
+              <div className="space-y-1">
+                <Label className="text-ms-2xs">Nama</Label>
+                <Input
+                  ref={createNameRef}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="cth: Pak Andi"
+                  className="h-9 text-ms-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-ms-2xs">Kontak (opsional)</Label>
+                <Input
+                  value={newContact}
+                  onChange={(e) => setNewContact(e.target.value)}
+                  placeholder="Nomor WA / email"
+                  className="h-9 text-ms-sm"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setCreating(false)}
+                  disabled={busy}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => void saveContact()}
+                  disabled={busy || !newName.trim()}
+                >
+                  {busy ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Simpan
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function PartyOptionRow({
+  option,
+  selected,
+  query,
+  onPick,
+}: {
+  option: Party;
+  selected: boolean;
+  query: string;
+  onPick: () => void;
+}) {
+  return (
+    <div className="flex w-full items-center gap-2 rounded-sm px-2 py-2 text-ms-sm transition-colors hover:bg-accent hover:text-accent-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-medium">
+          <HighlightText text={option.name} query={query} />
+        </div>
+        {option.contact && (
+          <div className="truncate text-ms-2xs text-muted-foreground">
+            <HighlightText text={option.contact} query={query} />
+          </div>
+        )}
+      </div>
+      {selected ? (
+        <span className="flex items-center gap-1 text-ms-2xs font-semibold text-success">
+          <Check className="h-3.5 w-3.5" />
+          Dipilih
+        </span>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPick();
+          }}
+          className="h-7 text-ms-2xs"
+        >
+          Pilih
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  const q = query.trim();
+  if (!q) return <>{text}</>;
+  const lower = q.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+  while (remaining.length > 0) {
+    const idx = remaining.toLowerCase().indexOf(lower);
+    if (idx === -1) {
+      parts.push(<span key={key++}>{remaining}</span>);
+      break;
+    }
+    if (idx > 0) {
+      parts.push(<span key={key++}>{remaining.slice(0, idx)}</span>);
+    }
+    const match = remaining.slice(idx, idx + q.length);
+    parts.push(
+      <mark
+        key={key++}
+        className="rounded-sm bg-primary/20 px-0.5 font-semibold text-primary"
+      >
+        {match}
+      </mark>,
+    );
+    remaining = remaining.slice(idx + q.length);
+  }
+  return <>{parts}</>;
 }
 
 function AddDebtDialog({
@@ -1055,11 +1915,23 @@ function AddDebtDialog({
   const [due, setDue] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  // Di Android WebView, "touch release" setelah memilih item Select bisa
+  // tembus ke overlay Dialog sehingga dialog ikut tertutup dan user
+  // terlempar balik ke halaman Hutang & Piutang. Kunci penutupan dialog
+  // selama dropdown terbuka dan sesaat setelahnya.
+  const selectGuardRef = useRef(0);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  const [createdParties, setCreatedParties] = useState<Party[]>([]);
+  const handleOpenChange = (v: boolean) => {
+    if (!v && Date.now() < selectGuardRef.current) return;
+    onOpenChange(v);
+  };
 
   useEffect(() => {
     if (open) {
       const k = prefill?.kind ?? defaultKind;
       setKind(k);
+      setRecentIds(readRecentParties(uid, k));
       const linkId =
         k === "hutang" ? prefill?.supplierId : prefill?.customerId;
       if (linkId) {
@@ -1079,9 +1951,20 @@ function AddDebtDialog({
       setDue("");
       setNote("");
     }
-  }, [open, defaultKind, prefill]);
+  }, [open, defaultKind, prefill, uid]);
 
-  const partyOptions = kind === "hutang" ? suppliers : customers;
+  // Jenis (hutang/piutang) bisa diganti setelah dialog terbuka.
+  useEffect(() => {
+    if (open) setRecentIds(readRecentParties(uid, kind));
+  }, [open, kind, uid]);
+
+  const partyOptions = useMemo(() => {
+    const base = kind === "hutang" ? suppliers : customers;
+    const map = new Map<string, Party>();
+    for (const p of base) map.set(p.id, p);
+    for (const p of createdParties) map.set(p.id, p);
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [kind, suppliers, customers, createdParties]);
 
   const submit = async () => {
     if (!uid) return;
@@ -1109,11 +1992,11 @@ function AddDebtDialog({
       amount: amt,
       due_date: due || null,
       note: note.trim() || null,
-      source: "manual",
+      source: assertDebtSource("manual"),
     });
     setSaving(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Tersimpan");
@@ -1122,16 +2005,24 @@ function AddDebtDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => {
+          if (Date.now() < selectGuardRef.current) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (Date.now() < selectGuardRef.current) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Tambah catatan</DialogTitle>
           <DialogDescription>
             Catat hutang atau piutang baru secara manual.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-ms-3">
+          <div className="grid grid-cols-2 gap-ms-2">
             <Button
               type="button"
               variant={kind === "hutang" ? "default" : "outline"}
@@ -1151,10 +2042,10 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">
+            <Label className="text-ms-xs">
               Pihak {kind === "hutang" ? "(supplier/orang)" : "(customer/orang)"}
             </Label>
-            <div className="flex gap-2">
+            <div className="flex gap-ms-2">
               <Button
                 type="button"
                 size="sm"
@@ -1180,33 +2071,44 @@ function AddDebtDialog({
                 placeholder="cth: Pak Andi"
               />
             ) : (
-              <Select value={partyId} onValueChange={setPartyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Pilih…" />
-                </SelectTrigger>
-                <SelectContent>
-                  {partyOptions.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {o.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <SearchablePartySelect
+                options={partyOptions}
+                value={partyId}
+                kind={kind}
+                placeholder="Pilih…"
+                recentIds={recentIds}
+                uid={uid}
+                onChange={(v) => {
+                  selectGuardRef.current = Date.now() + 600;
+                  setPartyId(v);
+                  setRecentIds(pushRecentParty(uid, kind, v));
+                }}
+                onOpenChange={(o) => {
+                  selectGuardRef.current = o
+                    ? Number.MAX_SAFE_INTEGER
+                    : Date.now() + 600;
+                }}
+                onCreate={(party) => {
+                  setCreatedParties((prev) => [...prev, party]);
+                  setRecentIds(pushRecentParty(uid, kind, party.id));
+                }}
+              />
             )}
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
               placeholder="0"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Jatuh tempo (opsional)</Label>
+            <Label className="text-ms-xs">Jatuh tempo (opsional)</Label>
             <Input
               type="date"
               value={due}
@@ -1215,7 +2117,7 @@ function AddDebtDialog({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1278,7 +2180,7 @@ function PaymentDialog({
     });
     setSaving(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Pembayaran dicatat");
@@ -1299,17 +2201,18 @@ function PaymentDialog({
             )}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Tanggal</Label>
+            <Label className="text-ms-xs">Tanggal</Label>
             <Input
               type="date"
               value={paidAt}
@@ -1317,7 +2220,7 @@ function PaymentDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
@@ -1327,6 +2230,164 @@ function PaymentDialog({
           </Button>
           <Button onClick={submit} disabled={saving}>
             {saving ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Dialog "Catat Pembayaran → Kirim WA". Sebelum pesan pengingat dikirim,
+ * user dapat opsional mencatat pembayaran baru (jumlah, tanggal, catatan).
+ * Jika jumlah bayar > 0, pembayaran tersimpan lebih dulu ke `debt_payments`
+ * lalu pesan WA di-generate dengan status & sisa yang sudah diperbarui.
+ * Jika jumlah dikosongkan, dialog hanya mengirim pengingat tanpa mencatat
+ * pembayaran baru — sehingga tombol ini tetap bisa dipakai untuk "tagih saja".
+ */
+function ReminderDialog({
+  debt,
+  uid,
+  sisa,
+  onClose,
+  onSend,
+}: {
+  debt: Debt | null;
+  uid: string | null;
+  sisa: number;
+  onClose: () => void;
+  onSend: (
+    extra: { amount: number; paidAt: string; note: string } | null,
+  ) => Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [paidAt, setPaidAt] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (debt) {
+      setAmount("");
+      setPaidAt(new Date().toISOString().slice(0, 10));
+      setNote("");
+    }
+  }, [debt]);
+
+  const parseAmt = () =>
+    Number(amount.replace(/[^\d.,]/g, "").replace(",", "."));
+
+  const doSend = async (recordPayment: boolean) => {
+    if (!debt) return;
+    let extra: { amount: number; paidAt: string; note: string } | null = null;
+    if (recordPayment) {
+      const amt = parseAmt();
+      if (!amt || amt <= 0) {
+        toast.error("Isi jumlah bayar terlebih dahulu.");
+        return;
+      }
+      if (!uid) {
+        toast.error("Sesi belum siap.");
+        return;
+      }
+      setBusy(true);
+      const { error } = await supabase.from("debt_payments").insert({
+        user_id: uid,
+        debt_id: debt.id,
+        amount: amt,
+        paid_at: paidAt,
+        note: note.trim() || null,
+      });
+      if (error) {
+        setBusy(false);
+        notifyError(error);
+        return;
+      }
+      extra = { amount: amt, paidAt, note };
+      toast.success("Pembayaran dicatat, membuka WA…");
+    } else {
+      setBusy(true);
+    }
+    try {
+      await onSend(extra);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const amt = parseAmt();
+  const hasAmt = Number.isFinite(amt) && amt > 0;
+
+  return (
+    <Dialog open={!!debt} onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Catat pembayaran & kirim WA</DialogTitle>
+          <DialogDescription>
+            {debt && (
+              <>
+                {debt.party_name} · sisa {rupiah(Math.max(0, sisa))}
+              </>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-ms-3">
+          <div className="space-y-1">
+            <Label className="text-ms-xs">Jumlah bayar (Rp) — opsional</Label>
+            <NumericTextField
+              value={amount}
+              onValueChange={setAmount}
+              decimal={false}
+              placeholder="Kosongkan bila hanya menagih"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {hasAmt && amt > sisa && (
+              <p className="text-ms-2xs text-warning">
+                Melebihi sisa ({rupiah(sisa)}). Tetap dapat disimpan.
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-ms-xs">Tanggal</Label>
+            <Input
+              type="date"
+              value={paidAt}
+              onChange={(e) => setPaidAt(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="cth: transfer BCA"
+            />
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-ms-2 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Batal
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void doSend(false)}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Kirim tanpa mencatat
+          </Button>
+          <Button
+            onClick={() => void doSend(true)}
+            disabled={busy || !hasAmt}
+            className="w-full bg-wa text-wa-foreground hover:bg-wa/90 sm:w-auto"
+          >
+            {busy ? "Memproses…" : "Simpan & Kirim WA"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1453,9 +2514,9 @@ function EditDebtDialog({
               : ""}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-ms-3">
           <div className="space-y-1">
-            <Label className="text-xs">Nama pihak</Label>
+            <Label className="text-ms-xs">Nama pihak</Label>
             <Input
               value={partyName}
               onChange={(e) => setPartyName(e.target.value)}
@@ -1463,21 +2524,22 @@ function EditDebtDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Jumlah (Rp)</Label>
-            <Input
-              inputMode="numeric"
+            <Label className="text-ms-xs">Jumlah (Rp)</Label>
+            <NumericTextField
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onValueChange={setAmount}
+              decimal={false}
               placeholder="0"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
             {minAmount > 0 && (
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-ms-2xs text-muted-foreground">
                 Minimal {rupiah(minAmount)} (sudah terbayar).
               </p>
             )}
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Jatuh tempo (opsional)</Label>
+            <Label className="text-ms-xs">Jatuh tempo (opsional)</Label>
             <Input
               type="date"
               value={due}
@@ -1485,7 +2547,7 @@ function EditDebtDialog({
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Catatan (opsional)</Label>
+            <Label className="text-ms-xs">Catatan (opsional)</Label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}

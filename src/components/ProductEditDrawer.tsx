@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NumericTextField } from "@/components/NumericDraftInput";
 import {
   Drawer,
   DrawerContent,
@@ -8,7 +9,7 @@ import {
   DrawerFooter,
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 
@@ -106,7 +107,7 @@ export function ProductEditDrawer(props: Props) {
         patch({ lokasi: `https://www.google.com/maps?q=${latitude},${longitude}` });
         toast.success("Lokasi diperbarui", { id: tId });
       },
-      (err) => toast.error("Gagal: " + friendlyError(err), { id: tId }),
+      (err) => notifyError(err, { prefix: "Gagal: " }),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
@@ -115,24 +116,24 @@ export function ProductEditDrawer(props: Props) {
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[92vh]">
         <DrawerHeader className="border-b text-left">
-          <DrawerTitle className="truncate text-base">Edit produk</DrawerTitle>
-          <DrawerDescription className="text-[11px]">
+          <DrawerTitle className="truncate text-ms-base">Edit produk</DrawerTitle>
+          <DrawerDescription className="text-ms-2xs">
             {sent ? "Status: Sudah dikirim" : "Status: Belum dikirim"} · {rupiah(draft.harga)}
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4 text-sm">
+        <div className="flex-1 overflow-y-auto px-ms-4 py-ms-3 space-ms-4 text-ms-sm">
           {/* Foto */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Foto</h3>
-            <div className="flex flex-wrap items-start gap-2">
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Foto</h3>
+            <div className="flex flex-wrap items-start gap-ms-2">
               {draft.foto && (
                 <div className="relative">
                   <img src={draft.foto} alt="" className="h-20 w-20 rounded-md border object-cover" />
                   <button
                     onClick={() => { removeFoto(draft.id); patch({ foto: undefined }); }}
                     aria-label="Hapus foto utama"
-                    className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-xs shadow"
+                    className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-ms-xs shadow"
                   >×</button>
                 </div>
               )}
@@ -145,17 +146,17 @@ export function ProductEditDrawer(props: Props) {
                       patch({ galeri: (draft.galeri ?? []).filter((_, i) => i !== idx) });
                     }}
                     aria-label="Hapus foto galeri"
-                    className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-xs shadow"
+                    className="absolute -right-1.5 -top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-ms-xs shadow"
                   >×</button>
                 </div>
               ))}
-              <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[11px] hover:bg-accent">
+              <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-ms-2xs hover:bg-accent">
                 📷
                 <span>{draft.foto ? "Ganti" : "Foto"}</span>
                 <input type="file" accept="image/*" capture="environment" className="hidden"
                   onChange={(e) => setFoto(draft.id, e.target.files)} />
               </label>
-              <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[11px] hover:bg-accent">
+              <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-ms-2xs hover:bg-accent">
                 🖼️
                 <span>Galeri</span>
                 <input type="file" accept="image/*" multiple className="hidden"
@@ -165,23 +166,23 @@ export function ProductEditDrawer(props: Props) {
           </section>
 
           {/* Identitas */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Info produk</h3>
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Info produk</h3>
             <label className="block">
-              <span className="text-[11px] text-muted-foreground">Nama</span>
+              <span className="text-ms-2xs text-muted-foreground">Nama</span>
               <input
                 value={draft.nama}
                 onChange={(e) => patch({ nama: e.target.value })}
                 placeholder="Nama produk"
-                className="mt-1 h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </label>
             <label className="block">
-              <span className="text-[11px] text-muted-foreground">Kategori</span>
+              <span className="text-ms-2xs text-muted-foreground">Kategori</span>
               <select
                 value={draft.kategori}
                 onChange={(e) => patch({ kategori: e.target.value })}
-                className="mt-1 h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
               >
                 {categories.map((k) => <option key={k} value={k}>{k}</option>)}
               </select>
@@ -189,27 +190,27 @@ export function ProductEditDrawer(props: Props) {
           </section>
 
           {/* Harga */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Harga</h3>
-            <label className="flex h-11 items-center gap-2 rounded-md border bg-background px-3 text-sm">
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Harga</h3>
+            <label className="flex h-11 items-center gap-ms-2 rounded-md border bg-background px-ms-3 text-ms-sm">
               <span className="text-muted-foreground">Rp</span>
-              <input
-                type="number" inputMode="numeric" min={0}
-                value={draft.harga}
-                onChange={(e) => patch({ harga: Math.max(0, Number(e.target.value) || 0) })}
+              <NumericTextField
+                value={String(draft.harga ?? "")}
+                onValueChange={(v) => patch({ harga: Math.max(0, Number(v) || 0) })}
+                decimal={false}
                 className="w-full bg-transparent tabular-nums outline-none"
                 placeholder="0"
               />
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{rupiah(draft.harga)}</span>
+              <span className="shrink-0 text-ms-xs text-muted-foreground tabular-nums">{rupiah(draft.harga)}</span>
             </label>
           </section>
 
           {/* Satuan & Jumlah */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Satuan & jumlah</h3>
-            <div className="grid grid-cols-2 gap-2">
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Satuan & jumlah</h3>
+            <div className="grid grid-cols-2 gap-ms-2">
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Satuan</span>
+                <span className="text-ms-2xs text-muted-foreground">Satuan</span>
                 <select
                   value={s}
                   onChange={(e) => {
@@ -218,54 +219,54 @@ export function ProductEditDrawer(props: Props) {
                     const cur = draft.jumlah ?? 1;
                     patch({ satuan: next, jumlah: Math.min(nb.max, Math.max(nb.min, cur)) });
                   }}
-                  className="mt-1 h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
                 >
                   {satuanList.map((sv) => <option key={sv} value={sv}>{sv}</option>)}
                 </select>
               </label>
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Jumlah</span>
-                <input
-                  type="number" inputMode="decimal"
-                  min={b.min} max={b.max} step={b.step}
-                  value={draft.jumlah ?? b.min}
-                  onChange={(e) => {
-                    const raw = Number(e.target.value);
+                <span className="text-ms-2xs text-muted-foreground">Jumlah</span>
+                <NumericTextField
+                  value={String(draft.jumlah ?? b.min)}
+                  onValueChange={(v) => {
+                    if (v === "") return;
+                    const raw = Number(v);
                     if (!Number.isFinite(raw)) return;
                     patch({ jumlah: Math.min(b.max, Math.max(b.min, raw)) });
                   }}
-                  className="mt-1 h-11 w-full rounded-md border bg-background px-3 text-sm tabular-nums outline-none focus:ring-2 focus:ring-ring"
+                  step={b.step}
+                  className="mt-1 h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm tabular-nums outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               {formatJumlah(draft.jumlah ?? b.min, s)} · Gram: 0.01–5000 · Kg: 0.001–5
             </p>
           </section>
 
           {/* Keterangan */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Keterangan</h3>
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Keterangan</h3>
             <textarea
               value={draft.keterangan}
               onChange={(e) => patch({ keterangan: e.target.value })}
               placeholder="Catatan untuk pelanggan…"
               rows={3}
-              className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full resize-none rounded-md border bg-background px-ms-3 py-ms-2 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             />
           </section>
 
           {/* Lokasi */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Lokasi</h3>
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Lokasi</h3>
             <input
               value={draft.lokasi}
               onChange={(e) => patch({ lokasi: e.target.value })}
               placeholder="Link lokasi (Google Maps)"
-              className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="h-11 w-full rounded-md border bg-background px-ms-3 text-ms-sm outline-none focus:ring-2 focus:ring-ring"
             />
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={ambilLokasi} className="h-10 rounded-md border text-[12px] font-medium hover:bg-accent">
+            <div className="grid grid-cols-2 gap-ms-2">
+              <button onClick={ambilLokasi} className="h-10 rounded-md border text-ms-xs font-medium hover:bg-accent">
                 📍 Ambil sekarang
               </button>
               <button
@@ -274,13 +275,13 @@ export function ProductEditDrawer(props: Props) {
                     .then(() => toast.success("Link disalin"))
                     .catch(() => toast.error("Gagal menyalin"));
                 }}
-                className="h-10 rounded-md border text-[12px] font-medium hover:bg-accent"
+                className="h-10 rounded-md border text-ms-xs font-medium hover:bg-accent"
               >
                 🔗 Salin link
               </button>
               {draft.lokasi && (
                 <a href={draft.lokasi} target="_blank" rel="noreferrer"
-                  className="col-span-2 inline-flex h-10 items-center justify-center rounded-md border text-[12px] font-medium hover:bg-accent">
+                  className="col-span-2 inline-flex h-10 items-center justify-center rounded-md border text-ms-xs font-medium hover:bg-accent">
                   🗺️ Buka peta
                 </a>
               )}
@@ -288,18 +289,18 @@ export function ProductEditDrawer(props: Props) {
           </section>
 
           {/* Status */}
-          <section className="space-y-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status pengiriman</h3>
-            <div className="grid grid-cols-2 gap-2">
+          <section className="space-ms-2">
+            <h3 className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Status pengiriman</h3>
+            <div className="grid grid-cols-2 gap-ms-2">
               <button
                 onClick={() => { update(draft.id, { status: "Belum Dikirim" }); patch({ status: "Belum Dikirim" }); }}
-                className={`h-10 rounded-md border text-[12px] font-medium ${!sent ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
+                className={`h-10 rounded-md border text-ms-xs font-medium ${!sent ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent"}`}
               >
                 📦 Belum
               </button>
               <button
                 onClick={() => { markSent(draft.id); patch({ status: "Sudah Dikirim" }); }}
-                className={`h-10 rounded-md border text-[12px] font-medium ${sent ? "border-[#128C7E] bg-[#25D366] text-white" : "hover:bg-accent"}`}
+                className={`h-10 rounded-md border text-ms-xs font-medium ${sent ? "border-wa-strong bg-wa text-wa-foreground" : "hover:bg-accent"}`}
               >
                 ✓ Terkirim
               </button>
@@ -321,24 +322,27 @@ export function ProductEditDrawer(props: Props) {
                   onOpenChange(false);
                 }
               }}
-              className="inline-flex h-10 w-full items-center justify-center rounded-md border border-destructive/40 text-[12px] font-semibold text-destructive hover:bg-destructive/10"
+              className="inline-flex h-10 w-full items-center justify-center rounded-md border border-destructive/40 text-ms-xs font-semibold text-destructive hover:bg-destructive/10"
             >
               🗑 Hapus produk
             </button>
           </section>
         </div>
 
-        <DrawerFooter className="sticky bottom-0 grid grid-cols-[auto_1fr] gap-2 border-t bg-card/95 pt-3 backdrop-blur">
+        <DrawerFooter
+          className="sticky bottom-0 grid grid-cols-[auto_1fr] gap-ms-2 border-t bg-card/95 pt-3 backdrop-blur"
+          style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem)` }}
+        >
           <button
             type="button"
             onClick={kirimWA}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] px-3 text-[13px] font-semibold text-white hover:opacity-90"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-wa px-ms-3 text-ms-sm font-semibold text-wa-foreground hover:opacity-90"
           >
             💬 WA
           </button>
           <button
             onClick={save}
-            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-ms-4 text-ms-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             💾 Simpan
           </button>

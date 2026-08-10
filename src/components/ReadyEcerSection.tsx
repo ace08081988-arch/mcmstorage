@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,25 +27,44 @@ import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus, type ChatShareDuplicateInfo } from "@/components/ChatSharePreviewDialog";
+import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ExternalLink, History, Undo2 } from "lucide-react";
-import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
-import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, type IdemRecord } from "@/lib/idempotency";
+import { ExternalLink, History, Undo2, ChevronDown } from "lucide-react";
+import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
+import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
+import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { confirm as confirmDialog } from "@/lib/confirm";
+import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
+import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
+import { withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
+// Cache URL foto per-path selama masa berlaku tanda tangan dikurangi margin.
+// Tanpa ini, setiap pemuatan ulang (realtime, refresh manual) meminta URL
+// satu per satu untuk seluruh foto — beban N+1 yang bikin layar terasa berat.
+const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
 async function resolveShotSignedUrl(
   path: string,
   source: "worker" | "self",
   expiresIn = 60 * 60,
 ): Promise<string | null> {
+  const cacheKey = `${source}:${path}`;
+  const hit = signedUrlCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.url;
   const primary = source === "worker" ? signedUrl : ecerSignedUrl;
   const secondary = source === "worker" ? ecerSignedUrl : signedUrl;
-  const a = await primary(path, expiresIn);
-  if (a) return a;
-  return await secondary(path, expiresIn);
+  const url = (await primary(path, expiresIn)) ?? (await secondary(path, expiresIn));
+  if (url) {
+    // Margin 5 menit supaya tidak memakai URL yang hampir kedaluwarsa.
+    signedUrlCache.set(cacheKey, { url, expiresAt: Date.now() + (expiresIn - 300) * 1000 });
+  }
+  return url;
 }
 
 type WorkerShot = {
@@ -77,6 +104,10 @@ type SyncStatus = {
 
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  // Navigasi bulk WA/Chat wajib lewat halaman /ecer supaya alur pembayaran
+  // (Lunas/Hutang/Bayar sebagian) tetap dipanggil sebelum WA/Chat benar-
+  // benar terkirim. Sama seperti tombol per-kartu "Kirim ke pembeli".
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>(() => {
     if (typeof window === "undefined") return "all";
@@ -89,6 +120,9 @@ export function ReadyEcerSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+  // Kiriman pegawai yang tidak cocok dengan judul Ecer manapun. Sebelumnya
+  // dilewati diam-diam sehingga admin mengira pegawai belum mengirim.
+  const [unmatched, setUnmatched] = useState<{ count: number; names: string[] }>({ count: 0, names: [] });
   // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
   const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
@@ -161,60 +195,105 @@ export function ReadyEcerSection() {
     }
   }
 
+  // Segarkan daftar & ringkasan saat transaksi Tunai / Harga Jual tercatat.
+  useOnDebtTx(useCallback(() => { void handleRefresh(); }, []));
+
   async function load() {
+    try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
-      const { data: titles } = await sb
-        .from("ecer_titles")
-        .select("id,name,target_grams,unit_label,warehouse_item_id")
-        .order("created_at", { ascending: false })
-        .limit(20);
+      const { data: titles } = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name: string; target_grams: number; unit_label: string; warehouse_item_id: string }>>>(
+        (signal) => sb
+          .from("ecer_titles")
+          .select("id,name,target_grams,unit_label,warehouse_item_id")
+          .order("created_at", { ascending: false })
+          .limit(20)
+          .abortSignal(signal),
+        "ready_ecer_titles",
+      );
       const list = (titles ?? []) as Array<{ id: string; name: string; target_grams: number; unit_label: string; warehouse_item_id: string }>;
       if (list.length === 0) { setRows([]); return; }
       const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
       const titleIds = list.map((t) => t.id);
       const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
       const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
-        sb.from("warehouse_items").select("id,name").in("id", itemIds),
-        sb.from("ecer_preparations")
-          .select("id,title_id,photo_path,location_url,created_at")
-          .in("title_id", titleIds)
-          .gte("created_at", sinceIso)
-          .order("created_at", { ascending: false })
-          .limit(200),
-        sb
-          .from("prep_submissions")
-          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
-          .gte("submitted_at", sinceIso)
-          .order("submitted_at", { ascending: false })
-          .limit(200),
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name: string }>>>(
+          (signal) => sb.from("warehouse_items").select("id,name").in("id", itemIds).abortSignal(signal),
+          "ready_ecer_items",
+        ),
+        // Filter server-side "aktif" WAJIB via helper — mengunci semantik
+        // "sold_at IS NULL" ke satu tempat (@/lib/prep-active-selector).
+        // Kalau definisi "aktif" bergeser di masa depan, satu edit di
+        // helper langsung merambat ke semua badge.
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; title_id: string; sold_at: string | null; photo_path: string | null; location_url: string | null; created_at: string }>>>(
+          (signal) => measureQuery(QueryMetricNames.ecerPrepAktif, () =>
+            withActivePrepsFilter(
+              sb.from("ecer_preparations")
+                .select("id,title_id,sold_at,photo_path,location_url,created_at")
+                .in("title_id", titleIds)
+            )
+              .gte("created_at", sinceIso)
+              .order("created_at", { ascending: false })
+              .limit(200)
+              .abortSignal(signal),
+            { titles: titleIds.length },
+          ) as Promise<SupabaseQueryResult<Array<{ id: string; title_id: string; sold_at: string | null; photo_path: string | null; location_url: string | null; created_at: string }>>>,
+          "ready_ecer_preps",
+        ),
+        withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string; sent_at: string | null; sent_channel: string | null; sent_maps_url: string | null }>>>(
+          (signal) => sb
+            .from("prep_submissions")
+            .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id,sent_at,sent_channel,sent_maps_url")
+            .gte("submitted_at", sinceIso)
+            .order("submitted_at", { ascending: false })
+            .limit(200)
+            .abortSignal(signal),
+          "ready_ecer_prep_submissions",
+        ),
         Promise.resolve({ data: null }),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
-      const countMap = new Map<string, number>();
-      for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
-        countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
-      }
+      // Badge "N kotak siap" WAJIB memakai selector tunggal supaya konsisten
+      // dengan ReadyRequestSection dan detail ecer. Filter `sold_at IS NULL`
+      // sudah diterapkan di server, tapi helper klien tetap dipakai sebagai
+      // sabuk pengaman.
+      const countMap = countActiveByTitle(
+        (preps ?? []) as Array<{ title_id: string; sold_at: string | null }>,
+      );
       void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
-      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
+      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string; sent_at: string | null; sent_channel: string | null; sent_maps_url: string | null }>;
+      // H6: SSOT sent tracker sekarang di DB (`prep_submissions.sent_at`).
+      // Hydrate overlay lokal supaya kartu tetap di "Terkirim" walau
+      // localStorage baru (ganti perangkat / clear cache).
+      hydrateSentFromDb(subRows.map((r) => ({
+        id: r.id,
+        sent_at: r.sent_at,
+        sent_channel: r.sent_channel,
+        sent_maps_url: r.sent_maps_url,
+      })));
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
-      type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null };
+      type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();
       if (taskItemIds.length > 0) {
-        const { data: tItems } = await sb
-          .from("prep_task_items")
-          .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label")
-          .in("id", taskItemIds);
+        const { data: tItems } = await withSupabaseQueryTimeout<SupabaseQueryResult<Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null }>>>(
+          (signal) => sb
+            .from("prep_task_items")
+            .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label,ecer_title_id")
+            .in("id", taskItemIds)
+            .abortSignal(signal),
+          "ready_ecer_task_items",
+        );
         metaByItemId = new Map(
-          ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null }>).map((i) => [
+          ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null }>).map((i) => [
             i.id,
             {
               name: (i.name_snapshot ?? "").trim().toLowerCase(),
               warehouse_item_id: i.warehouse_item_id,
               qty_requested: i.qty_requested,
               unit_label: (i.unit_label ?? "").trim().toLowerCase(),
+              ecer_title_id: i.ecer_title_id,
             } as TaskItemMeta,
           ])
         );
@@ -242,6 +321,7 @@ export function ReadyEcerSection() {
       // Track per-title match quality + per-product submission counts
       const matchStats = new Map<string, { strict: number; fallback_grams: number; fallback_wid: number }>();
       const subsPerWid = new Map<string, number>();
+      const unmatchedNames: string[] = [];
       for (const t of list) matchStats.set(t.id, { strict: 0, fallback_grams: 0, fallback_wid: 0 });
       for (const s of subRows) {
         const meta = metaByItemId.get(s.task_item_id);
@@ -252,19 +332,32 @@ export function ReadyEcerSection() {
         if (wid) subsPerWid.set(wid, (subsPerWid.get(wid) ?? 0) + 1);
         let titleId: string | undefined;
         let matchKind: "strict" | "fallback_grams" | "fallback_wid" | null = null;
-        if (wid) {
+        // Prefer explicit ecer_title_id captured when the task was created.
+        // This makes worker submissions land at the exact variant (1G/ST/SPR/GS)
+        // regardless of how many units were requested vs. the title's target_grams.
+        if (meta.ecer_title_id && titleIds.includes(meta.ecer_title_id)) {
+          titleId = meta.ecer_title_id;
+          matchKind = "strict";
+        } else if (wid) {
           const strictId = titleStrict.get(`${wid}|${g}|${u}`);
           if (strictId) { titleId = strictId; matchKind = "strict"; }
           else {
             const gId = titleByWidGrams.get(`${wid}|${g}`)?.[0];
             if (gId) { titleId = gId; matchKind = "fallback_grams"; }
-            else {
-              const wId = titleByWid.get(wid)?.[0];
-              if (wId) { titleId = wId; matchKind = "fallback_wid"; }
-            }
+            // Sengaja TIDAK fallback ke wid-only: kiriman pegawai yang
+            // ukuran/unit-nya tidak cocok dengan judul manapun harus jatuh
+            // ke panel Request, bukan menempel di judul acak (mis. SPR 0.2g
+            // ketika perintah pegawai sebenarnya 1 gram). Aturan ini
+            // menyelaraskan perintah pegawai dengan panel Ecer: cocok = tempel;
+            // tidak cocok = biarkan panel Request yang menangani.
           }
         }
-        if (!titleId) continue; // require warehouse match — name-only is unreliable
+        if (!titleId) {
+          // Tidak cocok dengan judul Ecer manapun. Kiriman ini ditangani panel
+          // Request; catat agar admin tahu fotonya sudah masuk, bukan hilang.
+          unmatchedNames.push(meta.name || "Tanpa nama");
+          continue; // require warehouse match — name-only is unreliable
+        }
         if (matchKind) {
           const st = matchStats.get(titleId);
           if (st) st[matchKind] += 1;
@@ -306,7 +399,15 @@ export function ReadyEcerSection() {
           );
         }
       }
-      await Promise.all(thumbJobs);
+      await Promise.race([
+        Promise.allSettled(thumbJobs),
+        new Promise<void>((resolve) => window.setTimeout(resolve, 5_000)),
+      ]);
+
+      setUnmatched({
+        count: unmatchedNames.length,
+        names: Array.from(new Set(unmatchedNames)).slice(0, 5),
+      });
 
       setRows(list.map((t) => {
         const shots = shotsByName.get(t.id) ?? [];
@@ -355,22 +456,45 @@ export function ReadyEcerSection() {
           },
         };
       }));
+    } catch (err) {
+      console.warn("[ready-ecer] gagal memuat, lepas skeleton", err);
+      setRows((prev) => prev ?? []);
+      setRealtimeStatus("offline");
+    }
   }
 
   useEffect(() => {
     void load();
+    // Beberapa foto yang diunggah beruntun menghasilkan banyak event dalam
+    // hitungan detik. Tanpa jeda, seluruh pemuatan (5 tabel + URL foto)
+    // diulang untuk tiap event dan layar terasa berat.
+    let bumpTimer: number | undefined;
+    let bumpRunning = false;
+    const runBump = async () => {
+      if (bumpRunning) return;
+      bumpRunning = true;
+      setSyncing(true);
+      try { await load(); } finally { setSyncing(false); bumpRunning = false; }
+    };
+    const bump = () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      bumpTimer = window.setTimeout(() => { void runBump(); }, 700);
+    };
     const ch = supabase
       .channel("ready-ecer:prep_submissions")
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, async () => {
-        setSyncing(true);
-        try { await load(); } finally { setSyncing(false); }
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, bump)
+      // H20: "siapkan sendiri" rows live in ecer_preparations — subscribe here too
+      // so paket yang dibuat dari flow ecer langsung ikut refresh.
+      .on("postgres_changes", { event: "*", schema: "public", table: "ecer_preparations" }, bump)
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setRealtimeStatus("live");
         else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeStatus("offline");
         else setRealtimeStatus("connecting");
       });
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      if (bumpTimer) window.clearTimeout(bumpTimer);
+      supabase.removeChannel(ch);
+    };
   }, []);
 
   const q = query.trim().toLowerCase();
@@ -401,11 +525,31 @@ export function ReadyEcerSection() {
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
+  // Ref ke root section supaya kita bisa scroll ke sini saat user datang
+  // dari toast "Lihat Riwayat" di /ecer.
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Buka tab Riwayat + scroll ke section bila datang dari toast atau bila
+  // ReadyEcerSection sudah ter-mount saat event di-dispatch.
+  useEffect(() => {
+    const openSent = () => {
+      setView("sent");
+      // Tunggu satu frame supaya konten tab Riwayat sudah render sebelum scroll.
+      requestAnimationFrame(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    if (consumeSentTabFlag()) openSent();
+    const handler = () => openSent();
+    window.addEventListener(SHOW_SENT_EVENT, handler);
+    return () => window.removeEventListener(SHOW_SENT_EVENT, handler);
+  }, []);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
   const [bulkPickChat, setBulkPickChat] = useState(false);
   const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
+  const [layout, setLayout] = useLayoutMode("readyEcer", "grid");
+  const ecerGridClass = layoutGridClass(layout);
   // Reset pilihan jika tab/view berganti.
   useEffect(() => {
     setSelectedIds(new Set());
@@ -421,11 +565,17 @@ export function ReadyEcerSection() {
   }
   const sentMap = useSentShots();
   const sentDetails = useSentDetails();
+  // Kartu yang di-"Hapus dari Riwayat" — dikecualikan dari daftar Aktif
+  // maupun Riwayat sampai user meng-unhide (misalnya lewat clear registry).
+  const hiddenSet = useHiddenSent();
   // Split each row's shots into active vs sent based on local history.
   const rowsForView = (filtered ?? []).map((r) => {
     const active: WorkerShot[] = [];
     const sent: WorkerShot[] = [];
-    for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
+    for (const s of r.worker_shots) {
+      if (hiddenSet.has(s.id)) continue;
+      (sentMap.has(s.id) ? sent : active).push(s);
+    }
     const sentTimes = sent.map((s) => sentMap.get(s.id) ?? 0).filter((n) => n > 0);
     const lastSentAt = sentTimes.length ? Math.max(...sentTimes) : null;
     return {
@@ -439,43 +589,108 @@ export function ReadyEcerSection() {
   const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
   const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
   const rowsAfterView = rowsForView.filter((r) => (view === "sent" ? r._sentCount > 0 : true));
+  // ------------------------------------------------------------------
+  // Highlight kartu yang BARU dipindah ke Riwayat. Alur:
+  //   1. Deteksi sentinel `max(sentMap.at)` bertambah dibanding baseline
+  //      saat komponen mount → berarti ada shot yang baru saja ditandai
+  //      terkirim (baik dari toast /ecer, tombol WhatsApp, atau tab lain).
+  //   2. Temukan row (Judul Ecer) yang memiliki shot tersebut.
+  //   3. Kalau user belum di tab "Riwayat terkirim", buka tab-nya dulu
+  //      (pending), lalu ketika view === "sent" — set justMovedRowId
+  //      supaya kartu scroll ke tengah viewport + ring emerald.
+  //   4. Highlight auto-hilang setelah 2.6 detik.
+  // ------------------------------------------------------------------
+  const initialMaxAtRef = useRef<number | null>(null);
+  const [justMovedRowId, setJustMovedRowId] = useState<string | null>(null);
+  const [pendingHighlightRowId, setPendingHighlightRowId] = useState<string | null>(null);
+  useEffect(() => {
+    let maxAt = 0;
+    let newestId: string | null = null;
+    for (const [id, at] of sentMap) {
+      if (at > maxAt) { maxAt = at; newestId = id; }
+    }
+    if (initialMaxAtRef.current === null) {
+      initialMaxAtRef.current = maxAt;
+      return;
+    }
+    if (maxAt <= initialMaxAtRef.current) return;
+    initialMaxAtRef.current = maxAt;
+    if (!newestId) return;
+    const rowsAll = filtered ?? [];
+    const row = rowsAll.find((r) => r.worker_shots.some((s) => s.id === newestId));
+    if (!row) return;
+    if (view === "sent") {
+      setJustMovedRowId(row.id);
+    } else {
+      setPendingHighlightRowId(row.id);
+      setView("sent");
+      requestAnimationFrame(() => {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [sentMap, filtered, view]);
+  useEffect(() => {
+    if (view === "sent" && pendingHighlightRowId) {
+      setJustMovedRowId(pendingHighlightRowId);
+      setPendingHighlightRowId(null);
+    }
+  }, [view, pendingHighlightRowId]);
+  useEffect(() => {
+    if (!justMovedRowId) return;
+    const t = setTimeout(() => setJustMovedRowId(null), 2600);
+    return () => clearTimeout(t);
+  }, [justMovedRowId]);
   const syncCounts = (rows ?? []).reduce<Record<SyncLevel, number>>((acc, r) => {
     acc[r.sync.level] = (acc[r.sync.level] ?? 0) + 1;
     return acc;
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
   const visible = rowsAfterView.filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
-  function formatRelative(ts: number, now: number): string {
-    const diff = Math.max(0, now - ts);
-    const sec = Math.floor(diff / 1000);
-    if (sec < 10) return "baru saja";
-    if (sec < 60) return `${sec} dtk lalu`;
-    const min = Math.floor(sec / 60);
-    if (min < 60) return `${min} mnt lalu`;
-    const hr = Math.floor(min / 60);
-    if (hr < 24) return `${hr} jam lalu`;
-    return new Date(ts).toLocaleString();
-  }
   function formatAbsolute(ts: number): string {
     return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }
 
   return (
-    <div className="space-y-1.5">
+    <div ref={rootRef} className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        <div className="flex items-center gap-ms-1.5">
+          <p className="text-ms-2xs uppercase tracking-wide text-muted-foreground">
             Produk Eceran Siap Kirim
           </p>
           <RealtimeBadge status={realtimeStatus} syncing={syncing || refreshing} />
         </div>
-        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
+        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }} className="inline-flex items-center gap-0.5 text-ms-2xs font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
+      {/* Layout toggle (grid/list/table) — desktop only. Di mobile user
+          harian cukup dengan satu layout list yang paling jelas. */}
+      <div className="hidden justify-end sm:flex">
+        <LayoutModeToggle mode={layout} onChange={setLayout} />
+      </div>
+
+      {unmatched.count > 0 && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex flex-wrap items-center justify-between gap-ms-2 rounded-md border border-warning/30 bg-warning/10 px-ms-2 py-1.5 text-ms-2xs text-warning"
+        >
+          <span className="min-w-0">
+            {unmatched.count} kiriman pegawai belum cocok dengan judul eceran
+            {unmatched.names.length > 0 ? ` (${unmatched.names.join(", ")})` : ""} — fotonya tidak hilang, cek panel Request.
+          </span>
+          <Link
+            to="/request"
+            search={{ title: undefined, highlight: undefined, send: undefined }}
+            className="shrink-0 font-medium underline underline-offset-2"
+          >
+            Buka Request
+          </Link>
+        </div>
+      )}
 
       {rows && rows.length > 0 && (
-        <div className="flex gap-1.5">
+        <div className="flex gap-ms-1.5">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -483,7 +698,7 @@ export function ReadyEcerSection() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Cari judul, produk, kategori (1g, ST, SPR, GS), atau ID…"
-              className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
+              className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-ms-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
             />
             {query && (
               <button
@@ -499,7 +714,7 @@ export function ReadyEcerSection() {
           <select
             value={productFilter}
             onChange={(e) => setProductFilter(e.target.value)}
-            className="h-8 max-w-[40%] rounded-md border bg-card px-2 text-xs outline-none focus:border-primary/40"
+            className="h-8 max-w-[40%] rounded-md border bg-card px-ms-2 text-ms-xs outline-none focus:border-primary/40"
             aria-label="Filter produk"
           >
             <option value="all">Semua produk</option>
@@ -514,13 +729,13 @@ export function ReadyEcerSection() {
         <div
           role="status"
           aria-live="polite"
-          className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+          className={`flex items-center justify-between gap-ms-2 rounded-md border px-ms-2 py-1 text-ms-2xs transition-colors ${
             crossTabSync.status === "pending"
-              ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
+              : "border-success/30 bg-success/10 text-success dark:text-success"
           }`}
         >
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 items-center gap-ms-2">
             {crossTabSync.status === "pending" ? (
               <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
             ) : (
@@ -547,8 +762,8 @@ export function ReadyEcerSection() {
       )}
 
       {syncedFromDetail && productFilter !== "all" && (
-        <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex items-center justify-between gap-ms-2 rounded-md border border-primary/30 bg-primary/5 px-ms-2 py-1 text-ms-2xs text-primary">
+          <div className="flex min-w-0 flex-1 items-center gap-ms-2">
             <span className="truncate">
               Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
             </span>
@@ -558,7 +773,7 @@ export function ReadyEcerSection() {
                 title={new Date(lastSyncedAt).toLocaleString()}
                 className="shrink-0 tabular-nums opacity-70"
               >
-                · {formatRelative(lastSyncedAt, nowTick)}
+                · {fmtAgo(lastSyncedAt, nowTick)}
               </time>
             )}
           </div>
@@ -584,11 +799,11 @@ export function ReadyEcerSection() {
       )}
 
       {rows && rows.length > 0 && (
-        <div className="flex items-center gap-1 rounded-md border bg-card/50 p-0.5">
+        <div className="flex items-center gap-ms-1 rounded-md border bg-card/50 p-0.5">
           <button
             type="button"
             onClick={() => setView("active")}
-            className={`flex-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 rounded px-ms-2 py-1 text-ms-2xs font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "active"}
           >
             Aktif <span className="ml-1 font-mono opacity-80">{totalActive}</span>
@@ -596,7 +811,7 @@ export function ReadyEcerSection() {
           <button
             type="button"
             onClick={() => setView("sent")}
-            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 inline-flex items-center justify-center gap-ms-1 rounded px-ms-2 py-1 text-ms-2xs font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "sent"}
           >
             <History className="h-3 w-3" /> Riwayat terkirim <span className="ml-0.5 font-mono opacity-80">{totalSent}</span>
@@ -605,6 +820,7 @@ export function ReadyEcerSection() {
       )}
 
       {rows && rows.length > 0 && visible.length > 0 && (
+        <div className="hidden sm:block">
         <BulkToolbar
           selectMode={selectMode}
           setSelectMode={(v) => { setSelectMode(v); if (!v) setSelectedIds(new Set()); }}
@@ -615,27 +831,44 @@ export function ReadyEcerSection() {
           busy={bulkBusy}
           onBulkWA={async () => {
             if (selectedIds.size === 0) return;
-            setBulkBusy("wa");
-            try {
-              const ids = [...selectedIds];
-              for (const id of ids) {
-                await new Promise<void>((resolve) => {
-                  const handler = () => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); };
-                  window.addEventListener(`ecer-bulk-done:${id}`, handler);
-                  window.dispatchEvent(new CustomEvent(`ecer-bulk:wa:${id}`));
-                  // safety timeout
-                  setTimeout(() => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); }, 60000);
-                });
-              }
-            } finally {
-              setBulkBusy(null);
-              setSelectedIds(new Set());
-              setSelectMode(false);
+            // WA/Chat bulk lama mengirim langsung tanpa lewat verifikasi
+            // pembayaran. Sekarang disamakan dengan alur Siapkan Sendiri &
+            // tombol per-kartu: WAJIB satu judul, lalu diarahkan ke /ecer
+            // dengan `send=1` supaya SendEcerPrepsDialog terbuka dan owner
+            // mengisi metode bayar sebelum WA benar-benar terkirim.
+            if (selectedIds.size > 1) {
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              return;
             }
+            const id = [...selectedIds][0];
+            const row = (rows ?? []).find((r) => r.id === id);
+            if (!row) return;
+            setSelectedIds(new Set());
+            setSelectMode(false);
+            void navigate({
+              to: "/ecer",
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+            });
           }}
-          onBulkChatPick={() => setBulkPickChat(true)}
+          onBulkChatPick={() => {
+            if (selectedIds.size === 0) return;
+            if (selectedIds.size > 1) {
+              toast.info("Verifikasi bayar hanya bisa satu judul sekaligus agar pencatatan penjualan tetap eksplisit.");
+              return;
+            }
+            const id = [...selectedIds][0];
+            const row = (rows ?? []).find((r) => r.id === id);
+            if (!row) return;
+            setSelectedIds(new Set());
+            setSelectMode(false);
+            void navigate({
+              to: "/ecer",
+              search: { item: row.warehouse_item_id, title: row.id, highlight: undefined, send: "1" },
+            });
+          }}
           onBulkDelete={() => setBulkConfirm("delete")}
         />
+        </div>
       )}
 
       <PickChatConversationDialog
@@ -702,10 +935,10 @@ export function ReadyEcerSection() {
       </AlertDialog>
 
       {rows === null ? (
-        <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
+        <div className={ecerGridClass} aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2.5">
-              <div className="flex items-center gap-1.5">
+            <div key={i} className="flex flex-col gap-ms-1 rounded-md border bg-card px-ms-3 py-ms-2.5">
+              <div className="flex items-center gap-ms-1.5">
                 <Skeleton className="h-3.5 w-3.5 rounded" />
                 <Skeleton className="h-3 w-2/3" />
               </div>
@@ -717,20 +950,20 @@ export function ReadyEcerSection() {
       ) : rows.length === 0 ? (
         <Link
           to="/ecer"
-          search={{ item: undefined, title: undefined, highlight: undefined }}
-          className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
+          search={{ item: undefined, title: undefined, highlight: undefined, send: undefined }}
+          className="flex flex-col items-center gap-ms-1.5 rounded-md border border-dashed bg-card/50 p-ms-5 text-center text-ms-2xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
             <Scale className="h-4 w-4 text-primary" />
           </div>
           <span className="font-medium text-foreground">Belum ada Judul Ecer</span>
           <span>Tap untuk membuat yang pertama.</span>
-          <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+          <span className="mt-0.5 inline-flex items-center gap-ms-1 rounded-full bg-primary/10 px-ms-2 py-0.5 text-primary">
             <Plus className="h-3 w-3" /> Buat sekarang
           </span>
         </Link>
       ) : filtered && filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
+        <div className="flex flex-col items-center gap-ms-2 rounded-md border border-dashed bg-card/50 p-ms-4 text-center text-ms-2xs text-muted-foreground">
           <span>Tidak ada hasil yang cocok.</span>
           {activeFilters > 0 && (
             <button
@@ -743,13 +976,13 @@ export function ReadyEcerSection() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className={ecerGridClass}>
           {visible.length === 0 ? (
-            <div className="col-span-2 flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+            <div className="col-span-full flex flex-col items-center gap-ms-1 rounded-md border border-dashed bg-card/50 p-ms-5 text-center text-ms-2xs text-muted-foreground">
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
-                  <span>Belum ada riwayat terkirim. Tekan tombol WA pada kartu aktif — kiriman akan pindah ke sini.</span>
+                  <span>Belum ada riwayat terkirim. Tekan tombol WhatsApp pada kartu aktif — kiriman akan pindah ke sini.</span>
                 </>
               ) : (
                 <span>Semua kartu sudah dipindah ke Riwayat terkirim.</span>
@@ -767,9 +1000,15 @@ export function ReadyEcerSection() {
                 view={view}
                 lastSentAt={r._lastSentAt}
                 sentDetails={sentDetails}
+                now={nowTick}
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
+                justMoved={justMovedRowId === r.id}
                 onToggleSelect={() => toggleSelect(r.id)}
+                onEnterSelect={() => {
+                  setSelectMode(true);
+                  setSelectedIds(new Set([r.id]));
+                }}
               />
             ))
           )}
@@ -802,7 +1041,7 @@ function BulkToolbar({
         <button
           type="button"
           onClick={() => setSelectMode(true)}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-foreground hover:bg-accent"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border bg-card px-ms-2 text-ms-2xs font-semibold text-foreground hover:bg-accent"
         >
           <ListChecks className="h-3 w-3" /> Pilih beberapa
         </button>
@@ -810,43 +1049,41 @@ function BulkToolbar({
     );
   }
   return (
-    <div className="flex flex-wrap items-center gap-1 rounded-md border bg-primary/5 px-1.5 py-1">
+    <div className="flex flex-wrap items-center gap-ms-1 rounded-md border bg-primary/5 px-1.5 py-1">
       <button
         type="button"
         onClick={() => {
           if (allSelected) setSelectedIds(new Set());
           else setSelectedIds(new Set(visibleIds));
         }}
-        className="inline-flex h-7 items-center gap-1 rounded-md bg-card px-2 text-[11px] font-semibold hover:bg-accent"
+        className="inline-flex h-7 items-center gap-ms-1 rounded-md bg-card px-ms-2 text-ms-2xs font-semibold hover:bg-accent"
       >
         {allSelected ? <CheckSquare className="h-3 w-3 text-primary" /> : <Square className="h-3 w-3" />}
         {allSelected ? "Lepas semua" : "Pilih semua"}
       </button>
-      <span className="text-[11px] font-semibold text-primary">{count} terpilih</span>
-      <div className="ml-auto flex flex-wrap items-center gap-1">
-        <button
-          type="button"
+      <span className="text-ms-2xs font-semibold text-primary">{count} terpilih</span>
+      <div className="ml-auto flex flex-wrap items-center gap-ms-1">
+        <WaShareButton
+          size="sm"
+          variant="solid"
+          disabled={count === 0 || busy !== null}
+          busy={busy === "wa"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkWA}
+        />
+        <ChatShareButton
+          size="sm"
+          variant="solid"
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
-        >
-          {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-          WA
-        </button>
-        <button
-          type="button"
+          busy={busy === "chat"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkChatPick}
-          disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-        >
-          {busy === "chat" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-          Chat
-        </button>
+        />
         <button
           type="button"
           onClick={onBulkDelete}
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-[11px] font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-destructive/40 bg-destructive/10 px-ms-2 text-ms-2xs font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
         >
           {busy === "delete" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
           Hapus
@@ -855,12 +1092,12 @@ function BulkToolbar({
           type="button"
           onClick={() => setSelectMode(false)}
           disabled={busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-ms-1 rounded-md border bg-card px-ms-2 text-ms-2xs font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
         >
           <X className="h-3 w-3" /> Batal
         </button>
       </div>
-      <p className="basis-full text-[11px] text-muted-foreground">
+      <p className="basis-full text-ms-2xs text-muted-foreground">
         {view === "sent"
           ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
           : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
@@ -877,18 +1114,18 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
   const order: SyncLevel[] = ["ok", "fallback_grams", "fallback_wid", "self_only", "no_match", "no_wid", "empty"];
   const failing = counts.no_match + counts.no_wid;
   return (
-    <div className="rounded-md border bg-card/50 p-1.5">
+    <div className="rounded-md border bg-card/50 p-ms-1.5">
       <div className="mb-1 flex items-center justify-between px-0.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
+        <span className="text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
         {failing > 0 && (
-          <span className="text-[11px] font-semibold text-destructive">{failing} gagal</span>
+          <span className="text-ms-2xs font-semibold text-destructive">{failing} gagal</span>
         )}
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-ms-1">
         <button
           type="button"
           onClick={() => onChange("all")}
-          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+          className={`inline-flex items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
         >
           Semua <span className="font-mono">{total}</span>
         </button>
@@ -902,7 +1139,7 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
               key={lvl}
               type="button"
               onClick={() => onChange(isActive ? "all" : lvl)}
-              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
+              className={`inline-flex items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
               aria-pressed={isActive}
             >
               <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -918,17 +1155,17 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
   if (syncing) {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-1.5 text-[11px] font-medium leading-none text-primary">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-primary/10 px-1.5 text-ms-2xs font-medium leading-none text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Memperbarui…
       </span>
     );
   }
   if (status === "live") {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-1.5 text-[11px] font-medium leading-none text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-success/10 px-1.5 text-ms-2xs font-medium leading-none text-success dark:text-success">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-success" />
         </span>
         Live
       </span>
@@ -936,13 +1173,13 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   }
   if (status === "offline") {
     return (
-      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-destructive/10 px-1.5 text-[11px] font-medium leading-none text-destructive">
+      <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-destructive/10 px-1.5 text-ms-2xs font-medium leading-none text-destructive">
         <Radio className="h-2.5 w-2.5" /> Offline
       </span>
     );
   }
   return (
-    <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-1.5 text-[11px] font-medium leading-none text-muted-foreground">
+    <span className="inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-muted px-1.5 text-ms-2xs font-medium leading-none text-muted-foreground">
       <Loader2 className="h-2.5 w-2.5 animate-spin" /> Menyambung…
     </span>
   );
@@ -957,86 +1194,132 @@ type EcerCardProps = {
   view: "active" | "sent";
   lastSentAt: number | null;
   sentDetails: Map<string, SentEntry>;
+  now: number;
   selectMode?: boolean;
   selected?: boolean;
+  justMoved?: boolean;
   onToggleSelect?: () => void;
+  onEnterSelect?: () => void;
 };
 function EcerCard(props: EcerCardProps) {
   return <EcerCardImpl {...props} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
-  ok:              { label: "Tersinkron",        cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-  fallback_grams:  { label: "Cocok ukuran",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
-  fallback_wid:    { label: "Cocok produk",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
+  ok:              { label: "Tersinkron",        cls: "bg-success/10 text-success dark:text-success", dot: "bg-success" },
+  fallback_grams:  { label: "Cocok ukuran",      cls: "bg-warning/10 text-warning dark:text-warning",       dot: "bg-warning" },
+  fallback_wid:    { label: "Cocok produk",      cls: "bg-warning/10 text-warning dark:text-warning",       dot: "bg-warning" },
   self_only:       { label: "Mandiri saja",      cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400",             dot: "bg-sky-500" },
   no_match:        { label: "Tidak cocok",       cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
   no_wid:          { label: "Tanpa produk",      cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
   empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
 };
 
-function fmtAgo(ts: number, now = Date.now()): string {
-  const diff = Math.max(0, now - ts);
+/**
+ * Format timestamp relatif ("Terkirim · N mnt lalu") dengan pembulatan
+ * kanonik ala WhatsApp / Twitter:
+ *   - Clock skew (ts di masa depan) → "baru saja".
+ *   - < 10 dtk           → "baru saja"
+ *   - < 60 dtk           → "N dtk lalu"       (floor: 59.9s → 59)
+ *   - < 60 mnt           → "N mnt lalu"       (floor pada menit penuh)
+ *   - < 24 jam           → "N jam lalu"
+ *   - < 7 hari           → "N hari lalu"
+ *   - ≥ 7 hari           → tanggal absolut ("12 Jul 2026")
+ * Menerima `now` eksplisit supaya SEMUA badge di satu render pakai
+ * referensi waktu yang sama (konsistensi antar-item).
+ */
+function fmtAgo(ts: number, now: number = Date.now()): string {
+  const diff = now - ts;
+  if (diff < 10_000) return "baru saja"; // termasuk clock skew (diff < 0)
   const sec = Math.floor(diff / 1000);
-  if (sec < 10) return "baru saja";
   if (sec < 60) return `${sec} dtk lalu`;
   const min = Math.floor(sec / 60);
   if (min < 60) return `${min} mnt lalu`;
   const hr = Math.floor(min / 60);
   if (hr < 24) return `${hr} jam lalu`;
   const day = Math.floor(hr / 24);
-  return `${day} hari lalu`;
+  if (day < 7) return `${day} hari lalu`;
+  return new Date(ts).toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount, now, onResend, resendLabel }: {
   status: "idle" | "sending" | "success" | "failed" | "cancelled";
   error: string | null;
   view: "active" | "sent";
   lastSentAt: number | null;
   sentCount: number;
+  now: number;
+  onResend?: () => void;
+  resendLabel?: string;
 }) {
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   if (status === "sending") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Mengirim…
       </span>
     );
   }
   if (status === "failed") {
     return (
+      <span className="inline-flex items-center gap-ms-1">
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
+          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-destructive">
             <XCircle className="h-2.5 w-2.5" /> Gagal kirim
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
-          <div className="font-semibold text-foreground">Gagal mengirim ke WhatsApp</div>
+        <PopoverContent align="start" className="w-64 space-y-1 p-ms-2.5 text-ms-2xs" onClick={stop}>
+          <div className="font-semibold text-foreground">Gagal kirim via WhatsApp</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
-          <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
+          {onResend ? (
+            <button
+              type="button"
+              onClick={(e) => { stop(e); onResend(); }}
+              className="mt-1 inline-flex w-full items-center justify-center gap-ms-1 rounded-md bg-primary px-ms-2 py-1 text-ms-2xs font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <RefreshCw className="h-3 w-3" /> {resendLabel || "Kirim ulang"}
+            </button>
+          ) : (
+            <p className="text-muted-foreground">Tekan tombol WhatsApp lagi untuk mencoba ulang.</p>
+          )}
         </PopoverContent>
       </Popover>
+      {onResend && (
+        <button
+          type="button"
+          onClick={(e) => { stop(e); onResend(); }}
+          className="inline-flex items-center gap-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-primary hover:bg-primary/20"
+          title={resendLabel || "Kirim ulang"}
+        >
+          <RefreshCw className="h-2.5 w-2.5" /> Kirim ulang
+        </button>
+      )}
+      </span>
     );
   }
   if (status === "cancelled") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold text-muted-foreground">
         <CircleSlash className="h-2.5 w-2.5" /> Dibatalkan
       </span>
     );
   }
   if (status === "success" || (view === "sent" && lastSentAt)) {
-    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
+    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!, now)}`;
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-success/10 px-1.5 py-0.5 text-ms-2xs font-semibold text-success dark:text-success" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
       </span>
     );
   }
   if (view === "active" && sentCount === 0) {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-ms-1 rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-medium text-muted-foreground">
         <span className="h-1 w-1 rounded-full bg-muted-foreground/60" /> Belum dikirim
       </span>
     );
@@ -1056,8 +1339,8 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
     .sort((a, b) => b.entry.at - a.entry.at);
   if (rows.length === 0) return null;
   return (
-    <div className="rounded-md border bg-muted/40 p-1.5">
-      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-md border bg-muted/40 p-ms-1.5">
+      <div className="mb-1 flex items-center gap-ms-1 text-ms-2xs font-semibold uppercase tracking-wide text-muted-foreground">
         <History className="h-2.5 w-2.5" /> Detail kiriman ({rows.length})
       </div>
       <ul className="space-y-1">
@@ -1069,12 +1352,12 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
           });
           const maps = entry.mapsUrl ?? shot.location_url ?? null;
           return (
-            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[11px] leading-snug">
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
+            <li key={shot.id} className="flex flex-wrap items-center gap-ms-1 text-ms-2xs leading-snug">
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-success/10 text-success dark:text-success"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
                 {channel === "chat" ? "Chat" : "WA"}
               </span>
-              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-success/10 text-success dark:text-success" : "bg-destructive/10 text-destructive"}`}>
                 {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
                 {ok ? "Sukses" : "Gagal"}
               </span>
@@ -1109,7 +1392,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls}`}
+          className={`inline-flex w-fit items-center gap-ms-1 rounded-full px-1.5 py-0.5 text-ms-2xs font-semibold ${meta.cls}`}
           aria-label={`Status sinkron: ${meta.label}`}
         >
           <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -1118,7 +1401,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-64 space-y-2 p-2.5 text-[11px]"
+        className="w-64 space-ms-2 p-ms-2.5 text-ms-2xs"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="font-semibold text-foreground">Status sinkron foto pegawai</div>
@@ -1142,11 +1425,93 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect }: EcerCardProps) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, now, selectMode = false, selected = false, justMoved = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
+  const cardRootRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
+  const openCardDetail = () => {
+    void navigate({
+      to: "/ecer",
+      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined },
+    });
+  };
+  // Di tab "Riwayat terkirim": tap kartu HANYA expand/collapse detail
+  // pengiriman di dalam kartu. Tidak pernah pindah ke /ecer supaya user
+  // bisa memeriksa riwayat tanpa keluar dari halaman index.
+  const handleCardOpen = () => {
+    if (view === "sent") {
+      setExpanded((v) => !v);
+    } else {
+      openCardDetail();
+    }
+  };
+  useEffect(() => {
+    if (justMoved && cardRootRef.current) {
+      // Delay 1 frame supaya layout tab "Riwayat" sudah selesai render.
+      requestAnimationFrame(() => {
+        cardRootRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+  }, [justMoved]);
   const [sending, setSending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  function startLongPress() {
+    if (selectMode) return;
+    longPressFired.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      try { navigator.vibrate?.(30); } catch { /* noop */ }
+      setMenuOpen(true);
+    }, 500);
+  }
+  function cancelLongPress() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }
+  function doDelete() {
+    if (shots.length > 0) {
+      if (view === "sent") {
+        unmarkSent(shots.map((s) => s.id));
+        toast.success("Kartu dikembalikan ke daftar aktif.");
+      } else {
+        markSent(shots.map((s) => s.id), {
+          channel: "wa",
+          mapsUrl: null,
+          status: "success",
+          idemKey: `manual-skip-${r.id}-${Date.now()}`,
+        });
+        toast.success("Kartu ditandai terkirim & dipindah ke Riwayat.");
+      }
+    } else {
+      toast.info("Belum ada kiriman pegawai untuk kartu ini.");
+    }
+    setConfirmDelete(false);
+  }
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
+  const [waPreviewOpen, setWaPreviewOpen] = useState(false);
+  const [waPreviewText, setWaPreviewText] = useState("");
+  const [waPreviewLocation, setWaPreviewLocation] = useState<string | null>(null);
+  const [waPreviewPhotoCount, setWaPreviewPhotoCount] = useState(0);
+  // Ringkasan pengelompokan atomik per folder untuk ditampilkan di pratinjau.
+  const [waPreviewFolders, setWaPreviewFolders] = useState<
+    Array<{ label: string; count: number; included: boolean }>
+  >([]);
+  // Snapshot ekspektasi (folder ids + jumlah foto) yang dihitung saat pratinjau
+  // dibuka. Dipakai sebagai gerbang validasi tepat sebelum kirim WA agar
+  // pratinjau dan pesan yang benar-benar terkirim TIDAK PERNAH beda —
+  // bila `shots` berubah antara klik "Pratinjau" dan "Kirim WA", alur kirim
+  // dibatalkan dan operator diminta membuka pratinjau ulang.
+  const [waPreviewExpected, setWaPreviewExpected] = useState<
+    { folderIds: string[]; photoCount: number } | null
+  >(null);
+  // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
+  // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
+  const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
@@ -1173,7 +1538,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const extra = Math.max(0, shots.length - thumbs.length);
   const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
 
-  async function sendWA(e: React.MouseEvent) {
+  async function sendWA(
+    e: React.MouseEvent,
+    expected?: { folderIds: string[]; photoCount: number } | null,
+  ) {
     e.preventDefault();
     e.stopPropagation();
     if (sending) return;
@@ -1181,7 +1549,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
-    const take = shots.slice(0, 6);
+    setLastSendChannel("wa");
+    // Urutan kanonik: sort by id (naik) sebelum slice — sehingga urutan
+    // shots di UI (yang bisa berubah karena pegawai baru menyerobot masuk
+    // atau resort submitted_at) tidak mempengaruhi identitas idempotency
+    // maupun urutan foto/teks yang dikirim.
+    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
+    const take = canonicalShots.slice(0, 6);
     const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
@@ -1197,20 +1571,102 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setSendStatus("sending");
     setSendError(null);
     try {
-      // Bangun daftar slot foto (max 10). Pertahankan slot yang gagal agar bisa di-retry
-      // dari pratinjau tanpa mengulang seluruh alur kirim.
+      // Bangun daftar slot foto secara ATOMIK per folder kiriman: setiap shot
+      // (satu folder kiriman pegawai) dikirim utuh — semua foto di folder itu
+      // ikut, atau folder tsb tidak ikut sama sekali. Ini menjaga janji
+      // "1 folder = 1 kiriman", walau operator menandai beberapa foto atau
+      // slicing 10 memotong di tengah folder. Pertahankan slot yang gagal
+      // agar bisa di-retry dari pratinjau tanpa mengulang alur kirim.
       type Slot = { path: string; name: string; source: typeof take[number]["source"] };
-      const allSlots: Slot[] = [];
+      const folderGroups: Array<{ shot: typeof take[number]; slots: Slot[] }> = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
-        for (let pi = 0; pi < paths.length; pi++) {
-          allSlots.push({ path: paths[pi], name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`, source: s.source });
+        ])).filter(Boolean).sort();
+        if (paths.length === 0) continue;
+        const group: Slot[] = paths.map((p, pi) => ({
+          path: p,
+          name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`,
+          source: s.source,
+        }));
+        folderGroups.push({ shot: s, slots: group });
+      }
+      const MAX_SLOTS = 10;
+      const freshSlots: Slot[] = [];
+      const includedShots: typeof take = [];
+      for (const g of folderGroups) {
+        // Selalu sertakan folder pertama secara utuh, bahkan bila jumlah foto
+        // > MAX_SLOTS — supaya kiriman tidak terpotong di tengah folder.
+        if (freshSlots.length === 0) {
+          freshSlots.push(...g.slots); includedShots.push(g.shot); continue;
+        }
+        if (freshSlots.length + g.slots.length > MAX_SLOTS) break;
+        freshSlots.push(...g.slots); includedShots.push(g.shot);
+      }
+      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
+      // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
+      // foto di pesan WA konsisten dengan lampiran.
+      const folderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      // Gerbang validasi: bila pratinjau menyertakan snapshot ekspektasi,
+      // pastikan folder yang benar-benar akan terkirim (id + jumlah foto)
+      // SAMA PERSIS dengan yang ditampilkan di pratinjau. Kalau tidak,
+      // batalkan sebelum share sheet terbuka dan minta operator membuka
+      // pratinjau ulang — mencegah mismatch pratinjau vs pesan terkirim.
+      if (expected) {
+        const actualIds = [...includedShots.map((s) => s.id)].sort();
+        const idsMatch =
+          actualIds.length === expected.folderIds.length &&
+          actualIds.every((id, i) => id === expected.folderIds[i]);
+        const countMatch = freshSlots.length === expected.photoCount;
+        if (!idsMatch || !countMatch) {
+          toast.warning(
+            `Kiriman berubah sejak pratinjau (folder ${expected.folderIds.length}→${actualIds.length}, foto ${expected.photoCount}→${freshSlots.length}). Buka pratinjau ulang.`,
+          );
+          setSending(false);
+          setSendStatus("idle");
+          return;
         }
       }
-      const slots = allSlots.slice(0, 10);
+      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
+      const omitted = shots.length - includedShots.length;
+      const freshText = [
+        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${freshSlots.length} foto terlampir:`,
+        ...lines,
+        ...(firstLocationFresh ? [``, `📍 Lokasi: ${firstLocationFresh}`] : []),
+      ].join("\n");
+      const freshFingerprint = payloadFingerprint({
+        channel: "wa",
+        text: freshText,
+        url: firstLocationFresh ?? null,
+        expectedCount: freshSlots.length,
+        slots: freshSlots.map((s) => ({ path: s.path, name: s.name })),
+      });
+      // Snapshot idempoten — pengiriman kedua/ketiga menggunakan urutan &
+      // teks yang persis sama seperti pengiriman pertama, walaupun `shots`
+      // di UI sudah berubah di antara klik.
+      const snapshot = await getOrCreateSendSnapshot(idemKey, async () => ({
+        fingerprint: freshFingerprint,
+        orderedIds: take.map((s) => s.id),
+        text: freshText,
+        locationUrl: firstLocationFresh ?? null,
+        slotFileNames: freshSlots.map((s) => s.name),
+        slotPaths: freshSlots.map((s) => s.path),
+        expectedCount: freshSlots.length,
+        meta: { destination: r.name },
+      }));
+      // Rekonstruksi slots dari snapshot supaya path/nama/order = kali pertama.
+      // `source` diambil dari take saat ini bila cocok, fallback ke shot pertama.
+      const idToSource = new Map(canonicalShots.map((s) => [s.id, s.source]));
+      const slots: Slot[] = snapshot.slotPaths.map((p, i) => {
+        const name = snapshot.slotFileNames[i] ?? `${r.name}-${i + 1}.jpg`;
+        const ownerId = snapshot.orderedIds.find((id) => name.includes(id.slice(0, 6)));
+        const source = (ownerId && idToSource.get(ownerId)) || take[0]?.source || "worker";
+        return { path: p, name, source };
+      });
       async function fetchSlots(list: Slot[]): Promise<{ ok: File[]; failed: Slot[] }> {
         const ok: File[] = [];
         const failed: Slot[] = [];
@@ -1232,26 +1688,33 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         pendingSlots = failed;
         return ok;
       };
-      if (files.length === 0) {
-        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
+      // Peringatan detail: jelaskan foto mana yang gagal dibaca dari bucket
+      // agar operator tahu folder + urutan foto yang tidak ikut terlampir.
+      const describeFailedSlot = (sl: Slot) => {
+        const ownerId = snapshot.orderedIds.find((id) => sl.name.includes(id.slice(0, 6)));
+        const owner = includedShots.find((s) => s.id === ownerId) ?? take.find((s) => s.id === ownerId);
+        const label = owner ? folderName(owner) : (ownerId ? `Kiriman ${ownerId.slice(0, 6)}` : "Kiriman");
+        const idx = sl.name.match(/-(\d+)\.jpg$/)?.[1] ?? "?";
+        return `${label} · foto #${idx}`;
+      };
+      if (initial.failed.length > 0) {
+        const details = initial.failed.map(describeFailedSlot);
+        const preview = details.slice(0, 4).join(", ");
+        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
+        const msg = files.length === 0
+          ? `Semua ${initial.failed.length} foto gagal dibaca: ${preview}${more}`
+          : `${initial.failed.length}/${expectedCount} foto gagal dibaca: ${preview}${more}`;
+        toast.warning(msg, {
+          description: "Bisa dicoba ulang dari tombol Kirim ulang setelah share sheet muncul.",
+        });
+        appendSendLog(idemKey, { kind: "error", label: `Foto gagal dibaca (${initial.failed.length}/${expectedCount})`, detail: details.join(" · ") });
       }
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const text = [
-        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
-        ...lines,
-      ].join("\n");
-      // Fingerprint payload WA: caption + link + daftar slot foto (path & nama).
-      // Stabil terhadap urutan dan dipakai untuk membandingkan dengan payload
-      // kiriman sebelumnya pada idempotency key yang sama.
-      const waFingerprint = payloadFingerprint({
-        channel: "wa",
-        text,
-        url: firstLocation ?? null,
-        expectedCount,
-        slots: slots.map((s) => ({ path: s.path, name: s.name })),
-      });
+      // Payload TETAP diambil dari snapshot — pengiriman kedua/ketiga wajib
+      // menghasilkan teks, urutan foto, dan link lokasi yang identik dengan
+      // pengiriman pertama.
+      const text = snapshot.text;
+      const firstLocation = snapshot.locationUrl;
+      const waFingerprint = snapshot.fingerprint;
       // Ringkasan payload — disimpan di record idempotency agar saat klik
       // ganda terdeteksi, banner pratinjau bisa menampilkan perbedaan field
       // (caption / foto / lokasi / tujuan) dibanding kiriman sebelumnya.
@@ -1304,7 +1767,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         if (r0.status === "shared" || r0.status === "fallback") {
           clearIdem(idemKey);
           setIdem(idemKey, "done", undefined, waFingerprint, waSummary);
-          markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+          // Pindah ke Riwayat terkirim SATU entri per folder yang benar-benar
+          // ikut (includedShots), bukan `take` mentah — supaya folder yang
+          // dilewati batas 10 foto tidak salah-tandai sebagai terkirim.
+          markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
           res = { status: "shared" };
         } else if (r0.status === "cancelled") {
           throw new Error("__cancelled__");
@@ -1324,7 +1790,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           const r0 = await callShare();
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
-            markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+            // Idem: hanya folder yang benar-benar ikut yang pindah ke Riwayat.
+            markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
             appendSendLog(idemKey, { kind: "step", label: r0.status === "shared" ? "WA dibagikan (Web Share / native)" : "WA dibuka via fallback wa.me" });
             appendSendLog(idemKey, { kind: "outcome", label: "Selesai" });
             return { status: "shared" as const, error: undefined as string | undefined };
@@ -1354,12 +1821,75 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
-  function undoSent(e: React.MouseEvent) {
+  function openWAPreview(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    unmarkSent(shots.map((s) => s.id));
-    toast.message("Dikembalikan ke daftar aktif.");
+    if (sending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
+    const take = canonicalShots.slice(0, 6);
+    // Cerminkan logika atomik-per-folder yang sama dengan sendWA agar
+    // hitungan "kiriman" & daftar item di pratinjau selalu = yang benar-
+    // benar akan terkirim.
+    const MAX_SLOTS = 10;
+    const folderGroups: Array<{ shot: typeof take[number]; count: number }> = [];
+    for (const s of take) {
+      const paths = new Set<string>([
+        ...((s.photo_paths ?? []) as string[]),
+        ...(s.photo_path ? [s.photo_path] : []),
+      ]);
+      const n = Array.from(paths).filter(Boolean).length;
+      if (n > 0) folderGroups.push({ shot: s, count: n });
+    }
+    const includedShots: typeof take = [];
+    let photoCount = 0;
+    for (const g of folderGroups) {
+      if (photoCount === 0) { photoCount += g.count; includedShots.push(g.shot); continue; }
+      if (photoCount + g.count > MAX_SLOTS) break;
+      photoCount += g.count; includedShots.push(g.shot);
+    }
+    // Ringkasan folder untuk pratinjau: tandai mana yang ikut / tidak.
+    const includedIds = new Set(includedShots.map((s) => s.id));
+    const folderName = (s: typeof take[number]) =>
+      s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+    const folderSummary = folderGroups.map((g, i) => ({
+      label: `Folder ${i + 1}: ${folderName(g.shot)} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+      count: g.count,
+      included: includedIds.has(g.shot.id),
+    }));
+    const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
+    const omitted = shots.length - includedShots.length;
+    const text = [
+      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+      `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${photoCount} foto terlampir:`,
+      ...lines,
+      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
+    ].join("\n");
+    setWaPreviewText(text);
+    setWaPreviewLocation(firstLocation);
+    setWaPreviewPhotoCount(photoCount);
+    setWaPreviewFolders(folderSummary);
+    setWaPreviewExpected({
+      folderIds: [...includedShots.map((s) => s.id)].sort(),
+      photoCount,
+    });
+    setWaPreviewOpen(true);
   }
+
+  async function confirmSendWA() {
+    const expected = waPreviewExpected;
+    setWaPreviewOpen(false);
+    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+    try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
+  }
+
+  // Aksi "Kembalikan ke aktif" untuk kartu Riwayat dilakukan lewat
+  // DropdownMenu (memakai `doDelete()` yang sudah handle unmarkSent).
+  // Fungsi inline `undoSent` lama dihapus supaya tidak ada handler duplikat.
 
   async function prepareChat(conversationId: string, convTitle: string) {
     if (chatSending || chatPreparing) return;
@@ -1367,6 +1897,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    setLastSendChannel("chat");
     const take = shots.slice(0, 6);
     const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
@@ -1385,41 +1916,69 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const chatShots: { id: string; file: File; caption?: string }[] = [];
       let attemptedPaths = 0;
       const thumbUrls: string[] = [];
+      const MAX_CHAT_SLOTS = 10;
+      let foldersIncluded = 0;
+      const includedShots: typeof take = [];
+      const failedPhotos: Array<{ shotId: string; folder: string; index: number }> = [];
+      const chatFolderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
         ])).filter(Boolean);
         if (paths.length === 0) continue;
+        // Atomik per folder: jangan mulai folder baru bila akan memotong
+        // sebelum semua foto terkirim. Folder pertama tetap disertakan
+        // utuh (bahkan bila > MAX_CHAT_SLOTS).
+        if (foldersIncluded > 0 && chatShots.length + paths.length > MAX_CHAT_SLOTS) break;
+        const folderStart = chatShots.length;
         for (let pi = 0; pi < paths.length; pi++) {
           const p = paths[pi];
           attemptedPaths++;
           const url = await resolveShotSignedUrl(p, s.source, 600);
-          if (!url) continue;
+          if (!url) { failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 }); continue; }
           const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
           if (f) {
             chatShots.push({ id: `${s.id}:${pi}`, file: f });
             if (thumbUrls.length < 4) thumbUrls.push(url);
+          } else {
+            failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 });
           }
-          if (chatShots.length >= 10) break;
         }
-        if (chatShots.length >= 10) break;
+        if (chatShots.length > folderStart) { foldersIncluded++; includedShots.push(s); }
       }
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
+      // terlampir, agar hitungan "kiriman" dan daftar foto konsisten.
+      const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
+      const folderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const omitted = shots.length - includedShots.length;
       const caption = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${chatShots.length} foto terlampir:`,
+        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${chatShots.length} foto terlampir:`,
         ...lines,
       ].join("\n");
       toast.dismiss(tid);
+      if (failedPhotos.length > 0) {
+        const details = failedPhotos.map((f) => `${f.folder} · foto #${f.index}`);
+        const preview = details.slice(0, 4).join(", ");
+        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
+        toast.warning(
+          `${failedPhotos.length}/${attemptedPaths} foto gagal dibaca: ${preview}${more}`,
+          { description: "Foto tersebut tidak akan ikut dilampirkan ke Chat." },
+        );
+      }
       const preview: ChatSharePreviewData = {
         conversationTitle: convTitle,
         caption,
         photoCount: chatShots.length,
+        folderCount: foldersIncluded,
         thumbs: thumbUrls,
         totalPhotos: chatShots.length,
         missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
+        failedPhotoLabels: failedPhotos.map((f) => `${f.folder} · foto #${f.index}`),
         mapsUrl: firstLocation,
       };
       // Fingerprint payload Chat: caption + conv + lokasi + daftar id foto.
@@ -1465,7 +2024,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         caption,
         locationUrl: firstLocation,
         chatShots,
-        markIds: take.map((s) => s.id),
+        // Pindah ke Riwayat terkirim = SATU entri per folder yang benar-benar
+        // ikut atomically (includedShots), bukan `take` mentah.
+        markIds: includedShots.map((s) => s.id),
         preview,
         duplicate,
         previousLog,
@@ -1487,6 +2048,45 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   async function confirmChatSend(opts?: { force?: boolean }) {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    // Gerbang validasi: recompute folder atomik & jumlah foto dari `shots`
+    // saat ini menggunakan logika yang sama dengan prepareChat. Bila hasilnya
+    // berbeda dari snapshot pratinjau (ctx.markIds / ctx.chatShots), batalkan
+    // agar pratinjau tidak pernah menyesatkan pesan yang benar-benar terkirim.
+    {
+      const takeNow = shots.slice(0, 6);
+      const MAX_CHAT_SLOTS = 10;
+      const includedNowIds: string[] = [];
+      let photosNow = 0;
+      let foldersIncluded = 0;
+      for (const s of takeNow) {
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        if (foldersIncluded > 0 && photosNow + paths.length > MAX_CHAT_SLOTS) break;
+        photosNow += paths.length;
+        foldersIncluded++;
+        includedNowIds.push(s.id);
+      }
+      const expectedIds = [...ctx.markIds].sort();
+      const actualIds = [...includedNowIds].sort();
+      const idsMatch =
+        actualIds.length === expectedIds.length &&
+        actualIds.every((id, i) => id === expectedIds[i]);
+      // ctx.chatShots.length adalah jumlah foto yang benar-benar berhasil di-fetch;
+      // jumlah *paths* saat pratinjau = photosNow saat itu. Bandingkan dengan
+      // `photosNow` hasil recompute untuk mendeteksi perubahan sumber.
+      const countMatch = photosNow === ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0);
+      if (!idsMatch || !countMatch) {
+        toast.warning(
+          `Kiriman berubah sejak pratinjau (folder ${expectedIds.length}→${actualIds.length}, foto ${ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0)}→${photosNow}). Buka pratinjau ulang.`,
+        );
+        setChatPreviewOpen(false);
+        setChatPreview(null);
+        return;
+      }
+    }
     // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
     // record lama agar withIdempotency tidak men-skip eksekusi.
     if (opts?.force) {
@@ -1562,6 +2162,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       setSendStatus("success");
       const msgCount = "messageCount" in res ? res.messageCount ?? 0 : 0;
       appendSendLog(ctx.idemKey, { kind: "outcome", label: `Selesai · ${msgCount} pesan terkirim` });
+      // Pindahkan kartu (foto + link) ke Riwayat terkirim secara otomatis,
+      // agar simetris dengan alur WA. Tanpa ini, kiriman via Chat tidak
+      // pernah pindah ke tab Riwayat sehingga terasa "belum terkirim".
+      if (ctx.markIds.length > 0) {
+        markSent(ctx.markIds, {
+          channel: "chat",
+          mapsUrl: ctx.locationUrl ?? null,
+          status: "success",
+          idemKey: ctx.idemKey,
+        });
+      }
       setChatStatus((prev) => prev ? {
         ...prev,
         outcome: {
@@ -1651,9 +2262,43 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
 
   return (
     <div
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md ${
-        selectMode ? "cursor-pointer" : ""
-      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      ref={cardRootRef}
+      data-just-moved={justMoved ? "1" : undefined}
+      role={selectMode ? undefined : "button"}
+      tabIndex={selectMode ? undefined : 0}
+      aria-label={
+        selectMode
+          ? `${selected ? "Lepas pilihan" : "Pilih"} kartu ${r.name}`
+          : view === "sent"
+            ? `${expanded ? "Tutup" : "Buka"} detail riwayat kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${shots.length} kiriman terkirim`
+            : `Buka detail kartu ${r.name} — ${r.product_name} ${r.target_grams}${unit}, ${r.prep_count} kotak siap`
+      }
+      aria-describedby={`ecer-card-desc-${r.id}`}
+      aria-pressed={selectMode ? selected : undefined}
+      aria-expanded={selectMode ? undefined : view === "sent" ? expanded : undefined}
+      onKeyDown={
+        selectMode
+          ? undefined
+          : (e) => {
+              if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+              const target = e.target as HTMLElement | null;
+              // Bila fokus ada di anak interaktif (tombol menu ⋮, tombol Kirim,
+              // link Maps, checkbox pilih), biarkan elemen tersebut menangani
+              // Enter/Space sesuai perannya sendiri.
+              if (target && target !== e.currentTarget && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [role='checkbox'], [data-radix-collection-item]")) {
+                return;
+              }
+              // Cegah scroll halaman saat Space ditekan di container kartu.
+              e.preventDefault();
+              e.stopPropagation();
+              handleCardOpen();
+            }
+      }
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm outline-none transition hover:border-primary/60 hover:shadow-md active:scale-[0.997] active:bg-accent/30 focus-visible:z-10 focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer ${
+        selected ? "ring-2 ring-primary ring-offset-1" : ""
+      } ${
+        justMoved ? "ring-2 ring-success ring-offset-2 shadow-lg shadow-success/20 animate-pulse" : ""
+      }`}
       onClickCapture={
         selectMode
           ? (e) => {
@@ -1661,13 +2306,201 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               e.stopPropagation();
               onToggleSelect?.();
             }
-          : undefined
+          : (e) => {
+              if (longPressFired.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                longPressFired.current = false;
+                return;
+              }
+              // Buat seluruh kartu bisa di-tap untuk membuka detail /ecer,
+              // termasuk area SentDetailList / thumbnails / badge yang tidak
+              // dibungkus <Link>. Anak-anak interaktif (dropdown menu, tombol
+              // Kirim, popover, anchor Maps) sudah memanggil stopPropagation
+              // sendiri, jadi tidak akan sampai ke sini.
+              const target = e.target as HTMLElement | null;
+              if (target && target.closest("a, button, input, textarea, select, [role='button'], [role='menuitem'], [data-radix-collection-item]")) {
+                return;
+              }
+              handleCardOpen();
+            }
       }
+      onPointerDown={selectMode ? undefined : startLongPress}
+      onPointerUp={cancelLongPress}
+      onPointerLeave={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onContextMenu={(e) => { e.preventDefault(); setMenuOpen(true); }}
     >
+      <span id={`ecer-card-desc-${r.id}`} className="sr-only">
+        {view === "sent"
+          ? `Riwayat terkirim. ${shots.length} kiriman pegawai${
+              thumbs[0]?.location_url ? ", ada lokasi GPS" : ""
+            }. Tekan Enter untuk membuka detail di Ecer, atau tekan menu untuk kembalikan ke aktif.`
+          : `Daftar aktif. ${r.prep_count} kotak siap${
+              shots.length > 0 ? `, ${shots.length} foto dari pegawai` : ", belum ada foto pegawai"
+            }. Tekan Enter untuk membuka detail di Ecer.`}
+      </span>
+      {!selectMode && (
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Menu aksi kartu ${r.name}`}
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(true); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="absolute right-1.5 top-1.5 z-30 inline-flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-sm transition hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuLabel className="truncate">{r.name}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {view === "sent" ? (
+              <>
+                <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
+                  <Undo2 className="mr-2 h-3.5 w-3.5" />
+                  Kembalikan ke aktif
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onSelect={async () => {
+                    setMenuOpen(false);
+                    if (shots.length === 0) {
+                      toast.info("Tidak ada kiriman untuk dihapus.");
+                      return;
+                    }
+                    const ok = await confirmDialog({
+                      title: `Hapus kartu "${r.name}" dari Riwayat?`,
+                      description:
+                        "Kartu akan disembunyikan dari Riwayat terkirim dan tidak akan kembali ke daftar Aktif. Foto pegawai tetap ada di database.",
+                      confirmText: "Hapus",
+                      destructive: true,
+                    });
+                    if (!ok) return;
+                    hideSent(shots.map((s) => s.id));
+                    toast.success("Kartu dihapus dari Riwayat.");
+                  }}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  Hapus dari Riwayat
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <DropdownMenuItem onSelect={() => { setMenuOpen(false); setConfirmDelete(true); }} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                Hapus (tandai terkirim)
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onSelect={() => {
+                setMenuOpen(false);
+                onEnterSelect?.();
+              }}
+              className="hidden sm:flex"
+            >
+              <CheckSquare className="mr-2 h-3.5 w-3.5" />
+              Pilih beberapa
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setMenuOpen(false);
+                onRefresh();
+              }}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Segarkan
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus kartu "{r.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kartu akan ditandai terkirim tanpa mengirim ke WA atau Chat, lalu pindah ke tab Riwayat terkirim. Anda bisa mengembalikannya dari sana.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete}>Ya, hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={waPreviewOpen} onOpenChange={setWaPreviewOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()} className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pratinjau pesan WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-ms-2.5">
+            <div className="flex items-center justify-between text-ms-xs font-semibold">
+              <span className="text-foreground">Ringkasan payload</span>
+              <span className="text-primary">
+                {waPreviewFolders.filter((f) => f.included).length} kiriman · {waPreviewPhotoCount} foto terlampir
+              </span>
+            </div>
+          </div>
+          {waPreviewFolders.length > 0 && (
+            <div className="rounded-md border bg-background p-ms-2">
+              <div className="mb-1 flex items-center justify-between text-ms-2xs font-semibold">
+                <span>Pengelompokan folder</span>
+                <span className="text-muted-foreground">
+                  {waPreviewFolders.filter((f) => f.included).length}/{waPreviewFolders.length} folder · {waPreviewPhotoCount} foto
+                </span>
+              </div>
+              <ul className="space-y-0.5 text-ms-2xs">
+                {waPreviewFolders.map((f, i) => (
+                  <li
+                    key={i}
+                    className={`flex items-center justify-between gap-ms-2 rounded px-1.5 py-1 ${
+                      f.included ? "bg-success/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
+                    }`}
+                  >
+                    <span className="truncate">{f.label}</span>
+                    <span className="shrink-0 tabular-nums">{f.count} foto{f.included ? "" : " · dilewati"}</span>
+                  </li>
+                ))}
+              </ul>
+              {waPreviewFolders.some((f) => !f.included) && (
+                <p className="mt-1 text-ms-2xs text-muted-foreground">
+                  Folder dilewati karena batas 10 foto per pengiriman. Kirim sisanya di batch berikutnya.
+                </p>
+              )}
+            </div>
+          )}
+          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-ms-3">
+            <pre className="whitespace-pre-wrap break-words font-sans text-ms-xs leading-relaxed text-foreground">{waPreviewText}</pre>
+            {waPreviewLocation && (
+              <a
+                href={waPreviewLocation}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-primary underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MapPin className="h-3 w-3" /> Buka lokasi di peta
+              </a>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendWA} className="bg-wa text-wa-foreground hover:bg-wa/90">
+              <MessageCircle className="mr-1 h-3.5 w-3.5" /> Kirim WA
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {selectMode && (
         <button
           type="button"
-          aria-label={selected ? "Lepas pilihan" : "Pilih kartu"}
+          aria-label={selected ? `Lepas pilihan kartu ${r.name}` : `Pilih kartu ${r.name}`}
+          aria-pressed={selected}
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(); }}
           className={`absolute left-1.5 top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition ${
             selected
@@ -1679,46 +2512,87 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         </button>
       )}
       {shots.length > 0 ? (
+        view === "sent" ? (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v); }}
+          aria-label={`${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name} — ${shots.length} foto${thumbs[0]?.location_url ? ", dengan lokasi GPS" : ""}`}
+          aria-expanded={expanded}
+          className="relative block aspect-[4/3] w-full overflow-hidden bg-muted text-left"
+        >
+          {thumbs[0]?.thumb_url ? (
+            <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          ) : (
+            <div
+              aria-hidden
+              className="h-full w-full animate-pulse bg-gradient-to-br from-muted via-muted/60 to-muted"
+            />
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
+              <Scale className="h-2.5 w-2.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
+            </div>
+          </div>
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-info/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
+            {shots.length} foto
+          </span>
+          {thumbs[0]?.location_url && (
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-ms-2xs font-medium leading-none text-white backdrop-blur-sm">
+              <MapPin className="h-2.5 w-2.5" /> GPS
+            </span>
+          )}
+        </button>
+        ) : (
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+          aria-label={`Buka foto ${r.name} — ${shots.length} foto${thumbs[0]?.location_url ? ", dengan lokasi GPS" : ""}`}
           className="relative block aspect-[4/3] overflow-hidden bg-muted"
         >
           {thumbs[0]?.thumb_url ? (
             <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
+            <div
+              aria-hidden
+              className="h-full w-full animate-pulse bg-gradient-to-br from-muted via-muted/60 to-muted"
+            />
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-            <div className="flex min-w-0 items-center gap-1 text-[11px] font-medium leading-none text-white/90">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-1 text-ms-2xs font-medium leading-none text-white/90">
               <Scale className="h-2.5 w-2.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-[11px] font-semibold leading-none text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-ms-1 whitespace-nowrap rounded-full bg-info/95 px-1.5 text-ms-2xs font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-ms-2xs font-medium leading-none text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
         </Link>
+        )
       ) : null}
 
-      <div className="flex flex-col gap-1.5 p-2">
+      <div className="flex flex-col gap-ms-1.5 p-ms-2">
         <Link
           to="/ecer"
-          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+          data-testid={`ready-ecer-card-${r.id}`}
+          aria-label={view === "sent" ? `${expanded ? "Tutup" : "Buka"} detail riwayat ${r.name}` : `Buka detail ${r.name} di halaman Ecer`}
+          aria-expanded={view === "sent" ? expanded : undefined}
+          onClick={view === "sent" ? (e) => { e.preventDefault(); e.stopPropagation(); setExpanded((v) => !v); } : undefined}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="flex min-w-0 items-center gap-ms-1.5">
               <Scale className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-xs font-semibold leading-snug" title={r.name}>{r.name}</span>
+              <span className="min-w-0 flex-1 truncate text-ms-xs font-semibold leading-snug" title={r.name}>{r.name}</span>
             </div>
           )}
-          <span className="block min-w-0 truncate text-[11px] font-medium leading-none text-foreground/80" title={`${r.product_name} · ${r.target_grams} ${unit}`}>
+          <span className="block min-w-0 truncate text-ms-2xs font-medium leading-none text-foreground/80" title={`${r.product_name} · ${r.target_grams} ${unit}`}>
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
@@ -1728,91 +2602,89 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             view={view}
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
+            now={now}
+            resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
+            onResend={
+              sending || chatSending || chatPreparing
+                ? undefined
+                : () => {
+                    const fake = {
+                      preventDefault() {},
+                      stopPropagation() {},
+                    } as unknown as React.MouseEvent;
+                    if (lastSendChannel === "chat") {
+                      // Buka lagi pratinjau Chat terakhir tanpa menandai foto ulang.
+                      // chatPreview + snapshot idempotency masih tersedia — pengguna
+                      // cukup menekan "Kirim" lagi di dialog.
+                      if (chatPreview) {
+                        setChatPreviewOpen(true);
+                      } else {
+                        toast.info("Pilih tujuan Chat lagi untuk mengirim ulang.");
+                        setPickChatOpen(true);
+                      }
+                    } else {
+                      // WA: buka pratinjau supaya folder yang sama (via snapshot
+                      // idempotency) dikirim ulang tanpa foto perlu ditandai ulang.
+                      openWAPreview(fake);
+                    }
+                  }
+            }
           />
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className="flex w-fit min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground hover:bg-accent"
-                title={`Cocok: produk + ${r.target_grams}${unit}`}
-              >
-                <span className="h-1 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
-                <span className="min-w-0 flex-1 truncate whitespace-nowrap">
-                  Cocok: produk + {r.target_grams}{unit}
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-64 space-y-2 p-2.5 text-[11px]"
-              onClick={(e) => e.stopPropagation()}
+          {/* Popover "Cocok: produk + Xg" dihapus dari kartu Beranda — info
+              sama sudah tampil di baris produk di atas. Aturan pencocokan +
+              ID mentah tetap tersedia di halaman detail /ecer bila diperlukan
+              untuk audit. Ini bagian dari simplifikasi "1 kartu = 1 aksi". */}
+          <span className="text-ms-2xs leading-snug">
+            <span
+              data-testid={`ready-ecer-badge-${r.id}`}
+              data-badge-count={r.prep_count}
+              className={r.prep_count > 0 ? "font-semibold text-success dark:text-success" : "text-muted-foreground"}
             >
-              <div className="font-semibold text-foreground">Aturan cocok foto</div>
-              <dl className="space-y-1 text-muted-foreground">
-                <div className="flex gap-1">
-                  <dt className="shrink-0">warehouse_item_id:</dt>
-                  <dd className="break-all font-mono text-foreground/90">{r.warehouse_item_id}</dd>
-                </div>
-                <div className="flex gap-1"><dt>ukuran:</dt><dd className="text-foreground/90">{r.target_grams}</dd></div>
-                <div className="flex gap-1"><dt>unit:</dt><dd className="text-foreground/90">{unit}</dd></div>
-                <div className="flex gap-1">
-                  <dt className="shrink-0">title_id:</dt>
-                  <dd className="break-all font-mono text-foreground/90">{r.id}</dd>
-                </div>
-              </dl>
-              <p className="text-muted-foreground">
-                Fallback: warehouse_item_id + ukuran (unit apa pun), lalu warehouse_item_id saja.
-              </p>
-              <Link
-                to="/ecer"
-                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
-                className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
-              >
-                <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer
-              </Link>
-            </PopoverContent>
-          </Popover>
-          <span className="text-[11px] leading-snug">
-            <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
               {r.prep_count} kotak siap
             </span>
           </span>
+          {view === "sent" && (
+            <span className="mt-0.5 inline-flex items-center gap-ms-1 self-start rounded-full bg-muted px-1.5 py-0.5 text-ms-2xs font-semibold text-muted-foreground">
+              <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              {expanded ? "Sembunyikan detail" : `Lihat detail kiriman (${shots.length})`}
+            </span>
+          )}
         </Link>
 
+        {view === "sent" && expanded && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <SentDetailList shots={shots} details={sentDetails} />
+          </div>
+        )}
+
         {shots.length === 0 ? (
-          <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 py-2.5 text-center">
-          {syncing || refreshing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-          ) : (
-            <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
-          <span className="text-[11px] font-medium leading-snug text-muted-foreground">
-            {syncing || refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
-          </span>
-          <span className="text-[11px] leading-snug text-muted-foreground">
-            {realtimeStatus === "live"
-              ? "Menunggu foto pegawai — akan muncul otomatis."
-              : realtimeStatus === "offline"
-              ? "Realtime terputus. Tap Segarkan untuk memuat ulang."
-              : "Menyambung ke realtime…"}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
-            disabled={refreshing}
-            className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[11px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Menyegarkan…" : "Segarkan"}
-          </button>
-        </div>
+          <div className="flex items-center gap-ms-1.5 rounded-md border border-dashed bg-muted/30 px-ms-2 py-1.5">
+            {syncing || refreshing ? (
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />
+            ) : (
+              <Inbox className="h-3 w-3 shrink-0 text-muted-foreground" />
+            )}
+            <span className="min-w-0 flex-1 truncate text-ms-2xs text-muted-foreground">
+              {syncing || refreshing
+                ? "Memuat kiriman…"
+                : realtimeStatus === "offline"
+                ? "Realtime terputus"
+                : "Menunggu foto pegawai"}
+            </span>
+            <button
+              type="button"
+              aria-label={`Segarkan kiriman pegawai untuk ${r.name}`}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
+              disabled={refreshing}
+              title="Segarkan"
+              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         ) : (
           <>
-          {view === "sent" && (
-            <SentDetailList shots={shots} details={sentDetails} />
-          )}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-ms-1.5">
             {thumbs.slice(1, 4).map((s) => (
               <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
                 {s.thumb_url ? (
@@ -1821,41 +2693,69 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </div>
             ))}
             {extra > 0 && (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[11px] font-semibold text-muted-foreground ring-1 ring-border">
+              <div
+                role="img"
+                aria-label={`${extra} foto lainnya`}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-ms-2xs font-semibold text-muted-foreground ring-1 ring-border"
+              >
                 +{extra}
               </div>
             )}
-            <button
-              type="button"
-              onClick={sendWA}
-              disabled={sending}
-              aria-label="Kirim ke WhatsApp"
-              className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
-            >
-              <MessageCircle className="h-3 w-3" />
-              {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickChatOpen(true); }}
-              disabled={chatSending || chatPreparing}
-              aria-label="Kirim via Chat aplikasi"
-              title="Kirim ke percakapan dalam aplikasi"
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
-            >
-              {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-              {chatPreparing ? "Siap…" : "Chat"}
-            </button>
-            {view === "sent" && (
-              <button
-                type="button"
-                onClick={undoSent}
-                aria-label="Kembalikan ke aktif"
-                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
+            <div className="ml-auto flex w-full items-center justify-end gap-ms-1.5 sm:w-auto">
+            {/*
+              Semua alur "Kirim ke pembeli" wajib lewat verifikasi
+              pembayaran (Lunas / Hutang / Bayar sebagian) di halaman detail
+              /ecer. Tombol WA/Chat share cepat lama dihapus dari dashboard
+              agar tidak ada jalur tembus yang melewati sistem pembayaran.
+              Owner tetap bisa memakai fitur share foto pegawai langsung
+              dari detail judul kalau memang perlu koordinasi internal.
+            */}
+            {view === "sent" ? null : r.prep_count > 0 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Pangkas gate: langsung buka halaman detail dengan
+                    // flag send=1. Modal pembayaran akan langsung terbuka
+                    // di /ecer tanpa dialog perantara.
+                    navigate({
+                      to: "/ecer",
+                      search: { item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" },
+                    });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-label={`Verifikasi bayar untuk ${r.prep_count} kotak ${r.name}`}
+                  title="Buka dialog verifikasi pembayaran — stok & lunas/hutang dicatat sebelum kirim ke pembeli"
+                  className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-wa px-ms-2 text-ms-2xs font-semibold text-wa-foreground shadow-sm transition hover:bg-wa/90"
+                >
+                  <Send className="h-3 w-3" /> Verifikasi bayar
+                </button>
+                <span
+                  className="inline-flex h-6 w-6 shrink-0 cursor-help items-center justify-center rounded-full border bg-background text-ms-2xs font-medium text-muted-foreground"
+                  title="Alur: verifikasi pembayaran (lunas/hutang/bayar sebagian) dulu, baru kirim ke pembeli via WA/Chat."
+                  aria-label="Info alur verifikasi bayar"
+                >
+                  ⓘ
+                </span>
+              </>
+            ) : (
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: undefined }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                aria-label={`Siapkan minimal 1 kotak untuk ${r.name} sebelum bisa dikirim`}
+                title="Belum ada kotak siap — buka detail untuk menyiapkan kotak dulu"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md border border-dashed border-primary/50 bg-primary/5 px-ms-2 text-ms-2xs font-semibold text-primary shadow-sm transition hover:bg-primary/10"
               >
-                <Undo2 className="h-3 w-3" /> Aktif
-              </button>
+                <Send className="h-3 w-3 opacity-70" /> Siapkan kotak →
+              </Link>
             )}
+            {/* Aksi "Kembalikan ke aktif" dan "Hapus dari Riwayat" untuk
+                view === "sent" dikonsolidasi ke DropdownMenu di kanan atas
+                kartu — tombol inline "Aktif" dihapus supaya tidak duplikat. */}
+            </div>
           </div>
           </>
         )}
@@ -1884,6 +2784,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         currentFingerprint={chatPreview?.fingerprint}
         currentSummary={chatPreview?.summary}
         idemIdsKey={chatPreview?.idemIdsKey}
+        conversationId={chatPreview?.conversationId ?? null}
+        peer={chatPreview ? { name: chatPreview.conversationTitle } : null}
       />
     </div>
   );

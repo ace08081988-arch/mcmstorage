@@ -40,3 +40,22 @@ test-results/
 .env
 .env.*
 !.env.example
+test-artifacts/
+
+bundle-report/stats.html
+bun.lockb
+
+# Android signing (JANGAN commit — keystore/password tidak pernah masuk repo)
+*.jks
+*.keystore
+*.p12
+*.pfx
+keystore.properties
+key.properties
+android/keystore.properties
+android/key.properties
+android/signing.properties
+android/local.properties
+android/google-services.json
+signing/
+dist/qa/

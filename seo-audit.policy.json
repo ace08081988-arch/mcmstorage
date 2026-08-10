@@ -1,0 +1,40 @@
+{
+  "$comment": "Whitelist/blacklist audit head & SEO. include kosong = semua rute publik diaudit. Pola glob: * = satu segmen, ** = banyak segmen.",
+  "include": [],
+  "exclude": [
+    "/lovable/**",
+    "/api/**",
+    "/not-found",
+    "/auth/**",
+    "/t/**",
+    "/diagnostik-viewport",
+    "/hubungkan-agen"
+  ],
+  "ignoreParams": [
+    "utm_*",
+    "fbclid",
+    "gclid",
+    "ref",
+    "src",
+    "hl"
+  ],
+  "exemptions": [
+    {
+      "pattern": "/katalog/*/*",
+      "rules": [
+        "og:image:width",
+        "og:image:height"
+      ],
+      "reason": "Foto produk pelanggan berasal dari storage; dimensinya bervariasi dan tidak selalu diketahui saat render."
+    },
+    {
+      "pattern": "/katalog/**",
+      "rules": [
+        "og:image-format",
+        "og:image-content-type",
+        "og:image-dimensions"
+      ],
+      "reason": "Foto produk pelanggan diambil dari storage lewat /api/public/img/og; formatnya mengikuti berkas asli (JPEG/WebP) dan dimensinya hasil transform, bukan PNG 1200x630 statis."
+    }
+  ]
+}

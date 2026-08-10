@@ -1,0 +1,356 @@
+#!/usr/bin/env node
+/**
+ * Ringkasan perubahan dependency untuk PR otomatis (Dependabot/Renovate).
+ *
+ * - Membandingkan package.json base vs head (dependencies, devDependencies, overrides).
+ * - Opsional membandingkan hasil `bun audit --json` sebelum/sesudah untuk
+ *   menandai advisory keamanan yang benar-benar terperbaiki oleh PR ini.
+ * - Menulis markdown ke stdout, ke --out <file>, dan ke $GITHUB_STEP_SUMMARY.
+ *
+ * Pemakaian:
+ *   node scripts/dep-pr-changelog.mjs --base origin/main \
+ *     [--audit-before before.json] [--audit-after after.json] [--out body.md] \
+ *     [--labels-out labels.txt] [--slack-out slack.json] [--pr-url <url>] [--pr-title <judul>]
+ *
+ * --labels-out menulis daftar label (satu per baris) untuk PR Dependabot:
+ *   severity/<low|moderate|high|critical> dan type/<security|fix|breaking>.
+ *
+ * --slack-out menulis payload Slack (Block Kit) HANYA jika PR ini menutup
+ *   advisory keamanan baru. Kalau tidak ada security fix, file tidak ditulis.
+ */
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
+
+const args = process.argv.slice(2);
+const flag = (name, fallback = null) => {
+  const i = args.indexOf(name);
+  return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
+};
+
+const baseRef = flag("--base", "origin/main");
+const outFile = flag("--out");
+const auditBeforePath = flag("--audit-before");
+const auditAfterPath = flag("--audit-after");
+const labelsOut = flag("--labels-out");
+const slackOut = flag("--slack-out");
+const prUrl = flag("--pr-url");
+const prTitle = flag("--pr-title", "PR dependency");
+
+const FIELDS = ["dependencies", "devDependencies", "overrides"];
+
+function readJsonFile(p) {
+  if (!p || !existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function readBasePackageJson() {
+  try {
+    const raw = execFileSync("git", ["show", `${baseRef}:package.json`], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function flatten(pkg) {
+  const out = new Map();
+  if (!pkg) return out;
+  for (const field of FIELDS) {
+    const block = pkg[field];
+    if (!block || typeof block !== "object") continue;
+    for (const [name, range] of Object.entries(block)) {
+      if (typeof range !== "string") continue;
+      out.set(`${field}:${name}`, { field, name, range });
+    }
+  }
+  return out;
+}
+
+function diffDeps(basePkg, headPkg) {
+  const before = flatten(basePkg);
+  const after = flatten(headPkg);
+  const changed = [];
+  const added = [];
+  const removed = [];
+  for (const [key, entry] of after) {
+    const prev = before.get(key);
+    if (!prev) added.push(entry);
+    else if (prev.range !== entry.range) changed.push({ ...entry, from: prev.range, to: entry.range });
+  }
+  for (const [key, entry] of before) if (!after.has(key)) removed.push(entry);
+  return { changed, added, removed };
+}
+
+/** Normalisasi output `bun audit --json` menjadi daftar advisory unik. */
+function normalizeAudit(json) {
+  const list = [];
+  if (!json || typeof json !== "object") return list;
+  const advisories = json.advisories ?? json.vulnerabilities ?? {};
+  const entries = Array.isArray(advisories) ? advisories : Object.values(advisories);
+  for (const raw of entries) {
+    if (!raw || typeof raw !== "object") continue;
+    const items = Array.isArray(raw) ? raw : [raw];
+    for (const adv of items) {
+      if (!adv || typeof adv !== "object") continue;
+      const severity = String(adv.severity ?? adv.cvss?.severity ?? "unknown").toLowerCase();
+      const name = adv.module_name ?? adv.name ?? adv.package_name ?? "(tidak diketahui)";
+      const title = adv.title ?? adv.summary ?? "Advisory keamanan";
+      const url = adv.url ?? adv.advisory_url ?? (adv.id ? `https://github.com/advisories/${adv.id}` : null);
+      const patched = adv.patched_versions ?? adv.fixed_in ?? null;
+      list.push({ key: `${name}::${title}`, name, title, severity, url, patched });
+    }
+  }
+  const seen = new Set();
+  return list.filter((a) => (seen.has(a.key) ? false : (seen.add(a.key), true)));
+}
+
+const SEVERITY_ORDER = { critical: 0, high: 1, moderate: 2, medium: 2, low: 3, info: 4, unknown: 5 };
+const SEVERITY_BADGE = {
+  critical: "🟥 critical",
+  high: "🟧 high",
+  moderate: "🟨 moderate",
+  medium: "🟨 moderate",
+  low: "🟦 low",
+  info: "⬜ info",
+  unknown: "⬜ unknown",
+};
+const bySeverity = (a, b) =>
+  (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9) || a.name.localeCompare(b.name);
+
+function npmLink(name) {
+  return `[\`${name}\`](https://www.npmjs.com/package/${name})`;
+}
+
+function changelogLink(name) {
+  return `[changelog](https://www.npmjs.com/package/${name}?activeTab=versions)`;
+}
+
+/** Ambil [major, minor, patch] pertama dari sebuah range semver (^1.2.3, ~1.2, >=1.2.3 ...). */
+function parseVersion(range) {
+  const m = String(range ?? "").match(/(\d+)\.(\d+)\.(\d+)|(\d+)\.(\d+)|(\d+)/);
+  if (!m) return null;
+  if (m[1]) return [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (m[4]) return [Number(m[4]), Number(m[5]), 0];
+  return [Number(m[6]), 0, 0];
+}
+
+/** "major" | "minor" | "patch" | null untuk satu perubahan range. */
+function bumpKind(from, to) {
+  const a = parseVersion(from);
+  const b = parseVersion(to);
+  if (!a || !b) return null;
+  if (b[0] !== a[0]) return "major";
+  if (b[1] !== a[1]) return "minor";
+  if (b[2] !== a[2]) return "patch";
+  return null;
+}
+
+const SEVERITY_LABEL = {
+  critical: "severity/critical",
+  high: "severity/high",
+  moderate: "severity/moderate",
+  medium: "severity/moderate",
+  low: "severity/low",
+};
+
+/**
+ * Label otomatis untuk PR dependency.
+ * - severity/*: severity tertinggi dari advisory yang diperbaiki, atau (kalau
+ *   tidak ada yang diperbaiki) dari advisory baru yang muncul.
+ * - type/security: PR ini menutup minimal satu advisory.
+ * - type/breaking: ada bump major.
+ * - type/fix: hanya bump patch (perbaikan rutin, risiko rendah).
+ */
+function deriveLabels({ changed, added, fixed, introduced }) {
+  const labels = new Set();
+  const severitySource = fixed.length ? fixed : introduced;
+  const top = [...severitySource].sort(bySeverity)[0];
+  if (top && SEVERITY_LABEL[top.severity]) labels.add(SEVERITY_LABEL[top.severity]);
+
+  if (fixed.length) labels.add("type/security");
+
+  const kinds = changed.map((c) => bumpKind(c.from, c.to)).filter(Boolean);
+  if (kinds.includes("major")) labels.add("type/breaking");
+  else if (kinds.length && kinds.every((k) => k === "patch")) labels.add("type/fix");
+  else if (!kinds.length && !added.length && fixed.length) labels.add("type/fix");
+
+  return [...labels].sort();
+}
+
+let derivedLabels = [];
+let slackPayload = null;
+
+const SEVERITY_EMOJI = {
+  critical: ":red_circle:",
+  high: ":large_orange_circle:",
+  moderate: ":large_yellow_circle:",
+  medium: ":large_yellow_circle:",
+  low: ":large_blue_circle:",
+};
+
+/** Payload Slack Block Kit untuk PR yang menutup advisory keamanan. */
+function buildSlackPayload({ fixed, introduced, remaining, changed }) {
+  if (!fixed.length) return null;
+
+  const top = fixed[0]?.severity ?? "unknown";
+  const advisoryLines = fixed
+    .slice(0, 10)
+    .map((a) => {
+      const emoji = SEVERITY_EMOJI[a.severity] ?? ":white_circle:";
+      const patched = a.patched ? ` — aman di \`${a.patched}\`` : "";
+      const title = a.url ? `<${a.url}|${a.title}>` : a.title;
+      return `${emoji} *${a.severity}* \`${a.name}\`: ${title}${patched}`;
+    })
+    .join("\n");
+  const more = fixed.length > 10 ? `\n_+${fixed.length - 10} advisory lainnya_` : "";
+
+  const versionLines = changed
+    .slice(0, 10)
+    .map((c) => `• \`${c.name}\` \`${c.from}\` → \`${c.to}\``)
+    .join("\n");
+
+  const blocks = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: `🛡️ Security fix dependency (${fixed.length})`, emoji: true },
+    },
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: prUrl ? `<${prUrl}|${prTitle}>` : prTitle },
+    },
+    { type: "section", text: { type: "mrkdwn", text: `*Advisory yang ditutup*\n${advisoryLines}${more}` } },
+  ];
+
+  if (versionLines) {
+    blocks.push({ type: "section", text: { type: "mrkdwn", text: `*Perubahan versi*\n${versionLines}` } });
+  }
+  if (introduced.length) {
+    blocks.push({
+      type: "section",
+      text: { type: "mrkdwn", text: `:warning: *${introduced.length} advisory baru muncul* — butuh review manual.` },
+    });
+  }
+
+  blocks.push({
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `Severity tertinggi: *${top}* • Sisa advisory: ${remaining.length} • Label: ${
+          derivedLabels.join(", ") || "—"
+        }`,
+      },
+    ],
+  });
+
+  return { text: `Security fix dependency (${fixed.length}) — ${prTitle}`, blocks };
+}
+
+function buildMarkdown() {
+  const headPkg = readJsonFile("package.json");
+  const basePkg = readBasePackageJson();
+  const { changed, added, removed } = diffDeps(basePkg, headPkg);
+
+  const before = normalizeAudit(readJsonFile(auditBeforePath));
+  const after = normalizeAudit(readJsonFile(auditAfterPath));
+  const afterKeys = new Set(after.map((a) => a.key));
+  const beforeKeys = new Set(before.map((a) => a.key));
+  const fixed = before.filter((a) => !afterKeys.has(a.key)).sort(bySeverity);
+  const introduced = after.filter((a) => !beforeKeys.has(a.key)).sort(bySeverity);
+  const remaining = after.filter((a) => beforeKeys.has(a.key)).sort(bySeverity);
+
+  derivedLabels = deriveLabels({ changed, added, fixed, introduced });
+  slackPayload = buildSlackPayload({ fixed, introduced, remaining, changed });
+
+  const lines = [];
+  lines.push("## 📦 Ringkasan update dependency");
+  lines.push("");
+
+  if (!basePkg) {
+    lines.push(`> Tidak bisa membaca \`package.json\` dari \`${baseRef}\`, jadi diff versi dilewati.`);
+    lines.push("");
+  }
+
+  if (changed.length || added.length || removed.length) {
+    lines.push("| Paket | Perubahan | Info |");
+    lines.push("| --- | --- | --- |");
+    for (const c of changed.sort((a, b) => a.name.localeCompare(b.name))) {
+      lines.push(`| ${npmLink(c.name)} | \`${c.from}\` → \`${c.to}\` | ${changelogLink(c.name)} |`);
+    }
+    for (const a of added.sort((x, y) => x.name.localeCompare(y.name))) {
+      lines.push(`| ${npmLink(a.name)} | baru \`${a.range}\` | ${changelogLink(a.name)} |`);
+    }
+    for (const r of removed.sort((x, y) => x.name.localeCompare(y.name))) {
+      lines.push(`| \`${r.name}\` | dihapus (\`${r.range}\`) | — |`);
+    }
+    lines.push("");
+  } else {
+    lines.push("Tidak ada perubahan versi di `package.json` (kemungkinan hanya `bun.lock`).");
+    lines.push("");
+  }
+
+  if (fixed.length) {
+    lines.push(`### 🛡️ Security fix (${fixed.length})`);
+    lines.push("");
+    for (const a of fixed) {
+      const patched = a.patched ? ` — aman di \`${a.patched}\`` : "";
+      const link = a.url ? ` ([advisory](${a.url}))` : "";
+      lines.push(`- **${SEVERITY_BADGE[a.severity] ?? a.severity}** \`${a.name}\`: ${a.title}${patched}${link}`);
+    }
+    lines.push("");
+  } else {
+    lines.push("### 🛡️ Security fix");
+    lines.push("");
+    lines.push(
+      auditBeforePath && auditAfterPath
+        ? "Tidak ada advisory yang hilang karena PR ini (update rutin, bukan security fix)."
+        : "Tidak ada advisory yang bisa dibandingkan (hasil `bun audit` tidak tersedia untuk PR ini).",
+    );
+    lines.push("");
+  }
+
+  if (introduced.length) {
+    lines.push(`### ⚠️ Advisory baru muncul (${introduced.length})`);
+    lines.push("");
+    for (const a of introduced) {
+      const link = a.url ? ` ([advisory](${a.url}))` : "";
+      lines.push(`- **${SEVERITY_BADGE[a.severity] ?? a.severity}** \`${a.name}\`: ${a.title}${link}`);
+    }
+    lines.push("");
+  }
+
+  if (remaining.length) {
+    lines.push(`<details><summary>Advisory yang masih tersisa (${remaining.length})</summary>`);
+    lines.push("");
+    for (const a of remaining) {
+      lines.push(`- **${SEVERITY_BADGE[a.severity] ?? a.severity}** \`${a.name}\`: ${a.title}`);
+    }
+    lines.push("");
+    lines.push("</details>");
+    lines.push("");
+  }
+
+  lines.push("---");
+  if (derivedLabels.length) {
+    lines.push(`Label otomatis: ${derivedLabels.map((l) => `\`${l}\``).join(", ")}`);
+    lines.push("");
+  }
+  lines.push(
+    "Gate yang harus lolos sebelum merge: `Typecheck & Build`, `bun run audit:deps:ci`, dan `bun run audit:router-versions`.",
+  );
+  return lines.join("\n");
+}
+
+const markdown = buildMarkdown();
+process.stdout.write(`${markdown}\n`);
+if (outFile) writeFileSync(outFile, `${markdown}\n`, "utf8");
+if (labelsOut) writeFileSync(labelsOut, `${derivedLabels.join("\n")}${derivedLabels.length ? "\n" : ""}`, "utf8");
+if (slackOut && slackPayload) writeFileSync(slackOut, `${JSON.stringify(slackPayload, null, 2)}\n`, "utf8");
+if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`);

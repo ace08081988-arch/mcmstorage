@@ -27,18 +27,18 @@ export function SaveAsQuickReplyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="chat-field-scope max-w-md">
         <DialogHeader>
           <DialogTitle>Tambah balas cepat</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <div>
-            <label className="text-xs font-semibold text-muted-foreground">Shortcut (huruf kecil, tanpa spasi)</label>
-            <div className="flex items-center gap-1">
+            <label className="text-ms-xs font-semibold text-muted-foreground">Shortcut (huruf kecil, tanpa spasi)</label>
+            <div className="flex items-center gap-ms-1">
               <span className="text-muted-foreground">/</span>
               <Input value={shortcut} onChange={(e) => setShortcut(e.target.value)} placeholder="terimakasih" maxLength={32} />
             </div>
-            <p className="mt-1 text-[11px] text-muted-foreground">Ketik <code>/{shortcut || "shortcut"}</code> di kotak pesan untuk memunculkan teks ini.</p>
+            <p className="mt-1 text-ms-2xs text-muted-foreground">Ketik <code>/{shortcut || "shortcut"}</code> di kotak pesan untuk memunculkan teks ini.</p>
           </div>
           <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5} placeholder="Isi balasan" />
         </div>

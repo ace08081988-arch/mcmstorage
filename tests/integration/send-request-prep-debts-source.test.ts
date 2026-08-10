@@ -1,0 +1,138 @@
+/**
+ * Regression: RPC `send_request_prep_to_customer` sempat gagal karena
+ * `debts_source_check` awalnya hanya memuat ('manual','purchase','sale')
+ * padahal RPC menulis debt dengan source `'request_prep'`. Test ini mengunci
+ * dua invariants secara statis (tanpa live DB) langsung dari file migrasi:
+ *
+ *   1. Constraint `debts_source_check` HARUS memuat `'request_prep'` di
+ *      allowlist-nya (migrasi 20260705122006).
+ *   2. RPC `send_request_prep_to_customer` HARUS meng-INSERT ke `public.debts`
+ *      dengan `source = 'request_prep'` (bukan literal lain), dan saat ada
+ *      sisa bayar (hutang penuh atau bayar sebagian).
+ *
+ * Bila salah satu regresi, kirim penyiapan request dengan metode hutang/partial akan
+ * balas 23514 (check violation) dan piutang tidak tercatat — sama dengan bug
+ * asli yang memaksa pelebaran constraint.
+ */
+import { describe, it, expect } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve, join } from "node:path";
+import { assertDebtSource, DEBT_SOURCES } from "@/lib/debt-source";
+
+const MIG_DIR = resolve(__dirname, "../../supabase/migrations");
+
+function readAllMigrations(): string {
+  return readdirSync(MIG_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .sort() // urutan kronologis by timestamp prefix
+    .map((f) => readFileSync(join(MIG_DIR, f), "utf8"))
+    .join("\n\n-- ==== next migration ====\n\n");
+}
+
+const allSql = readAllMigrations();
+
+/** Ambil klausul CHECK aktif terakhir untuk `debts_source_check`. */
+function latestDebtsSourceCheck(): string | null {
+  const re = /ADD\s+CONSTRAINT\s+debts_source_check\s+CHECK\s*\(([\s\S]*?)\)\s*;/gi;
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(allSql)) !== null) last = m[1];
+  return last;
+}
+
+/**
+ * Ambil body RPC versi terbaru — mendukung delimiter dollar-quote apa pun
+ * (`$$`, `$fn$`, `$function$`) dan memastikan nama fungsi cocok persis
+ * (diikuti `(`), supaya tidak keliru menangkap fungsi lain di migrasi
+ * yang kebetulan menyebut nama ini di komentar/GRANT.
+ */
+function latestFunctionBody(fnName: string): string | null {
+  const re = new RegExp(
+    String.raw`CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.${fnName}\s*\(` +
+      String.raw`[\s\S]*?AS\s+(\$[A-Za-z_]*\$)([\s\S]*?)\1`,
+    "gi",
+  );
+  let last: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(allSql)) !== null) last = m[2];
+  return last;
+}
+
+/** Ambil body RPC `send_request_prep_to_customer` versi terbaru. */
+function latestRpcBody(): string | null {
+  return latestFunctionBody("send_request_prep_to_customer");
+}
+
+/** Ambil body RPC `send_ecer_preps_to_customer` versi terbaru. */
+function latestEcerRpcBody(): string | null {
+  return latestFunctionBody("send_ecer_preps_to_customer");
+}
+
+describe("send_request_prep_to_customer × debts_source_check", () => {
+  const checkExpr = latestDebtsSourceCheck();
+  const rpcBody = latestRpcBody();
+  const ecerRpcBody = latestEcerRpcBody();
+
+  it("migrasi mendefinisikan `debts_source_check` yang memuat sumber request & ecer", () => {
+    expect(checkExpr, "ADD CONSTRAINT debts_source_check tidak ditemukan di migrasi").toBeTruthy();
+    // Semua sumber allowlist SSOT harus disebut di ekspresi CHECK.
+    for (const src of ["manual", "purchase", "sale", "request_prep", "ecer_prep"] as const) {
+      expect(checkExpr!).toMatch(new RegExp(`'${src}'`));
+    }
+  });
+
+  it("SSOT `DEBT_SOURCES` sinkron dengan allowlist constraint (tidak ada nilai liar)", () => {
+    // Setiap literal string di antara tanda kutip pada ekspresi CHECK harus
+    // muncul di SSOT — dan sebaliknya.
+    const literals = Array.from(checkExpr!.matchAll(/'([a-z_]+)'/g)).map((m) => m[1]);
+    expect(new Set(literals)).toEqual(new Set(DEBT_SOURCES));
+  });
+
+  it("RPC ditemukan dan meng-INSERT `debts` dengan source='request_prep'", () => {
+    expect(rpcBody, "Body RPC send_request_prep_to_customer tidak ditemukan").toBeTruthy();
+    // Blok INSERT INTO public.debts ... 'request_prep'.
+    const insertDebts = rpcBody!.match(/INSERT\s+INTO\s+public\.debts[\s\S]*?;/i);
+    expect(insertDebts, "INSERT INTO public.debts tidak ada di RPC").toBeTruthy();
+    expect(insertDebts![0]).toMatch(/'request_prep'/);
+    // Tidak boleh ada literal source lain di dalam blok INSERT tsb.
+    const otherSources = Array.from(insertDebts![0].matchAll(/'(manual|purchase|sale)'/g));
+    expect(otherSources, "RPC menulis source selain 'request_prep' — regresi").toHaveLength(0);
+  });
+
+  it("RPC request menulis piutang berdasarkan sisa bayar, bukan hanya literal hutang", () => {
+    // Partial juga harus masuk piutang ketika v_debt_amount > 0.
+    const guard = rpcBody!.match(
+      /IF\s+v_debt_amount\s*>\s*0\s+THEN[\s\S]*?INSERT\s+INTO\s+public\.debts[\s\S]*?END\s+IF\s*;/i,
+    );
+    expect(
+      guard,
+      "RPC harus membungkus INSERT debts di dalam IF v_debt_amount > 0 agar partial ikut tercatat",
+    ).toBeTruthy();
+    expect(guard![0]).toMatch(/kind\s*=?\s*['"]?piutang['"]?|'piutang'/i);
+  });
+
+  it("RPC ecer menulis piutang source='ecer_prep' berdasarkan sisa bayar", () => {
+    expect(ecerRpcBody, "Body RPC send_ecer_preps_to_customer tidak ditemukan").toBeTruthy();
+    const insertDebts = ecerRpcBody!.match(/INSERT\s+INTO\s+public\.debts[\s\S]*?;/i);
+    expect(insertDebts, "INSERT INTO public.debts tidak ada di RPC ecer").toBeTruthy();
+    expect(insertDebts![0]).toMatch(/'ecer_prep'/);
+    const guard = ecerRpcBody!.match(
+      /IF\s+v_debt_amount\s*>\s*0\s+THEN[\s\S]*?INSERT\s+INTO\s+public\.debts[\s\S]*?END\s+IF\s*;/i,
+    );
+    expect(guard, "RPC ecer harus catat piutang saat sisa bayar > 0").toBeTruthy();
+  });
+
+  it("RPC memvalidasi _payment_method menerima 'kas', 'hutang', dan 'partial'", () => {
+    // Cegah regresi ke enum bebas, tapi partial harus valid.
+    expect(rpcBody!).toMatch(/_payment_method\s+NOT\s+IN\s*\(\s*'kas'\s*,\s*'hutang'\s*,\s*'partial'\s*\)/i);
+    expect(rpcBody!).toMatch(/_paid_amount\s+IS\s+NULL[\s\S]*?_paid_amount\s*<=\s*0[\s\S]*?_paid_amount\s*>=\s*_total_amount/i);
+  });
+
+  it("guard klien `assertDebtSource` menerima 'request_prep' TAPI klien memakai 'manual'", () => {
+    // Sanity: SSOT konsisten — 'request_prep' valid, 'chat' tidak.
+    expect(() => assertDebtSource("request_prep")).not.toThrow();
+    expect(() => assertDebtSource("ecer_prep")).not.toThrow();
+    expect(() => assertDebtSource("manual")).not.toThrow();
+    expect(() => assertDebtSource("chat")).toThrow(/tidak valid/i);
+  });
+});

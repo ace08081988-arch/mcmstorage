@@ -1,0 +1,26 @@
+name: friend-requests-doc-sync
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "docs/friend-requests-rls.md"
+      - "supabase/tests/security_rls_authz.sql"
+      - "supabase/tests/audit_friend_requests.sql"
+      - "scripts/check-friend-requests-docs.mjs"
+      - ".github/workflows/friend-requests-doc-sync.yml"
+
+jobs:
+  check-docs-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure base ref is fetched
+        run: git fetch origin "$GITHUB_BASE_REF" --depth=1 || true
+      - name: Run friend_requests docs+tests sync guard
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          HEAD_REF: HEAD
+        run: node scripts/check-friend-requests-docs.mjs

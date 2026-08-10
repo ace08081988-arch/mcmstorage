@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pre-push hook Ace Storage — tolak push kalau format lockfile melanggar
+# docs/dependency-lockfile.md, supaya CI (workflow "Lockfile Format") tidak
+# gagal setelah PR dibuat.
+# Aktifkan dengan: bun run hooks:install  (otomatis lewat `prepare`).
+set -e
+
+if [ "$SKIP_LOCKFILE_CHECK" = "1" ]; then
+  echo "↷ Cek lockfile dilewati (SKIP_LOCKFILE_CHECK=1)."
+  exit 0
+fi
+
+# Tolak lockfile biner yang terlacak di git, sekalipun sudah hilang dari worktree.
+tracked_binary=$(git ls-files -- bun.lockb)
+if [ -n "$tracked_binary" ]; then
+  echo "❌ Push ditolak: \`bun.lockb\` (lockfile biner) masih terlacak di git."
+  echo "   Perbaiki: bun run fix:lockfile && git add -A && git commit --amend --no-edit"
+  echo "   Panduan: docs/dependency-lockfile.md"
+  exit 1
+fi
+
+if ! node scripts/check-text-lockfile.mjs; then
+  echo ""
+  echo "❌ Push ditolak: format lockfile melanggar aturan."
+  echo "   Perbaiki otomatis: bun run fix:lockfile"
+  echo "   Lalu commit ulang \`bun.lock\` (dan \`bunfig.toml\` bila berubah)."
+  echo "   Lewati sementara (tidak disarankan): SKIP_LOCKFILE_CHECK=1 git push"
+  echo "   Panduan: docs/dependency-lockfile.md"
+  exit 1
+fi

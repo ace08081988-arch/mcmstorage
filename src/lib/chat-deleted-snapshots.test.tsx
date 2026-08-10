@@ -196,9 +196,9 @@ describe("snapshots: deleted message rendering", () => {
     /** Mirrors the row rendered in the chat list (mobile + desktop sidebar). */
     function ConversationRowPreview({ item }: { item: Pick<ConversationListItem, "display_title" | "last_body" | "last_at"> }) {
       return (
-        <div className="flex flex-col gap-0.5 px-3 py-2">
+        <div className="flex flex-col gap-0.5 px-ms-3 py-ms-2">
           <span className="font-medium">{item.display_title}</span>
-          <span className="truncate text-xs text-muted-foreground">
+          <span className="truncate text-ms-xs text-muted-foreground">
             {item.last_body ?? ""}
           </span>
         </div>
@@ -342,7 +342,7 @@ describe("snapshots: deleted message rendering", () => {
         renderToStaticMarkup(
           <DeletedPreview
             message={mkMessage({ deleted_at: "now", attachment_path: "x" })}
-            className="text-xs text-muted-foreground"
+            className="text-ms-xs text-muted-foreground"
             iconClassName="h-2 w-2"
           />,
         ),

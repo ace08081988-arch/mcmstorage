@@ -22,14 +22,15 @@ import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { sendMessage } from "@/lib/chat.functions";
 import { StickerPickerDialog } from "@/components/chat/StickerPickerDialog";
 import type { LucideIcon } from "lucide-react";
+import { truncateWords } from "@/lib/truncate-message";
 
 function Tile({ icon: Icon, label, color, onClick, recent }: { icon: LucideIcon; label: string; color: string; onClick: () => void | Promise<void>; recent?: boolean }) {
   return (
-    <button type="button" onClick={onClick} className={`relative flex flex-col items-center gap-1.5 rounded-xl p-2 text-center transition hover:bg-accent active:scale-95 ${recent ? "ring-2 ring-primary/60" : ""}`}>
+    <button type="button" onClick={onClick} className={`relative flex flex-col items-center gap-ms-1.5 rounded-xl p-ms-2 text-center transition hover:bg-accent active:scale-95 ${recent ? "ring-2 ring-primary/60" : ""}`}>
       <span className={`flex h-12 w-12 items-center justify-center rounded-full ${color}`}>
         <Icon className="h-6 w-6" />
       </span>
-      <span className="text-[11px] font-medium text-foreground">{label}</span>
+      <span className="text-ms-2xs font-medium text-foreground">{label}</span>
       {recent ? (
         <span className="absolute -top-1 right-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
           Terakhir
@@ -105,9 +106,16 @@ type Props = {
   conversationId: string;
   disabled?: boolean;
   onSent?: () => void;
+  /**
+   * Opsional. Bila diisi, foto/video/dokumen yang dipilih dari tile
+   * (doc/gallery/camera/video) TIDAK masuk ke pratinjau internal AttachMenu,
+   * tetapi diserahkan ke parent untuk di-stage bersama produk di atas tombol
+   * Kirim. Berkas yang tidak valid tetap ditolak dengan toast di sini.
+   */
+  onStageFiles?: (files: File[]) => void;
 };
 
-export function AttachMenu({ conversationId, disabled, onSent }: Props) {
+export function AttachMenu({ conversationId, disabled, onSent, onStageFiles }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
   const [openSheet, setOpenSheet] = useState(false);
   const [openLoc, setOpenLoc] = useState(false);
@@ -138,9 +146,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     { id: "gallery",  label: "Galeri",  keywords: ["galeri","foto","gambar","image","jpg","png","photo"], color: "bg-fuchsia-500/15 text-fuchsia-500", icon: ImageIcon },
     { id: "camera",   label: "Kamera",  keywords: ["kamera","camera","jepret","selfie","foto"], color: "bg-sky-500/15 text-sky-500", icon: Camera },
     { id: "video",    label: "Video",   keywords: ["video","film","mp4","rekaman","movie"], color: "bg-rose-500/15 text-rose-500", icon: Film },
-    { id: "location", label: "Lokasi",  keywords: ["lokasi","maps","gps","alamat","peta","location"], color: "bg-emerald-500/15 text-emerald-500", icon: MapPin },
+    { id: "location", label: "Lokasi",  keywords: ["lokasi","maps","gps","alamat","peta","location"], color: "bg-success/15 text-success", icon: MapPin },
     { id: "contact",  label: "Kontak",  keywords: ["kontak","contact","nomor","telpon","wa","whatsapp"], color: "bg-blue-500/15 text-blue-500", icon: UserRound },
-    { id: "product",  label: "Produk",  keywords: ["produk","product","barang","item","kartu"], color: "bg-amber-500/15 text-amber-500", icon: Package },
+    { id: "product",  label: "Produk",  keywords: ["produk","product","barang","item","kartu"], color: "bg-warning/15 text-warning", icon: Package },
     { id: "sticker",  label: "Stiker",  keywords: ["stiker","sticker","panah","rekening","teks","ai","emoji"], color: "bg-pink-500/15 text-pink-500", icon: Sticker },
   ];
   const norm = (s: string) => s.toLowerCase().trim();
@@ -369,6 +377,25 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     const arr = Array.isArray(files) ? files : files ? [files] : [];
     if (arr.length === 0) return;
     setOpenSheet(false);
+    // Bila parent meng-handle staging (pratinjau di atas tombol Kirim),
+    // validasi di sini, teruskan yang valid, dan lewati pratinjau internal.
+    if (onStageFiles) {
+      const errors = arr.map((f) => validateFile(f));
+      const valid: File[] = [];
+      arr.forEach((f, i) => { if (!errors[i]) valid.push(f); });
+      const invalidCount = errors.filter(Boolean).length;
+      if (invalidCount > 0) {
+        const first = errors.find(Boolean) as string;
+        toast.error(
+          invalidCount === arr.length
+            ? "Semua lampiran tidak valid"
+            : `${invalidCount} dari ${arr.length} lampiran ditolak`,
+          { description: first },
+        );
+      }
+      if (valid.length > 0) onStageFiles(valid);
+      return;
+    }
     setCaption("");
     // Validasi tiap berkas; tetap ditampilkan agar pengguna langsung tahu alasannya.
     const errors = arr.map((f) => validateFile(f));
@@ -517,7 +544,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
-        { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
+        { description: cap ? `Caption: "${truncateWords(cap, 60)}"` : undefined },
       );
       // Semua berhasil → tutup dialog setelah jeda kecil supaya status terlihat.
       setTimeout(() => {
@@ -582,7 +609,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         </Button>
         <SheetContent side="bottom" className="rounded-t-2xl pb-8">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-base">Lampirkan</SheetTitle>
+            <SheetTitle className="text-ms-base">Lampirkan</SheetTitle>
           </SheetHeader>
           <div className="relative pt-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -601,43 +628,43 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             />
             {search ? (
               <button type="button" onClick={() => setSearch("")} aria-label="Kosongkan pencarian"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent">
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-ms-1 text-muted-foreground hover:bg-accent">
                 <X className="h-3.5 w-3.5" />
               </button>
             ) : null}
           </div>
-          <div className="grid grid-cols-4 gap-3 pt-3">
+          <div className="grid grid-cols-4 gap-ms-3 pt-3">
             {filteredTiles.map((t) => (
               <Tile key={t.id} recent={lastTile === t.id} color={t.color} icon={t.icon} label={t.label} onClick={() => runTile(t.id)} />
             ))}
             {filteredTiles.length === 0 ? (
-              <div className="col-span-4 py-6 text-center text-xs text-muted-foreground">
+              <div className="col-span-4 py-ms-6 text-center text-ms-xs text-muted-foreground">
                 Tidak ada pilihan cocok untuk "{search}".
               </div>
             ) : null}
           </div>
-          <p className="mt-4 text-center text-[11px] text-muted-foreground">
+          <p className="mt-4 text-center text-ms-2xs text-muted-foreground">
             Tap "+" → opsi terakhir. Tahan "+" untuk menu ini. "Terakhir" = pilihan tersimpan.
           </p>
         </SheetContent>
       </Sheet>
 
       <Dialog open={!!pending} onOpenChange={(v) => { if (!v && !busy) setPending(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="chat-field-scope max-w-md">
           <DialogHeader>
             <DialogTitle>
               Pratinjau lampiran{pending && pending.length > 1 ? ` · ${pending.length} berkas` : ""}
             </DialogTitle>
           </DialogHeader>
           {pending && pending.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-ms-3">
               {/* Toolbar: mode pilih + pilih semua + hapus semua */}
-              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+              <div className="flex flex-wrap items-center gap-ms-2 text-ms-2xs">
                 <Button
                   type="button"
                   size="sm"
                   variant={selectMode ? "secondary" : "outline"}
-                  className="h-7 px-2"
+                  className="h-7 px-ms-2"
                   disabled={!!busy}
                   onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
                 >
@@ -646,11 +673,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 </Button>
                 {selectMode ? (
                   <>
-                    <Button type="button" size="sm" variant="outline" className="h-7 px-2" disabled={!!busy} onClick={selectAllPending}>
+                    <Button type="button" size="sm" variant="outline" className="h-7 px-ms-2" disabled={!!busy} onClick={selectAllPending}>
                       Pilih semua
                     </Button>
                     {selected.size > 0 ? (
-                      <Button type="button" size="sm" variant="outline" className="h-7 px-2" disabled={!!busy} onClick={clearSelection}>
+                      <Button type="button" size="sm" variant="outline" className="h-7 px-ms-2" disabled={!!busy} onClick={clearSelection}>
                         Bersihkan
                       </Button>
                     ) : null}
@@ -660,7 +687,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                   <span className="ml-auto text-muted-foreground">{pending.length} berkas</span>
                 )}
               </div>
-              <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
+              <div className="grid max-h-72 grid-cols-3 gap-ms-2 overflow-y-auto">
                 {pending.map((p, i) => {
                   const st = statuses[p.id]?.state ?? "idle";
                   const isSelected = selected.has(p.id);
@@ -669,17 +696,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     key={p.id}
                     role={selectMode ? "button" : undefined}
                     onClick={selectMode && !busy ? () => toggleSelected(p.id) : undefined}
-                    className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}
+                    className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-success/70" : ""}`}
                   >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
-                      <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
+                      <img
+                        src={p.previewUrl}
+                        alt={`Pratinjau foto lampiran: ${p.file.name}`}
+                        className="h-full w-full object-cover"
+                      />
                     ) : p.previewUrl && p.file.type.startsWith("video/") ? (
                       <video src={p.previewUrl} className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
+                      <div className="flex h-full w-full flex-col items-center justify-center p-ms-2 text-center">
                         <FileText className="h-8 w-8 text-muted-foreground" />
-                        <div className="mt-1 line-clamp-2 text-[10px] font-medium">{p.file.name}</div>
-                        <div className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</div>
+                        <div className="mt-1 line-clamp-2 text-ms-2xs font-medium">{p.file.name}</div>
+                        <div className="text-ms-2xs text-muted-foreground">{formatBytes(p.file.size)}</div>
                       </div>
                     )}
                     {selectMode ? (
@@ -693,7 +724,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         onClick={(e) => { e.stopPropagation(); removePendingAt(i); }}
                         disabled={!!busy}
                         aria-label={`Hapus ${p.file.name}`}
-                        className="absolute right-1 top-1 rounded-full bg-background/85 p-1 shadow hover:bg-background disabled:opacity-50"
+                        className="absolute right-1 top-1 rounded-full bg-background/85 p-ms-1 shadow hover:bg-background disabled:opacity-50"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -703,7 +734,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
                     ) : st === "sent" && !selectMode ? (
-                      <div className="absolute right-7 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
+                      <div className="absolute right-7 top-1 rounded-full bg-success/95 p-0.5 text-white shadow">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
                     ) : (st === "error" || retryingIds.has(p.id)) && !selectMode ? (
@@ -714,7 +745,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         title={retryingIds.has(p.id) ? "Sedang mengulang…" : `Coba lagi: ${statuses[p.id]?.error ?? ""}`}
                         aria-label={`Coba lagi ${p.file.name}`}
                         aria-busy={retryingIds.has(p.id)}
-                        className="absolute right-7 top-1 flex items-center gap-1 rounded-full bg-destructive/95 px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground shadow hover:bg-destructive disabled:opacity-60"
+                        className="absolute right-7 top-1 flex items-center gap-ms-1 rounded-full bg-destructive/95 px-1.5 py-0.5 text-ms-2xs font-medium text-destructive-foreground shadow hover:bg-destructive disabled:opacity-60"
                       >
                         {retryingIds.has(p.id) ? (
                           <>
@@ -729,7 +760,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         )}
                       </button>
                     ) : null}
-                    <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] text-white">
+                    <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-ms-2xs text-white">
                       {p.file.name}
                     </div>
                   </div>
@@ -738,8 +769,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               </div>
               {/* Daftar error rinci agar pesan tidak terpotong di chip */}
               {pending.some((p) => statuses[p.id]?.state === "error" || retryingIds.has(p.id)) ? (
-                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
-                  <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-ms-2 text-ms-2xs">
+                  <div className="mb-1 flex items-center gap-ms-1 font-medium text-destructive">
                     <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
                   </div>
                   <ul className="space-y-1 text-destructive/90">
@@ -748,7 +779,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       const isRetrying = retryingIds.has(p.id);
                       if (!isErr && !isRetrying) return null;
                       return (
-                        <li key={p.id} className="flex items-start justify-between gap-2">
+                        <li key={p.id} className="flex items-start justify-between gap-ms-2">
                           <span className="min-w-0 flex-1 truncate">
                             • <span className="font-medium">{p.file.name}:</span>{" "}
                             {isRetrying ? "Sedang mengulang…" : statuses[p.id]?.error}
@@ -758,7 +789,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                             onClick={() => confirmSendPending(false, [p.id])}
                             disabled={!!busy || isRetrying}
                             aria-busy={isRetrying}
-                            className="shrink-0 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                            className="shrink-0 inline-flex items-center gap-ms-1 rounded border border-destructive/40 bg-background px-1.5 py-0.5 text-ms-2xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
                           >
                             {isRetrying ? (
                               <>
@@ -777,7 +808,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 </div>
               ) : null}
               <div>
-                <Label className="text-[11px] uppercase text-muted-foreground">
+                <Label className="text-ms-2xs uppercase text-muted-foreground">
                   Caption {pending.length > 1 ? "(berlaku pada berkas pertama)" : "(opsional)"}
                 </Label>
                 <Textarea rows={2} maxLength={1000} placeholder="Tulis caption…"
@@ -787,8 +818,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               </div>
               {progress ? (
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Mengunggah {progress.done}/{progress.total}…</span>
+                  <div className="flex items-center justify-between text-ms-2xs text-muted-foreground">
+                    <span className="flex items-center gap-ms-1"><Loader2 className="h-3 w-3 animate-spin" /> Mengunggah {progress.done}/{progress.total}…</span>
                     <span>{Math.round((progress.done / Math.max(progress.total, 1)) * 100)}%</span>
                   </div>
                   <Progress value={(progress.done / Math.max(progress.total, 1)) * 100} className="h-1.5" />
@@ -796,7 +827,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               ) : null}
             </div>
           ) : null}
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="gap-ms-2 sm:gap-ms-2">
             <Button variant="ghost" onClick={() => { setPending(null); setStatuses({}); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
@@ -844,11 +875,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       </Dialog>
 
       <Dialog open={openLoc} onOpenChange={(v) => !busy && setOpenLoc(v)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="chat-field-scope max-w-sm">
           <DialogHeader>
             <DialogTitle>Bagikan lokasi</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2 text-sm">
+          <div className="space-ms-2 text-ms-sm">
             <Button className="w-full justify-start" variant="outline" onClick={() => shareLocationNow()} disabled={!!busy}>
               <MapPin className="mr-2 h-4 w-4" /> Lokasi sekarang (sekali kirim)
             </Button>
@@ -858,7 +889,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             <Button className="w-full justify-start" variant="outline" onClick={() => shareLocationNow(60)} disabled={!!busy}>
               <Navigation className="mr-2 h-4 w-4" /> Live location · 1 jam
             </Button>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-ms-2xs text-muted-foreground">
               Live location dipasang sebagai label; posisinya tetap pada saat dikirim (tidak diperbarui otomatis di backend).
               Kirim ulang jika ingin update posisi.
             </p>
@@ -939,7 +970,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       ? "Tidak ada berkas yang dapat dihapus."
                       : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
                     {deleteSnapshot && (deleteSnapshot.count !== removable.length || deleteSnapshot.bytes !== totalBytes) ? (
-                      <span className="mt-1 block text-[11px] text-amber-600 dark:text-amber-400">
+                      <span className="mt-1 block text-ms-2xs text-warning dark:text-warning">
                         Daftar diperbarui:{" "}
                         {deleteSnapshot.count !== removable.length
                           ? `${removable.length - deleteSnapshot.count > 0 ? "+" : ""}${removable.length - deleteSnapshot.count} berkas`
@@ -953,28 +984,28 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     ) : null}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs">
                   <span className="font-medium text-muted-foreground">Terpilih:</span>
                   <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tSel.pendingN}</span>
-                  <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tSel.uploadingN}</span>
+                  <span className="rounded-full border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-warning dark:text-warning">uploading {tSel.uploadingN}</span>
                   <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tSel.errorN}</span>
                   {tSel.rejectedN > 0 ? (
                     <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">ditolak {tSel.rejectedN}</span>
                   ) : null}
                   {tSel.sentN > 0 ? (
-                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400">terkirim {tSel.sentN}</span>
+                    <span className="rounded-full border border-success/40 bg-success/10 px-1.5 py-0.5 text-success dark:text-success">terkirim {tSel.sentN}</span>
                   ) : null}
                 </div>
                 {confirmDelete !== "all" && (pending?.length ?? 0) > targets.length ? (
-                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <div className="flex flex-wrap items-center gap-ms-1.5 text-ms-2xs">
                     <span className="font-medium text-muted-foreground">Total antrean ({(pending ?? []).length}):</span>
                     <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tAll.pendingN}</span>
-                    <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tAll.uploadingN}</span>
+                    <span className="rounded-full border border-warning/50 bg-warning/10 px-1.5 py-0.5 text-warning dark:text-warning">uploading {tAll.uploadingN}</span>
                     <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tAll.errorN}</span>
                   </div>
                 ) : null}
                 {targets.length > 0 ? (
-                  <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]`}>
+                  <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-ms-2 text-ms-xs`}>
                     {shown.map((p) => {
                       const st = statuses[p.id]?.state ?? "idle";
                       const preflight = statuses[p.id]?.preflight;
@@ -994,21 +1025,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                           : preflight ? "ditolak"
                           : "menunggu";
                       const tone =
-                        st === "uploading" ? "border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        st === "uploading" ? "border-warning/50 bg-warning/10 text-warning dark:text-warning"
                           : st === "error" ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : st === "sent" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : st === "sent" ? "border-success/40 bg-success/10 text-success dark:text-success"
                           : preflight ? "border-destructive/40 bg-destructive/10 text-destructive"
                           : "border-muted-foreground/30 bg-background text-muted-foreground";
                       return (
-                        <li key={p.id} className={`flex items-center justify-between gap-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
+                        <li key={p.id} className={`flex items-center justify-between gap-ms-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
                           <span className="min-w-0 flex-1 truncate" title={p.file.name}>
-                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}</span>
+                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-ms-2xs italic text-warning dark:text-warning">(dilewati)</span> : null}</span>
                             {startedAt && (st === "uploading" || st === "sent" || st === "error") ? (
-                              <span className="block text-[10px] text-muted-foreground">
+                              <span className="block text-ms-2xs text-muted-foreground">
                                 mulai {fmtStart(startedAt)}
                                 {elapsedMs != null ? ` · ${st === "uploading" ? "berjalan" : "selesai"} ${fmtDur(elapsedMs)}` : ""}
                                 {st === "uploading" && estMs != null ? (
-                                  <span className={isSlow ? "ml-1 font-medium text-amber-600 dark:text-amber-400" : "ml-1"}>
+                                  <span className={isSlow ? "ml-1 font-medium text-warning dark:text-warning" : "ml-1"}>
                                     · est {fmtDur(estMs)}{remainMs != null && remainMs > 0 ? ` (sisa ~${fmtDur(remainMs)})` : remainMs != null && remainMs <= 0 ? " (melebihi estimasi)" : ""}
                                   </span>
                                 ) : null}
@@ -1016,20 +1047,20 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                               </span>
                             ) : null}
                           </span>
-                          <span className="flex shrink-0 items-center gap-1">
+                          <span className="flex shrink-0 items-center gap-ms-1">
                             <span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>
-                            <span className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</span>
+                            <span className="text-ms-2xs text-muted-foreground">{formatBytes(p.file.size)}</span>
                           </span>
                         </li>
                       );
                     })}
                     {extra > 0 ? (
                       <li className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] italic text-muted-foreground">…dan {extra} berkas lainnya</span>
+                        <span className="text-ms-2xs italic text-muted-foreground">…dan {extra} berkas lainnya</span>
                         <button
                           type="button"
                           onClick={() => setShowAllDelete(true)}
-                          className="shrink-0 text-[11px] font-medium text-primary hover:underline"
+                          className="shrink-0 text-ms-2xs font-medium text-primary hover:underline"
                         >
                           Lihat semua
                         </button>
@@ -1039,7 +1070,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <button
                           type="button"
                           onClick={() => setShowAllDelete(false)}
-                          className="text-[11px] font-medium text-primary hover:underline"
+                          className="text-ms-2xs font-medium text-primary hover:underline"
                         >
                           Tampilkan lebih sedikit
                         </button>
@@ -1048,7 +1079,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                   </ul>
                 ) : null}
                 {lockedCount > 0 ? (
-                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  <p className="text-ms-2xs text-warning dark:text-warning">
                     {lockedCount} berkas sedang diunggah dan akan dilewati.
                   </p>
                 ) : null}
@@ -1079,23 +1110,31 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 function ContactDialog({ conversationId, open, onOpenChange, onSent }: { conversationId: string; open: boolean; onOpenChange: (v: boolean) => void; onSent: () => void; }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  type StaffRow = { id: string; name: string; wa_phone: string | null; pin_chat_mcm: string | null };
   const staff = useQuery({
     queryKey: ["chat-attach", "staff"],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase.from("staff_contacts").select("id,name,wa_phone").order("name");
+      const { data, error } = await (supabase as any).from("staff_contacts").select("id,name,wa_phone,pin_chat_mcm").order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as StaffRow[];
     },
   });
   async function submit() {
     if (!name.trim() || !phone.trim()) { toast.error("Nama & nomor wajib diisi"); return; }
     setBusy(true);
     try {
-      await sendMessage({ data: { conversationId, body: encodeCard({ type: "contact", name: name.trim(), phone: phone.trim(), note: note.trim() || undefined }) } });
-      setName(""); setPhone(""); setNote("");
+      await sendMessage({ data: { conversationId, body: encodeCard({
+        type: "contact",
+        name: name.trim(),
+        phone: phone.trim(),
+        pin: pin.trim().toUpperCase() || undefined,
+        note: note.trim() || undefined,
+      }) } });
+      setName(""); setPhone(""); setPin(""); setNote("");
       onSent();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengirim kontak");
@@ -1103,25 +1142,41 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
   }
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader><DialogTitle>Kirim kontak</DialogTitle></DialogHeader>
         {staff.data && staff.data.length > 0 ? (
           <div className="space-y-1">
-            <Label className="text-[11px] uppercase text-muted-foreground">Dari daftar pegawai</Label>
-            <div className="max-h-32 space-y-1 overflow-y-auto rounded border p-1">
+            <Label className="text-ms-2xs uppercase text-muted-foreground">Dari daftar pegawai</Label>
+            <div className="max-h-40 space-y-1 overflow-y-auto rounded border p-ms-1">
               {staff.data.map((s) => (
-                <button key={s.id} type="button" className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs hover:bg-accent"
-                  onClick={() => { setName(s.name); setPhone(s.wa_phone); }}>
-                  <span className="truncate">{s.name}</span>
-                  <span className="text-muted-foreground">{s.wa_phone}</span>
+                <button key={s.id} type="button" className="flex w-full flex-col gap-0.5 rounded px-ms-2 py-1.5 text-left text-ms-xs hover:bg-accent"
+                  onClick={() => { setName(s.name); setPhone(s.wa_phone ?? ""); setPin(s.pin_chat_mcm ?? ""); }}>
+                  <span className="truncate font-medium">{s.name}</span>
+                  <span className="flex flex-wrap gap-x-2 text-ms-2xs text-muted-foreground">
+                    {s.wa_phone ? <span>WA: +{String(s.wa_phone).replace(/^\+?/, "")}</span> : null}
+                    {s.pin_chat_mcm ? <span className="font-mono text-primary">PIN Ace: {s.pin_chat_mcm}</span> : null}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         ) : null}
-        <div className="space-y-2">
+        <div className="space-ms-2">
           <div><Label>Nama</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Nomor WhatsApp</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="62812..." /></div>
+          <div>
+            <Label>PIN chat Ace</Label>
+            <Input
+              value={pin} onChange={(e) => setPin(e.target.value)}
+              placeholder="cth: ABCD-1234" autoCapitalize="characters" maxLength={10}
+              className="font-mono tracking-widest"
+            />
+            <p className="mt-1 text-ms-2xs text-muted-foreground">Kode PIN untuk berteman/dm di chat Ace (opsional).</p>
+          </div>
+          <div>
+            <Label>Nomor HP / WhatsApp</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="cth: 62812xxxxxxx" inputMode="tel" />
+            <p className="mt-1 text-ms-2xs text-muted-foreground">Ini nomor telepon (untuk WhatsApp/telepon), bukan PIN chat Ace.</p>
+          </div>
           <div><Label>Catatan (opsional)</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
         </div>
         <DialogFooter>
@@ -1160,14 +1215,14 @@ function ProductDialog({ conversationId, open, onOpenChange, onSent }: { convers
   }
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="chat-field-scope max-w-sm">
         <DialogHeader><DialogTitle>Kirim tautan produk</DialogTitle></DialogHeader>
         <Input placeholder="Cari nama produk…" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="max-h-72 space-y-1 overflow-y-auto">
-          {items.isLoading ? <div className="p-2 text-center text-xs text-muted-foreground">Memuat…</div> : null}
-          {items.data?.length === 0 ? <div className="p-2 text-center text-xs text-muted-foreground">Tidak ditemukan.</div> : null}
+          {items.isLoading ? <div className="p-ms-2 text-center text-ms-xs text-muted-foreground">Memuat…</div> : null}
+          {items.data?.length === 0 ? <div className="p-ms-2 text-center text-ms-xs text-muted-foreground">Tidak ditemukan.</div> : null}
           {(items.data ?? []).map((it) => (
-            <button key={it.id} type="button" className="flex w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-xs hover:bg-accent disabled:opacity-50"
+            <button key={it.id} type="button" className="flex w-full items-center justify-between gap-ms-2 rounded border px-ms-2 py-1.5 text-left text-ms-xs hover:bg-accent disabled:opacity-50"
               disabled={busy}
               onClick={() => send(it as { id: string; name: string; category: string | null; package_type: string; package_size: number })}>
               <span className="min-w-0 flex-1 truncate">

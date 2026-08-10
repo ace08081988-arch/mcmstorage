@@ -1,0 +1,34 @@
+name: lint-mmss
+
+on:
+  push:
+    paths:
+      - "src/components/chat/**"
+      - "src/lib/format-duration.ts"
+      - "eslint.config.js"
+      - "eslint.mmss-allowlist.json"
+      - "scripts/lint-mmss-ci.mjs"
+      - ".github/workflows/lint-mmss.yml"
+  pull_request:
+    paths:
+      - "src/components/chat/**"
+      - "src/lib/format-duration.ts"
+      - "eslint.config.js"
+      - "eslint.mmss-allowlist.json"
+      - "scripts/lint-mmss-ci.mjs"
+      - ".github/workflows/lint-mmss.yml"
+  workflow_dispatch:
+
+jobs:
+  lint-mmss:
+    name: mm:ss formatter guard (fail on warning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Enforce mm:ss lint (max-warnings=0)
+        run: bun run lint:mmss:ci

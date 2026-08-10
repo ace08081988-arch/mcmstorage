@@ -1,0 +1,175 @@
+name: Dependency PR Changelog
+
+# Menempelkan ringkasan versi + changelog advisory pada PR update dependency
+# (Dependabot/Renovate atau PR manual yang menyentuh package.json / bun.lock).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: dep-pr-changelog-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changelog:
+    name: Ringkasan update dependency
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Audit sebelum (base branch)
+        run: |
+          set +e
+          git worktree add /tmp/base "origin/${{ github.event.pull_request.base.ref || 'main' }}"
+          cd /tmp/base
+          bun install --frozen-lockfile >/dev/null 2>&1
+          bun audit --json > "${GITHUB_WORKSPACE}/audit-before.json" 2>/dev/null
+          exit 0
+
+      - name: Install dependencies (head)
+        run: bun install --frozen-lockfile
+
+      - name: Audit sesudah (PR)
+        run: |
+          set +e
+          bun audit --json > audit-after.json 2>/dev/null
+          exit 0
+
+      - name: Susun ringkasan
+        run: |
+          node scripts/dep-pr-changelog.mjs \
+            --base "origin/${{ github.event.pull_request.base.ref || 'main' }}" \
+            --audit-before audit-before.json \
+            --audit-after audit-after.json \
+            --out dep-changelog.md \
+            --labels-out dep-labels.txt \
+            --slack-out slack-payload.json \
+            --pr-url "${{ github.event.pull_request.html_url }}" \
+            --pr-title "${{ github.event.pull_request.title }}"
+
+      # Notifikasi Slack hanya saat PR benar-benar menutup advisory keamanan.
+      # Butuh repo secret SLACK_WEBHOOK_URL (Slack Incoming Webhook); tanpa itu step di-skip.
+      - name: Notifikasi Slack (security fix)
+        if: github.event_name == 'pull_request'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+          if [ ! -f slack-payload.json ]; then
+            echo "Tidak ada security fix baru — notifikasi Slack dilewati."
+            exit 0
+          fi
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "::notice::SLACK_WEBHOOK_URL belum diset, notifikasi Slack dilewati."
+            exit 0
+          fi
+          code="$(curl -sS -o /tmp/slack-res.txt -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' \
+            --data @slack-payload.json "$SLACK_WEBHOOK_URL")"
+          echo "Slack HTTP $code: $(cat /tmp/slack-res.txt)"
+          [ "$code" = "200" ] || echo "::warning::Gagal kirim notifikasi Slack (HTTP $code)."
+
+      - name: Komentari PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: dependency-changelog
+          path: dep-changelog.md
+
+      # Label otomatis: severity/* (low|moderate|high|critical) + type/* (security|fix|breaking).
+      - name: Label otomatis PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          [ -s dep-labels.txt ] || { echo "Tidak ada label yang perlu ditambahkan."; exit 0; }
+
+          color_for() {
+            case "$1" in
+              severity/critical) echo "b60205" ;;
+              severity/high)     echo "d93f0b" ;;
+              severity/moderate) echo "fbca04" ;;
+              severity/low)      echo "0e8a16" ;;
+              type/security)     echo "5319e7" ;;
+              type/breaking)     echo "e11d48" ;;
+              type/fix)          echo "0366d6" ;;
+              *)                 echo "ededed" ;;
+            esac
+          }
+
+          # Bersihkan label lama agar tidak menumpuk saat PR di-update.
+          for old in severity/critical severity/high severity/moderate severity/low type/security type/fix type/breaking; do
+            if ! grep -qxF "$old" dep-labels.txt; then
+              gh pr edit "$PR" --remove-label "$old" >/dev/null 2>&1 || true
+            fi
+          done
+
+          while IFS= read -r label; do
+            [ -n "$label" ] || continue
+            gh label create "$label" --color "$(color_for "$label")" --description "Auto: PR dependency" >/dev/null 2>&1 || true
+            gh pr edit "$PR" --add-label "$label" >/dev/null 2>&1 || echo "Gagal menambah label $label"
+          done < dep-labels.txt
+
+          echo "Label diterapkan:"; cat dep-labels.txt
+
+      # Gate wajib: komentar changelog harus mengikuti template — tabel versi
+      # lama→baru dan daftar advisory dengan severity + link — sebelum merge.
+      - name: Gate format changelog
+        run: node scripts/check-dep-pr-changelog.mjs dep-changelog.md
+
+      - name: Gate audit (fail on high/critical)
+        run: bun run audit:deps:ci
+
+      - name: Gate versi router
+        run: bun run audit:router-versions
+
+      # Auto-merge hanya untuk PR dependency berisiko rendah:
+      #  - dibuat oleh Dependabot
+      #  - label severity/low atau severity/moderate (atau tanpa severity sama sekali)
+      #  - TIDAK ada type/breaking, severity/high, severity/critical
+      # `gh pr merge --auto` tetap menunggu SEMUA required check (termasuk
+      # Typecheck & Build + kedua gate audit di job ini) lulus sebelum merge.
+      - name: Auto-merge PR dependency berisiko rendah
+        if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          labels="$( [ -f dep-labels.txt ] && cat dep-labels.txt || true )"
+
+          blocked=""
+          for bad in type/breaking severity/high severity/critical; do
+            if printf '%s\n' "$labels" | grep -qxF "$bad"; then blocked="$bad"; fi
+          done
+
+          if [ -n "$blocked" ]; then
+            echo "Auto-merge dilewati: label \"$blocked\" butuh review manual."
+            exit 0
+          fi
+
+          echo "Mengaktifkan auto-merge (squash) — menunggu semua required check lulus."
+          gh pr merge "$PR" --auto --squash || {
+            echo "Auto-merge tidak bisa diaktifkan (cek setting 'Allow auto-merge' di repo)."
+            exit 0
+          }

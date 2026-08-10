@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type MyProfile = {
@@ -11,10 +12,11 @@ export type MyProfile = {
   currency: string;
   date_format: string;
   avatar_url: string | null;
+  invite_code: string | null;
 };
 
 const PROFILE_COLS: string =
-  "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url";
+  "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url, invite_code";
 
 const DEFAULT_PREFS = {
   country_code: "ID",
@@ -49,6 +51,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
       email: user.email ?? null,
       phone: user.phone ?? null,
       avatar_url: null,
+      invite_code: null,
       ...DEFAULT_PREFS,
     };
   }
@@ -136,6 +139,52 @@ export function useMyProfile() {
     queryFn: getMyProfile,
     staleTime: 60_000,
   });
+}
+
+/**
+ * Berlangganan perubahan realtime pada baris `profiles` milik user saat ini.
+ * Setiap UPDATE (mis. ganti nama/avatar dari tab lain atau perangkat lain)
+ * langsung meng-invalidate cache profil sehingga UI ikut refresh tanpa reload.
+ *
+ * Dipakai berbarengan dengan `useMyProfile()` — sengaja dipisah supaya hook
+ * dasar tetap murni (bisa dipakai di banyak tempat tanpa membuka channel
+ * berulang), sementara halaman yang menampilkan avatar/nama besar (Profil
+ * Chat, Header) memasang subscription.
+ */
+export function useMyProfileRealtime(): void {
+  const qc = useQueryClient();
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`profile:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "profiles", filter: `id=eq.${uid}` },
+          () => {
+            qc.invalidateQueries({ queryKey: MY_PROFILE_KEY });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "address_book", filter: `user_id=eq.${uid}` },
+          () => {
+            // Buku alamat memengaruhi alias nama kontak yang ditampilkan.
+            qc.invalidateQueries({ queryKey: ["address-book"] });
+            qc.invalidateQueries({ queryKey: ["contact-alias"] });
+          },
+        )
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [qc]);
 }
 
 export function useUpdateMyProfile() {

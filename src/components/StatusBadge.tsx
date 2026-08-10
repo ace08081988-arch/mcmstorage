@@ -1,4 +1,9 @@
 import { cn } from "@/lib/utils";
+import {
+  STATUS_LABEL_ID,
+  STATUS_VARIANT,
+  type LifecycleStatus,
+} from "@/lib/prep-status";
 
 /**
  * Konsisten status badge untuk semua varian pesanan/produk.
@@ -21,10 +26,10 @@ function variantClass(v: StatusVariant): string {
   switch (v) {
     case "menunggu":
     case "hutang":
-      return "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+      return "bg-warning/15 text-warning dark:text-warning";
     case "siap":
     case "lunas":
-      return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+      return "bg-success/15 text-success dark:text-success";
     case "kelebihan":
     case "info":
       return "bg-sky-500/15 text-sky-700 dark:text-sky-400";
@@ -48,24 +53,30 @@ function resolveVariant(status: string): StatusVariant {
 export function StatusBadge({
   status,
   variant,
+  lifecycle,
   size = "sm",
   className,
   children,
 }: {
   status?: string;
   variant?: StatusVariant;
+  lifecycle?: LifecycleStatus;
   size?: "xs" | "sm";
   className?: string;
   children?: React.ReactNode;
 }) {
-  const v = variant ?? resolveVariant(status ?? "");
-  const label = children ?? status ?? "";
+  // `lifecycle` menang atas `status`/`variant` — SSOT untuk pipeline pesanan.
+  const v = lifecycle
+    ? STATUS_VARIANT[lifecycle]
+    : (variant ?? resolveVariant(status ?? ""));
+  const label =
+    children ?? (lifecycle ? STATUS_LABEL_ID[lifecycle] : (status ?? ""));
   return (
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded font-semibold uppercase leading-none",
         "max-w-full whitespace-nowrap tracking-wide",
-        size === "xs" ? "h-5 px-1.5 text-[10px]" : "h-6 px-2 text-[11px]",
+        size === "xs" ? "h-5 px-1.5 text-ms-2xs" : "h-6 px-ms-2 text-ms-2xs",
         variantClass(v),
         className,
       )}

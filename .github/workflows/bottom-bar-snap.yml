@@ -1,0 +1,56 @@
+name: Bottom Bar Snap E2E
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  bottom-bar-snap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      BASE_URL: http://localhost:4173
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          until curl -sf http://localhost:4173 > /dev/null; do
+            sleep 1
+          done
+
+      - name: Run bottom bar snap suite (mobile + tablet + desktop)
+        run: bunx playwright test --project=bottom-bar-snap-e2e --project=bottom-bar-snap-e2e-tablet --project=bottom-bar-snap-e2e-desktop --reporter=list,html
+
+      - name: Run bottom bar visual regression (screenshot diff)
+        run: bunx playwright test --project=bottom-bar-snap-visual --workers=1 --reporter=list,html
+
+      - name: Run bottom bar keyboard/focus a11y suite
+        run: bunx playwright test --project=bottom-bar-keyboard-e2e --reporter=list,html
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-bottom-bar-snap
+          path: playwright-report
+          retention-days: 14
