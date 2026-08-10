@@ -30,10 +30,14 @@ import {
   MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
   ArrowBigRight, ArrowBigLeft, ChevronsRight, ChevronsLeft, ChevronRight,
   Zap, Heart, Star, ThumbsUp, Flame,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   type Scene, type SceneObject, type DrawObj, type ShapeObj, type TextObj, type StickerObj,
   emptyScene, serializeScene, deserializeScene, newId,
@@ -1081,21 +1085,40 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Header glass — kiri (batal + reset), tengah (title kosong), kanan (undo/redo/layer/simpan). */}
         <header
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-2 px-ms-2 py-ms-2"
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-1 px-ms-2 py-ms-2"
           style={{ paddingTop: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 8px)" }}
         >
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <div className="pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={onCancel} label="Batal"><ChevronLeft className="h-5 w-5" /></IconPill>
-            <IconPill onClick={resetAll} label="Reset semua editan"><RotateCcw className="h-5 w-5" /></IconPill>
+            {/* Reset & Layer masuk menu overflow: di 320px header tidak muat
+                menampung semuanya tanpa memotong tombol Simpan. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Menu lainnya"
+                  className="grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-fullscreen">
+                <DropdownMenuItem onSelect={() => resetAll()}>
+                  <RotateCcw className="mr-2 h-4 w-4" /> Reset semua editan
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setShowLayers((v) => !v)}>
+                  <Layers className="mr-2 h-4 w-4" /> Layer ({scene.objects.length})
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <div className="pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={doUndo} disabled={!canUndo(history)} label="Undo"><Undo2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={doRedo} disabled={!canRedo(history)} label="Redo"><Redo2 className="h-5 w-5" /></IconPill>
-            <IconPill onClick={() => setShowLayers((v) => !v)} label="Layer" active={showLayers}><Layers className="h-5 w-5" /></IconPill>
             <Button
               size="sm"
               onClick={doSave}
-              className="ml-ms-1 h-9 rounded-full border border-[#c9a84c]/50 px-ms-4 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
+              className="ml-ms-1 h-11 shrink-0 rounded-full border border-[#c9a84c]/50 px-ms-3 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
               style={{ background: "linear-gradient(180deg, #f0d78c 0%, #c9a84c 55%, #a3873a 100%)" }}
             >
               Simpan
@@ -1105,7 +1128,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Kolom kiri-tengah: transform (rotate/flip). Vertikal supaya tidak menutupi foto. */}
         <div
-          className="pointer-events-none absolute left-ms-2 top-1/2 z-20 -translate-y-1/2"
+          className="pointer-events-none absolute left-2 top-1/2 z-20 -translate-y-1/2"
           style={{ paddingTop: "var(--app-safe-top,env(safe-area-inset-top,0px))" }}
         >
           <div className="pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
@@ -1119,7 +1142,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
         </div>
 
         {/* Kanan-tengah: zoom badge vertikal. */}
-        <div className="pointer-events-none absolute right-ms-2 top-1/2 z-20 -translate-y-1/2">
+        <div className="pointer-events-none absolute right-2 top-1/2 z-20 -translate-y-1/2">
           <div className="pointer-events-auto flex flex-col items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl">
             <IconPill onClick={() => setZoom((z) => Math.min(4, z + 0.25))} label="Zoom in"><ZoomIn className="h-5 w-5" /></IconPill>
             <span className="min-w-10 text-center text-ms-2xs font-medium tabular-nums text-[#f0d78c]/85">{Math.round(zoom * 100)}%</span>
@@ -1133,10 +1156,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             walau ukuran/zoom berubah. */}
         {selectedObj && (
           <div
-            className="pointer-events-none absolute left-1/2 right-2 z-30 flex max-w-[min(96vw,720px)] -translate-x-1/2 flex-col items-center gap-ms-2"
+            className="pointer-events-none absolute left-2 right-2 z-30 flex w-auto max-w-full translate-x-0 flex-col items-center gap-ms-2"
             style={{ top: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 68px)" }}
           >
-            <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
+            <div className="pointer-events-auto flex max-w-full items-center gap-ms-1 overflow-x-auto overscroll-x-contain rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl [scrollbar-width:none]">
               <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
               <IconPill onClick={() => bringForward(selectedObj.id)} label="Ke depan"><span className="text-ms-sm">↑</span></IconPill>
               <IconPill onClick={() => sendBackward(selectedObj.id)} label="Ke belakang"><span className="text-ms-sm">↓</span></IconPill>
@@ -1547,6 +1570,8 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             style={{
               bottom: "var(--app-keyboard-inset, 0px)",
               maxHeight: "calc(var(--app-vh-visible, var(--app-vh, 100dvh)) - 6rem)",
+              paddingBottom:
+                "calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 16px)",
             }}
             className="absolute inset-x-0 z-40 overflow-y-auto overscroll-contain rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in"
           >
@@ -1659,7 +1684,7 @@ function IconPill(props: {
       aria-pressed={active}
       disabled={disabled}
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
+        "grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
         !disabled && "hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95",
         active && "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]",
         tone === "danger" && "text-destructive-foreground hover:bg-destructive/30",
