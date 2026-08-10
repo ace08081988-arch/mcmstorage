@@ -195,3 +195,29 @@ describe("ReadyEcerSection meneruskan intent kanal yang benar", () => {
     expect(src).toContain('send: "1", ch: "chat"');
   });
 });
+
+// ---------- Guard status kanal Chat di Request ----------
+describe("Request: kanal Ace Chat aman & tidak jatuh ke WA", () => {
+  const src = read("src/routes/_authenticated.request.tsx");
+
+  it("tanpa percakapan tujuan, picker dibuka dan alur berhenti sebelum kirim", () => {
+    const guard = src.indexOf('if (channel === "chat" && !conv)');
+    const share = src.indexOf("await shareToChat(");
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(share);
+    expect(src.slice(guard, guard + 200)).toContain("setChatPickerOpen(true)");
+  });
+
+  it("Chat commit hanya bila status shared", () => {
+    const chat = src.indexOf("await shareToChat(");
+    const guard = src.indexOf('res.status !== "shared"');
+    const rpc = src.indexOf('rpc("send_request_prep_to_customer"');
+    expect(guard).toBeGreaterThan(chat);
+    expect(rpc).toBeGreaterThan(guard);
+  });
+
+  it("status share tak dikenal diperlakukan sebagai belum terkirim", () => {
+    expect(src).toContain("if (!isShareOpened(res.status))");
+    expect(src).toContain("Pengiriman belum dipastikan");
+  });
+});
