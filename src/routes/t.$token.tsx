@@ -1610,16 +1610,10 @@ function PublicPrepPage() {
     const hb = window.setInterval(() => {
       if (document.visibilityState === "visible") scheduleRefresh(12000);
     }, 15000);
-    // Timer tampilan saja (label "x dtk lalu") — tidak pernah mengambil data,
-    // dan berhenti bekerja saat layar tidak terlihat agar hemat baterai.
-    const tick = window.setInterval(() => {
-      if (document.visibilityState === "visible") setSyncTick((n) => n + 1);
-    }, 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(hb);
-      window.clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, token]);
