@@ -2889,7 +2889,7 @@ function ItemCard({
         const blobs = await loadDraftPhotos(draftKey);
         if (cancelled) return;
         if (blobs.length > 0) {
-          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          const staged = await mapWithConcurrency(blobs, PHOTO_DECODE_CONCURRENCY, (b) => stageFile(b));
           if (!cancelled) {
             setPhotos(staged);
             // Buka sekali saat draft tersimpan dimuat, supaya user langsung
@@ -3099,7 +3099,7 @@ function ItemCard({
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const beforeLen = photosRef.current.length;
-    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await mapWithConcurrency(files, PHOTO_DECODE_CONCURRENCY, (f) => stageOne(f, false));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
@@ -4550,7 +4550,7 @@ function RequestForm({
         const blobs = await loadDraftPhotos(draftKey);
         if (cancelled) return;
         if (blobs.length > 0) {
-          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          const staged = await mapWithConcurrency(blobs, PHOTO_DECODE_CONCURRENCY, (b) => stageFile(b));
           if (!cancelled) setPhotos(staged);
         }
       } catch {
@@ -4758,7 +4758,7 @@ function RequestForm({
   async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const beforeLen = photosRef.current.length;
-    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await mapWithConcurrency(files, PHOTO_DECODE_CONCURRENCY, (f) => stageOne(f, false));
     const okCount = results.filter(Boolean).length;
     if (okCount === 0) return;
     const len = await waitForPhotosRefLength(photosRef, beforeLen + okCount);
