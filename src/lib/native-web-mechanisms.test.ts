@@ -81,6 +81,19 @@ describe("guard native pada mekanisme web", () => {
     expect(register).toHaveBeenCalled();
   });
 
+  it("startPushKeepAlive & auto-fullscreen diguard isNativeApp()", () => {
+    const push = readFileSync("src/lib/push-client.ts", "utf8");
+    expect(push).toMatch(/startPushKeepAlive[\s\S]{0,200}isNativeApp\(\)/);
+    const fs = readFileSync("src/lib/fullscreen-mode.ts", "utf8");
+    expect(fs).toMatch(/startAutoFullscreenOnInstalled[\s\S]{0,300}isNativeApp\(\)/);
+  });
+
+  it("daftar chat mengirim rowVersion berisi selecting + selectedIds", () => {
+    const src = readFileSync("src/routes/_authenticated.chat.index.tsx", "utf8");
+    expect(src).toContain("rowVersion=");
+    expect(src).toMatch(/rowVersion=\{[^}]*selecting[^}]*selectedIds/s);
+  });
+
   it("native push & deep-link listener TIDAK diguard oleh isNativeApp()", () => {
     const push = readFileSync("src/lib/native-push.ts", "utf8");
     const deeplink = readFileSync("src/lib/native-deeplink.ts", "utf8");
