@@ -121,7 +121,7 @@ if (aapt) {
 }
 if (!appId) {
   // Fallback: infer dari capacitor.config.ts (based on variant).
-  appId = variant === "chat" ? "biz.mcmstorage.chat" : "biz.mcmstorage.app";
+  appId = variant === "chat" ? "biz.mcmstorage.chat" : "mcmstorage.app";
   console.log(`  ⚠ aapt tidak tersedia — fallback appId dari varian: ${appId}`);
 } else {
   console.log(`  ✓ appId=${appId}${versionCode ? ` versionCode=${versionCode}` : ""}`);

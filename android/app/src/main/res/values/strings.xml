@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">ACE STORAGE</string>
     <string name="title_activity_main">ACE STORAGE</string>
-    <string name="package_name">biz.mcmstorage.app</string>
+    <string name="package_name">mcmstorage.app</string>
     <string name="custom_url_scheme">biz.mcmstorage.app</string>
 </resources>

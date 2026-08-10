@@ -9,7 +9,7 @@
  *   node scripts/upload-play.mjs --variant chat
  *   node scripts/upload-play.mjs --track production --release-status draft
  *   node scripts/upload-play.mjs --aab path/ke.aab
- *   node scripts/upload-play.mjs --package biz.mcmstorage.app
+ *   node scripts/upload-play.mjs --package mcmstorage.app
  *
  * Flag:
  *   --track            internal (default) | alpha | beta | production
@@ -105,7 +105,7 @@ console.log(`  ✓ client_email: ${sa.client_email}`);
 // ─── 2. Tentukan package name & AAB ───────────────────────────────────
 step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
-  packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "biz.mcmstorage.app");
+  packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "mcmstorage.app");
 console.log(`  ✓ packageName: ${packageName}`);
 runSummary.packageName = packageName;
 

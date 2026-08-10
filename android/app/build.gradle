@@ -28,10 +28,13 @@ if (!hasReleaseSigning) {
 }
 
 android {
+    // namespace = paket sumber Java/R class (tetap biz.mcmstorage.app supaya
+    // MainActivity & resource tidak perlu dipindah). applicationId =
+    // identitas app di Play Console (mcmstorage.app).
     namespace = "biz.mcmstorage.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "biz.mcmstorage.app"
+        applicationId "mcmstorage.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode

@@ -1,8 +1,8 @@
 name: Build & Release AAB
 
 # Jalankan manual dari tab Actions → "Build & Release AAB" → Run workflow.
-# Mode default = dry-run: build AAB + verifikasi versionCode vs Play Console,
-# TIDAK upload. Matikan `dry_run` untuk benar-benar upload ke track.
+# Mode default = build-only: build signed AAB + upload artifact saja.
+# TIDAK menyentuh Play Developer API. Matikan `dry_run` untuk upload ke track.
 
 on:
   workflow_dispatch:
@@ -23,11 +23,11 @@ on:
         default: draft
         options: [draft, inProgress, halted, completed]
       dry_run:
-        description: "Dry-run (build + cek versi, TANPA upload)"
+        description: "Build-only: signed AAB + artifact, TANPA akses Play Console"
         type: boolean
         default: true
       skip_version_check:
-        description: "Lewati cek versionCode vs Play (TIDAK direkomendasikan)"
+        description: "Lewati cek versionCode vs Play (hanya berlaku saat dry_run=false)"
         type: boolean
         default: false
       expected_version_code:
@@ -152,33 +152,38 @@ jobs:
             exit 1
           fi
 
-      - name: Setup JDK 17
+      - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "platform-tools platforms;android-34 build-tools;34.0.0"
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Sanity check — required secrets present
+        env:
+          SECRET_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}
         run: |
+          # Mode build-only (dry_run=true, default): HANYA butuh 4 secret
+          # keystore. Play Developer API tidak disentuh sama sekali, jadi
+          # PLAY_SERVICE_ACCOUNT_JSON_B64 TIDAK wajib.
           missing=()
-          for name in KEYSTORE_BASE64 KEYSTORE_ALIAS KEYSTORE_STORE_PASS KEYSTORE_KEY_PASS PLAY_SERVICE_ACCOUNT_JSON_B64; do
-            if [ -z "${!name:-}" ]; then
-              # KEYSTORE_BASE64 baru dipakai di step berikutnya — cek dari secrets langsung.
-              if [ "$name" = "KEYSTORE_BASE64" ] && [ -z "${SECRET_KEYSTORE_BASE64:-}" ]; then
-                missing+=("$name")
-              elif [ "$name" != "KEYSTORE_BASE64" ]; then
-                missing+=("$name")
-              fi
-            fi
-          done
+          [ -n "${SECRET_KEYSTORE_BASE64:-}" ] || missing+=("KEYSTORE_BASE64")
+          [ -n "${KEYSTORE_ALIAS:-}" ] || missing+=("KEYSTORE_ALIAS")
+          [ -n "${KEYSTORE_STORE_PASS:-}" ] || missing+=("KEYSTORE_STORE_PASS")
+          [ -n "${KEYSTORE_KEY_PASS:-}" ] || missing+=("KEYSTORE_KEY_PASS")
+          if [ "$DRY_RUN" != "true" ]; then
+            [ -n "${PLAY_SERVICE_ACCOUNT_JSON_B64:-}" ] || missing+=("PLAY_SERVICE_ACCOUNT_JSON_B64")
+          else
+            echo "ℹ Mode build-only: PLAY_SERVICE_ACCOUNT_JSON_B64 tidak diperlukan."
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::Secret berikut belum di-set di repo settings → Secrets and variables → Actions:"
             printf '  - %s\n' "${missing[@]}"
@@ -188,11 +193,9 @@ jobs:
             echo "  KEYSTORE_ALIAS             = alias di dalam keystore (mis. mcm)"
             echo "  KEYSTORE_STORE_PASS        = password store"
             echo "  KEYSTORE_KEY_PASS          = password key"
-            echo "  PLAY_SERVICE_ACCOUNT_JSON_B64 = base64 -w0 service-account.json"
+            echo "  PLAY_SERVICE_ACCOUNT_JSON_B64 = base64 -w0 service-account.json (hanya untuk dry_run=false)"
             exit 1
           fi
-        env:
-          SECRET_KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
       - name: Materialize keystore file
         run: |
@@ -223,9 +226,14 @@ jobs:
           dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
           skip='${{ github.event.inputs.skip_version_check || 'false' }}'
 
-          args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
-          [ "$dry" = "true" ] && args+=(--upload-dry-run)
-          [ "$skip" = "true" ] && args+=(--skip-version-check)
+          if [ "$dry" = "true" ]; then
+            # BUILD-ONLY: signed AAB + artifact saja. Tidak ada panggilan ke
+            # Play Developer API (tidak upload, tidak cek versionCode remote).
+            args=(--variant "$variant")
+          else
+            args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
+            [ "$skip" = "true" ] && args+=(--skip-version-check)
+          fi
 
           echo "▶ node scripts/build-aab.mjs ${args[*]}"
           node scripts/build-aab.mjs "${args[@]}"
@@ -260,7 +268,7 @@ jobs:
             echo "| Varian | \`$variant\` |"
             echo "| Track | \`$track\` |"
             echo "| Release status | \`$status\` |"
-            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 dry-run (build + cek versi, tanpa upload)' || echo '🚀 upload ke Play Console' ) |"
+            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 build-only (signed AAB + artifact, tanpa Play API)' || echo '🚀 upload ke Play Console' ) |"
             echo "| Skip version check | $skip |"
             echo "| Actor | @${{ github.actor }} |"
             echo ""
