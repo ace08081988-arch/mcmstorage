@@ -131,7 +131,7 @@ describe("uploadPrepPhoto — nama & MIME JPEG hasil konversi", () => {
 
   it("ext override lewat argument string tetap didukung (backward compat)", async () => {
     const { client, calls } = makeStorage();
-    const blob = imgBlob("image/webp", 10 * 1024);
+    const blob = imgBlob("image/jpeg", 10 * 1024);
     const path = await uploadPrepPhoto("t", "i", blob, "jpg", client);
     expect(path).toMatch(/\.jpg$/);
     expect(calls[0].options.contentType).toBe("image/jpeg");
