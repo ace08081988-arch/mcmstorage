@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import React, {
   Component,
   Fragment,
+  memo,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -13,6 +14,10 @@ import React, {
   type RefObject,
 } from "react";
 import { toast } from "sonner";
+import { mapWithConcurrency } from "@/lib/async-pool";
+import { createTrailingThrottle } from "@/lib/trailing-throttle";
+import { createSessionExpiryTimer } from "@/lib/session-expiry";
+import { sameSnapshotValue } from "@/lib/prep-snapshot";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import {
   signedUrl,
@@ -408,8 +413,10 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
       limit: 20,
     });
     const photos = Array.isArray(result.results) ? result.results : [];
-    const files = await Promise.all(
-      photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
+    // Konkurensi dibatasi 2: decode 20 foto sekaligus memicu OOM/jank berat
+    // di Android WebView. Urutan hasil tetap sesuai urutan pilihan user.
+    const files = await mapWithConcurrency(photos, PHOTO_DECODE_CONCURRENCY, (photo) =>
+      cameraPhotoToFile(photo, "pegawai-galeri"),
     );
     return files.filter((file): file is File => !!file);
   } catch (err) {
