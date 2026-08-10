@@ -2129,49 +2129,11 @@ function PublicPrepPage() {
           <SyncBadge
             status={rtStatus}
             lastSyncAt={lastSyncAt}
-            tick={syncTick}
-            onRefresh={() => {
-              void manualResync();
-            }}
+            onRefresh={stableManualResync}
           />
         </div>
         {sessionExpiresAt && (
-          <div className="mx-auto flex max-w-2xl items-center justify-between gap-ms-2 px-ms-4 pb-2 text-ms-2xs">
-            <span
-              className={
-                "inline-flex items-center gap-ms-1 rounded-full border px-ms-2 py-0.5 font-medium tabular-nums " +
-                (sessionSecondsLeft <= 60
-                  ? "border-destructive/30 bg-destructive/10 text-destructive"
-                  : sessionSecondsLeft <= 300
-                    ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
-                    : "border-border bg-muted/60 text-muted-foreground")
-              }
-              title={`Sesi PIN aktif sampai ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-            >
-              <Clock className="h-3 w-3" />
-              Sesi {sessionClock}
-            </span>
-            {sessionSecondsLeft <= 300 ? (
-              <button
-                type="button"
-                onClick={reloginNow}
-                className={
-                  "inline-flex items-center gap-ms-1 rounded-full px-ms-2.5 py-0.5 text-ms-2xs font-semibold text-white shadow-sm transition " +
-                  (sessionSecondsLeft <= 60
-                    ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-warning hover:bg-warning")
-                }
-                title="Masuk ulang dengan PIN sekarang"
-              >
-                <Lock className="h-3 w-3" />
-                Re-login sekarang
-              </button>
-            ) : (
-              <span className="text-muted-foreground">
-                {`Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-              </span>
-            )}
-          </div>
+          <SessionCountdown expiresAt={sessionExpiresAt} onRelogin={stableRelogin} />
         )}
         {deferredReload.pending && (
           <div
@@ -2191,7 +2153,7 @@ function PublicPrepPage() {
                       : "Anda sedang mengetik: refresh akan berjalan otomatis setelah selesai."}
                   {deferredReload.since && (
                     <span className="ml-1 opacity-70">
-                      · ditahan {deferredTick} dtk
+                      · ditahan <DeferredHoldSeconds since={deferredReload.since} /> dtk
                     </span>
                   )}
                 </div>
