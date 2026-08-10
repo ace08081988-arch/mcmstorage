@@ -38,6 +38,29 @@ export function notificationPermission(): NotificationPermission | "unsupported"
   return Notification.permission;
 }
 
+
+/**
+ * Simpan token kepemilikan push agar bisa dibaca service worker (yang tidak
+ * punya akses localStorage) saat merotasi endpoint.
+ */
+const PUSH_OWNER_CACHE = "mcm-push-owner";
+const PUSH_OWNER_URL = "https://push-owner.local/token";
+
+async function storeOwnershipToken(token: string | null | undefined): Promise<void> {
+  if (!token || typeof caches === "undefined") return;
+  try {
+    const cache = await caches.open(PUSH_OWNER_CACHE);
+    await cache.put(
+      PUSH_OWNER_URL,
+      new Response(JSON.stringify({ token }), {
+        headers: { "content-type": "application/json" },
+      }),
+    );
+  } catch {
+    /* penyimpanan token bersifat best-effort */
+  }
+}
+
 async function getOrRegisterSW(): Promise<ServiceWorkerRegistration> {
   const existing = await navigator.serviceWorker.getRegistration(SW_SCOPE);
   if (existing && existing.active && existing.active.scriptURL.endsWith(SW_URL)) return existing;
@@ -57,7 +80,7 @@ export async function enablePushNotifications(): Promise<{ ok: boolean; reason?:
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
   }
-  await registerPushSubscription({
+  const registered = await registerPushSubscription({
     data: {
       endpoint: sub.endpoint,
       p256dh: arrayBufferToBase64(sub.getKey("p256dh")),
@@ -65,6 +88,7 @@ export async function enablePushNotifications(): Promise<{ ok: boolean; reason?:
       userAgent: navigator.userAgent.slice(0, 256),
     },
   });
+  await storeOwnershipToken(registered?.ownershipToken);
   return { ok: true };
 }
 
@@ -121,7 +145,7 @@ export async function keepPushAlive(): Promise<{ ok: boolean; reason?: string }>
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
     }
-    await registerPushSubscription({
+    const registered = await registerPushSubscription({
       data: {
         endpoint: sub.endpoint,
         p256dh: arrayBufferToBase64(sub.getKey("p256dh")),
@@ -129,6 +153,7 @@ export async function keepPushAlive(): Promise<{ ok: boolean; reason?: string }>
         userAgent: navigator.userAgent.slice(0, 256),
       },
     });
+    await storeOwnershipToken(registered?.ownershipToken);
     return { ok: true };
    } catch (e) {
     console.warn("[push] keepPushAlive gagal", e);
