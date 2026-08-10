@@ -7,7 +7,10 @@ const variant = (process.env.APP_VARIANT ?? "full").toLowerCase();
 const isChat = variant === "chat";
 
 const config: CapacitorConfig = {
-  appId: isChat ? "biz.mcmstorage.chat" : "biz.mcmstorage.app",
+  // Varian full HARUS memakai `mcmstorage.app` — itu package name aplikasi
+  // ACE STORAGE yang sudah terdaftar di Google Play Console. Varian chat
+  // tetap `biz.mcmstorage.chat`.
+  appId: isChat ? "biz.mcmstorage.chat" : "mcmstorage.app",
   appName: isChat ? "Ace Chat" : "ACE STORAGE",
   webDir: "dist",
   server: {
