@@ -4102,15 +4102,14 @@ function PhotoTileGrid({
 function SyncBadge({
   status,
   lastSyncAt,
-  tick,
   onRefresh,
 }: {
   status: "connecting" | "connected" | "error";
   lastSyncAt: number | null;
-  tick: number;
   onRefresh: () => void;
 }) {
-  void tick; // memaksa re-render tiap detak
+  // Timer internal (5 dtk) — hanya badge ini yang rerender, bukan portal.
+  useSecondsTicker(5000, lastSyncAt != null || status !== "connected");
   const ageSec = lastSyncAt ? Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000)) : null;
   let kind: "connecting" | "connected" | "lag" | "stale";
   if (status === "connecting" && lastSyncAt == null) kind = "connecting";
