@@ -1571,6 +1571,33 @@ function PublicPrepPage() {
     });
   }
 
+  // ---- Callback stabil untuk anak yang di-memo -----------------------
+  // ItemCard dibungkus React.memo; kalau prop fungsi berganti identitas tiap
+  // render parent, memo tidak ada gunanya. Simpan versi terbaru di ref lalu
+  // ekspos wrapper ber-identitas tetap (tidak pernah stale).
+  const latestHandlersRef = useRef({
+    clearStale,
+    handleItemSubmitted,
+    manualResync,
+    reloginNow,
+  });
+  latestHandlersRef.current = { clearStale, handleItemSubmitted, manualResync, reloginNow };
+  const stableClearStale = useCallback((id: string) => latestHandlersRef.current.clearStale(id), []);
+  const stableItemSubmitted = useCallback(
+    (id: string) => latestHandlersRef.current.handleItemSubmitted(id),
+    [],
+  );
+  const stableManualResync = useCallback(() => {
+    void latestHandlersRef.current.manualResync();
+  }, []);
+  const stableRelogin = useCallback(() => latestHandlersRef.current.reloginNow(), []);
+
+  // Cermin state ke ref untuk interval auto-resync (tanpa rerender).
+  lastSyncAtRef.current = lastSyncAt;
+  rtStatusRef.current = rtStatus;
+  resyncingRef.current = resyncing;
+  authedRefForSync.current = authed;
+
   // Penjadwal tunggal: semua pemicu (realtime, heartbeat, visibility) lewat
   // sini supaya ada jeda minimum dan tidak ada permintaan bertumpuk.
   // Trailing edge: event yang datang saat jeda belum lewat TIDAK dibuang,
