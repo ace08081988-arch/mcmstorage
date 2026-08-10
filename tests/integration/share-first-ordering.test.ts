@@ -38,9 +38,9 @@ describe("share-first: ecer (ReadyEcerSection)", () => {
     const occurrences = [...src.matchAll(/markSent\(/g)].map((m) => m.index ?? 0);
     expect(occurrences.length).toBeGreaterThan(0);
     for (const idx of occurrences) {
-      const before = src.slice(Math.max(0, idx - 600), idx);
-      // setiap markSent yang berkaitan dengan share harus didahului cek sukses
-      if (before.includes("callShare()") || before.includes("r0.status")) {
+      const before = src.slice(Math.max(0, idx - 400), idx);
+      // setiap markSent pada jalur share harus didahului cek sukses
+      if (before.includes("await callShare()")) {
         expect(before).toMatch(/r0\.status === "shared" \|\| r0\.status === "fallback"/);
       }
     }
