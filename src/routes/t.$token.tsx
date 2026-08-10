@@ -1437,20 +1437,20 @@ function PublicPrepPage() {
   // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
   // Bedanya: bila PIN telah diubah admin atau tugas ditutup, langsung pindah
   // ke layar yang sesuai tanpa menghapus state percobaan.
-  async function silentRefresh() {
-    if (!pinRef.current || !authed) return;
-    if (isWorkerOperationActive()) return;
+  async function silentRefresh(): Promise<RefreshResult> {
+    if (!pinRef.current || !authed) return { ok: false, at: null };
+    if (isWorkerOperationActive()) return { ok: false, at: null };
     // Guard in-flight: realtime broadcast, heartbeat 15 dtk, dan
     // visibilitychange bisa memicu bersamaan pada sinyal lemah. Tanpa guard,
     // beberapa permintaan identik berjalan paralel dan hasil lama bisa
     // menimpa hasil baru (last-write-wins yang salah).
     if (refreshInFlightRef.current) {
       refreshQueuedRef.current = true;
-      return;
+      return { ok: false, at: null };
     }
     refreshInFlightRef.current = true;
     try {
-      await silentRefreshInner();
+      return await silentRefreshInner();
     } finally {
       refreshInFlightRef.current = false;
       if (refreshQueuedRef.current) {
@@ -1461,8 +1461,9 @@ function PublicPrepPage() {
     }
   }
 
-  async function silentRefreshInner() {
+  async function silentRefreshInner(): Promise<RefreshResult> {
     lastRefreshAtRef.current = Date.now();
+    refreshThrottleRef.current?.markRan(lastRefreshAtRef.current);
     let data: unknown = null;
     try {
       const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
@@ -1471,13 +1472,13 @@ function PublicPrepPage() {
         // realtime/sync badge yang memberi tahu user.
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh transport error", r.error);
-        return;
+        return { ok: false, at: null };
       }
       data = r.data;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh threw", e);
-      return;
+      return { ok: false, at: null };
     }
     const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
@@ -1490,7 +1491,7 @@ function PublicPrepPage() {
       if (silentFailRef.current.count < cfg.silentFailTolerance) {
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
-        return;
+        return { ok: false, at: null };
       }
       if (kind === "bad_pin") setClosedReason("pin_changed");
       else if (kind === "expired") setClosedReason("expired");
@@ -1501,7 +1502,7 @@ function PublicPrepPage() {
       clearSession();
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh non-ok (kicked)", res);
-      return;
+      return { ok: false, at: null };
     }
     // Reset counter saat sukses.
     silentFailRef.current = { kind: null, count: 0 };
@@ -1512,21 +1513,39 @@ function PublicPrepPage() {
       // user ke PIN; pertahankan data terakhir yang masih valid.
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh missing/malformed task", res);
-      return;
+      return { ok: false, at: null };
     }
     const normalizedItems = normalizePrepItems(res.items);
+    const at = Date.now();
+    // Payload identik secara semantik → jangan set state object/array baru,
+    // supaya burst realtime tidak memicu rerender seluruh daftar kartu.
+    const prevSnapshot = lastSnapshotRef.current;
+    if (
+      prevSnapshot &&
+      sameSnapshotValue(prevSnapshot.task, normalizedTask) &&
+      sameSnapshotValue(prevSnapshot.items, normalizedItems)
+    ) {
+      lastSyncAtRef.current = at;
+      setLastSyncAt(at);
+      return { ok: true, at };
+    }
     const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
     const nextStale: Record<string, true> = { ...staleItemIds };
+    let staleChanged = false;
     for (const it of normalizedItems) {
       const before = prev.get(it.id);
       if (before && it.updated_at && before !== it.updated_at) {
+        if (!nextStale[it.id]) staleChanged = true;
         nextStale[it.id] = true;
       }
     }
-    setStaleItemIds(nextStale);
+    if (staleChanged) setStaleItemIds(nextStale);
+    lastSnapshotRef.current = { task: normalizedTask, items: normalizedItems };
     setTask(normalizedTask);
     setItems(normalizedItems);
-    setLastSyncAt(Date.now());
+    lastSyncAtRef.current = at;
+    setLastSyncAt(at);
+    return { ok: true, at };
   }
 
   // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
@@ -1557,10 +1576,16 @@ function PublicPrepPage() {
 
   // Penjadwal tunggal: semua pemicu (realtime, heartbeat, visibility) lewat
   // sini supaya ada jeda minimum dan tidak ada permintaan bertumpuk.
+  // Trailing edge: event yang datang saat jeda belum lewat TIDAK dibuang,
+  // melainkan dijadwalkan satu kali tepat setelah jeda selesai.
+  const refreshThrottleRef = useRef<ReturnType<typeof createTrailingThrottle> | null>(null);
+  if (!refreshThrottleRef.current) {
+    refreshThrottleRef.current = createTrailingThrottle(() => {
+      void silentRefreshRef.current?.();
+    });
+  }
   function scheduleRefresh(minGapMs = 3000) {
-    const since = Date.now() - lastRefreshAtRef.current;
-    if (since < minGapMs) return;
-    void silentRefresh();
+    refreshThrottleRef.current?.request(minGapMs);
   }
 
   // Realtime broadcast + fallback heartbeat & visibility refresh.
