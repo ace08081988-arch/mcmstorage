@@ -1,0 +1,1 @@
+ALTER FUNCTION public.stock_ledger_immutable() SET search_path = public, pg_temp;
