@@ -9,6 +9,8 @@ import { render, cleanup, screen } from "@testing-library/react";
 import * as React from "react";
 import { SessionCountdown, SyncAgeLabel, DeferredHoldSeconds } from "./PrepTimeTickers";
 
+(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
 afterEach(cleanup);
 
 let leafRenders = 0;
