@@ -55,6 +55,7 @@ import { markSent, useSentShots } from "@/lib/wa-sent-history";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { confirm } from "@/lib/confirm";
+import { confirmWhatsAppDelivered, isShareOpened, createReentryLock } from "@/lib/post-share-confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import {
   logAutoSendProposed,
@@ -4557,10 +4558,16 @@ function SendEcerPrepsDialog({
     });
   }
 
+  // Kunci re-entry: mencegah double tap / event ganda memicu dua commit
+  // finansial. Ref (bukan state) supaya efektif pada klik beruntun dalam
+  // satu frame render.
+  const sendLock = useRef(createReentryLock());
+
   async function handleSend() {
     if (!canSend) return;
     if (!party.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
     if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
+    if (!sendLock.current.acquire()) return;
 
     const methodLabel =
       payment.method === "hutang" ? `Hutang — sisa ${formatPaymentRupiah(payment.remaining)} piutang`
@@ -4573,18 +4580,105 @@ function SendEcerPrepsDialog({
       `Metode: ${methodLabel}`,
       note.trim() ? `Catatan: ${note.trim()}` : null,
       "",
-      "Setelah dikirim, stok, penjualan, dan piutang otomatis tercatat. Foto & caption akan dibagikan ke pembeli via WA/Chat.",
+      "Foto & caption dibagikan dulu ke pembeli via WA. Penjualan, stok, dan piutang baru dicatat setelah Anda mengonfirmasi bahwa pesan benar-benar terkirim.",
     ].filter(Boolean).join("\n");
     const ok = await confirm({
       title: "Konfirmasi pembayaran",
       description: summary,
-      confirmText: "Kirim ke pembeli",
+      confirmText: "Lanjut kirim WA",
       cancelText: "Periksa lagi",
     });
-    if (!ok) return;
+    if (!ok) { sendLock.current.release(); return; }
+
+    const captionPreview = (() => {
+      try { return buildCaption(); } catch { return null; }
+    })();
+
+    // Catat event histori dengan outcome final saja — TIDAK PERNAH "sent"
+    // sebelum konfirmasi pengiriman. Sebelum konfirmasi, outcome yang sah
+    // hanya "cancelled" atau "failed".
+    async function logSendEvent(
+      outcome: "sent" | "cancelled" | "failed",
+      photoCount: number,
+      errorMessage?: string | null,
+    ) {
+      try {
+        const { data: uData } = await supabase.auth.getUser();
+        const uid = uData.user?.id ?? null;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase as any).from("ecer_send_events").insert({
+          user_id: uid,
+          title_id: title.id,
+          prep_ids: preps.map((p) => p.id),
+          prep_count: preps.length,
+          customer_id: party.id ?? null,
+          party_name: party.name || null,
+          party_contact: party.contact || null,
+          channel: "wa",
+          outcome,
+          total_amount: payment.total,
+          paid_amount: payment.method === "partial" ? payment.paid : (payment.method === "kas" ? payment.total : 0),
+          payment_method: payment.method,
+          note: note.trim() || null,
+          caption_preview: captionPreview,
+          photo_count: photoCount,
+          error_message: errorMessage ?? null,
+        });
+        try {
+          window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
+        } catch { /* ignore */ }
+      } catch (logErr) {
+        console.warn("[ecer:send-history] gagal catat", logErr);
+      }
+    }
+
+    // Read-back: dipakai kalau RPC timeout/putus SETELAH konfirmasi, supaya
+    // retry tidak pernah menggandakan transaksi.
+    async function alreadyCommitted(): Promise<boolean> {
+      try {
+        const { data } = await supabase
+          .from("ecer_preparations")
+          .select("id, sold_at")
+          .in("id", preps.map((p) => p.id));
+        const rows = (data ?? []) as Array<{ sold_at: string | null }>;
+        return rows.length > 0 && rows.every((r) => isSentPrep(r));
+      } catch {
+        return false;
+      }
+    }
 
     setBusy(true);
+    let files: File[] = [];
     try {
+      // 1) Bangun lampiran & bagikan ke WhatsApp DULU. Belum ada satu pun
+      //    efek finansial di titik ini.
+      for (const p of preps) {
+        const signed = await resolvePhotoUrl(p);
+        if (!signed) continue;
+        const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
+        if (f) files.push(f);
+      }
+      const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
+      notifyShareResult(res);
+      if (!isShareOpened(res.status)) {
+        const failed = res.status === "failed";
+        await logSendEvent(failed ? "failed" : "cancelled", files.length,
+          failed ? (res as { error?: string }).error ?? null : null);
+        toast.info("Belum dikirim — paket tetap di daftar Siap Dikirim.");
+        return;
+      }
+
+      // 2) Konfirmasi eksplisit: share sheet terbuka BUKAN bukti terkirim.
+      const delivered = await confirmWhatsAppDelivered(
+        `${preps.length} kotak · ${title.name} · ${rupiah(totalAmount)} · ${methodLabel}`,
+      );
+      if (!delivered) {
+        await logSendEvent("cancelled", files.length, "Owner memilih: belum terkirim");
+        toast.info("Ditandai belum terkirim — tidak ada penjualan/piutang yang dicatat.");
+        return;
+      }
+
+      // 3) Baru sekarang RPC finansial (sold_at + sales + debts).
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: rpcErr } = await (supabase as any).rpc("send_ecer_preps_to_customer", {
         _prep_ids: preps.map((p) => p.id),
@@ -4595,12 +4689,15 @@ function SendEcerPrepsDialog({
         _payment_method: payment.method,
         _note: note.trim() || null,
       });
-      if (rpcErr) throw rpcErr;
+      if (rpcErr) {
+        // Read-back sebelum melaporkan gagal: kalau ternyata commit sudah
+        // masuk (timeout jaringan), jangan tawarkan retry.
+        if (!(await alreadyCommitted())) {
+          await logSendEvent("failed", files.length, (rpcErr as { message?: string })?.message ?? String(rpcErr));
+          throw rpcErr;
+        }
+      }
 
-      // Broadcast agar semua panel (ReadyEcerSection di /index, badge produk,
-      // panel Piutang) refetch — realtime tidak dipasang di semua permukaan,
-      // jadi event ini adalah sabuk pengaman supaya UI konsisten setelah kirim
-      // batch (baik Lunas, Hutang, maupun Bayar sebagian).
       emitDebtTx({
         kind: "piutang",
         wasCash: payment.method === "kas",
@@ -4609,6 +4706,7 @@ function SendEcerPrepsDialog({
         at: Date.now(),
       });
 
+      await logSendEvent("sent", files.length);
       toast.success(
         payment.method === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
@@ -4616,127 +4714,12 @@ function SendEcerPrepsDialog({
             ? `Terkirim — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat",
       );
-      // Log histori verifikasi & pengiriman (WA/Chat) per transaksi.
-      // Baris awal ditulis segera setelah RPC sukses supaya jejak tidak
-      // hilang kalau WebView pause saat pindah ke WhatsApp. Outcome +
-      // photo_count di-update setelah share benar-benar berjalan.
-      const captionPreview = (() => {
-        try { return buildCaption(); } catch { return null; }
-      })();
-      let sendEventId: string | null = null;
-      try {
-        const { data: uData } = await supabase.auth.getUser();
-        const uid = uData.user?.id ?? null;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: evt } = await (supabase as any)
-          .from("ecer_send_events")
-          .insert({
-            user_id: uid,
-            title_id: title.id,
-            prep_ids: preps.map((p) => p.id),
-            prep_count: preps.length,
-            customer_id: party.id ?? null,
-            party_name: party.name || null,
-            party_contact: party.contact || null,
-            channel: "wa",
-            outcome: "sent",
-            total_amount: payment.total,
-            paid_amount: payment.method === "partial" ? payment.paid : (payment.method === "kas" ? payment.total : 0),
-            payment_method: payment.method,
-            note: note.trim() || null,
-            caption_preview: captionPreview,
-            photo_count: 0,
-          })
-          .select("id")
-          .single();
-        sendEventId = (evt as { id?: string } | null)?.id ?? null;
-        if (sendEventId) {
-          try {
-            window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
-          } catch { /* ignore */ }
-        }
-      } catch (logErr) {
-        console.warn("[ecer:send-history] gagal catat awal", logErr);
-      }
-      // Urutan penting: DULU siapkan file + buka WA (memindahkan app ke
-      // background), BARU panggil onSent() saat visibility kembali "visible".
-      // Alasan: kalau onSent() dipanggil duluan, parent memicu refetch tepat
-      // saat WebView Android dipause karena app pindah ke WhatsApp. Fetch
-      // yang menggantung sering ter-resume dengan payload rusak dan memicu
-      // render-throw → error boundary global ("Memuat ulang halaman…").
-      // Kirim WA di latar; hasil dilaporkan lewat toast dari notifyShareResult.
-      let sentCalled = false;
-      const callSentOnce = () => {
-        if (sentCalled) return;
-        sentCalled = true;
-        try { onSent(); } catch (err) { console.error("[ecer:onSent]", err); }
-      };
-      // Fallback: kalau share tidak pernah membuka WA (mis. cancel awal),
-      // tetap refresh setelah 4 detik supaya UI tidak stuck.
-      const fallbackTimer = window.setTimeout(callSentOnce, 4000);
-      // Trigger refresh saat user kembali dari WhatsApp — momen paling aman
-      // untuk refetch karena WebView sudah active kembali.
-      const onVis = () => {
-        if (document.visibilityState === "visible") {
-          document.removeEventListener("visibilitychange", onVis);
-          window.clearTimeout(fallbackTimer);
-          // Beri 1 tick supaya WebView benar-benar siap menerima fetch baru.
-          window.setTimeout(callSentOnce, 250);
-        }
-      };
-      document.addEventListener("visibilitychange", onVis);
-
-      void (async () => {
-        try {
-          const files: File[] = [];
-          for (const p of preps) {
-            const signed = await resolvePhotoUrl(p);
-            if (!signed) continue;
-            const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
-            if (f) files.push(f);
-          }
-          const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
-          notifyShareResult(res);
-          if (sendEventId) {
-            const failed = res.status === "failed";
-            const cancelled = res.status === "cancelled";
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase as any)
-              .from("ecer_send_events")
-              .update({
-                photo_count: files.length,
-                outcome: failed ? "failed" : cancelled ? "cancelled" : "sent",
-                error_message: failed ? (res as { error?: string }).error ?? null : null,
-              })
-              .eq("id", sendEventId);
-            try {
-              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
-            } catch { /* ignore */ }
-          }
-        } catch (e) {
-          toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
-          if (sendEventId) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (supabase as any)
-              .from("ecer_send_events")
-              .update({
-                outcome: "failed",
-                error_message: (e as { message?: string })?.message ?? String(e),
-              })
-              .eq("id", sendEventId);
-            try {
-              window.dispatchEvent(new CustomEvent("ecer-send-history:changed", { detail: { titleId: title.id } }));
-            } catch { /* ignore */ }
-          }
-          // Kalau share error sebelum sempat memicu visibility hidden,
-          // pastikan UI tetap ter-refresh.
-          callSentOnce();
-        }
-      })();
+      try { onSent(); } catch (err) { console.error("[ecer:onSent]", err); }
     } catch (e) {
       toast.error("Gagal kirim: " + ((e as { message?: string })?.message ?? String(e)));
     } finally {
       setBusy(false);
+      sendLock.current.release();
     }
   }
 

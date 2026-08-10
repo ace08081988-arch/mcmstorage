@@ -23,10 +23,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
-import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
-import { shareToChat } from "@/lib/share-chat";
-import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
-import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus, type ChatShareDuplicateInfo } from "@/components/ChatSharePreviewDialog";
 import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,11 +31,9 @@ import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/L
 import { useOnDebtTx } from "@/lib/debt-tx-event";
 import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { measureQuery, QueryMetricNames } from "@/lib/query-metrics";
-import { markSent, unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { unmarkSent, useSentShots, useSentDetails, hideSent, useHiddenSent, hydrateSentFromDb, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { consumeSentTabFlag, SHOW_SENT_EVENT } from "@/lib/ready-ecer-sent-nav";
-import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
-import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 import { withSupabaseQueryTimeout, type SupabaseQueryResult } from "@/lib/supabase-timeout";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
@@ -546,7 +540,6 @@ export function ReadyEcerSection() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
-  const [bulkPickChat, setBulkPickChat] = useState(false);
   const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
   const [layout, setLayout] = useLayoutMode("readyEcer", "grid");
   const ecerGridClass = layoutGridClass(layout);
@@ -871,31 +864,6 @@ export function ReadyEcerSection() {
         </div>
       )}
 
-      <PickChatConversationDialog
-        open={bulkPickChat}
-        onOpenChange={setBulkPickChat}
-        onPick={async (cid, ctitle) => {
-          setBulkPickChat(false);
-          if (selectedIds.size === 0) return;
-          setBulkBusy("chat");
-          try {
-            const ids = [...selectedIds];
-            for (const id of ids) {
-              await new Promise<void>((resolve) => {
-                const handler = () => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); };
-                window.addEventListener(`ecer-bulk-done:${id}`, handler);
-                window.dispatchEvent(new CustomEvent(`ecer-bulk:chat:${id}`, { detail: { conversationId: cid, conversationTitle: ctitle } }));
-                setTimeout(() => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); }, 60000);
-              });
-            }
-          } finally {
-            setBulkBusy(null);
-            setSelectedIds(new Set());
-            setSelectMode(false);
-          }
-        }}
-        title={`Kirim ${selectedIds.size} kartu ke percakapan`}
-      />
 
       <AlertDialog open={bulkConfirm === "delete"} onOpenChange={(o) => !o && setBulkConfirm(null)}>
         <AlertDialogContent>
@@ -906,7 +874,7 @@ export function ReadyEcerSection() {
             <AlertDialogDescription>
               {view === "sent"
                 ? "Riwayat lokal kartu yang dipilih akan dibersihkan. Foto pegawai tetap ada — kartu akan kembali ke daftar Aktif."
-                : "Kartu terpilih akan ditandai terkirim (dilewati) tanpa mengirim ke WA atau Chat. Anda bisa mengembalikannya dari tab Riwayat terkirim."}
+                : "Kartu aktif tidak bisa ditandai terkirim dari sini. Status Terkirim hanya lahir dari alur Verifikasi bayar → kirim WA/Chat → konfirmasi."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -916,9 +884,16 @@ export function ReadyEcerSection() {
                 if (selectedIds.size === 0) { setBulkConfirm(null); return; }
                 setBulkBusy("delete");
                 try {
-                  const ids = [...selectedIds];
-                  for (const id of ids) {
-                    window.dispatchEvent(new CustomEvent(`ecer-bulk:${view === "sent" ? "undo" : "skip"}:${id}`));
+                  if (view === "sent") {
+                    // Hanya mengembalikan ke Aktif (unmark). Tidak pernah
+                    // menandai terkirim.
+                    const shotIds = (rows ?? [])
+                      .filter((r) => selectedIds.has(r.id))
+                      .flatMap((r) => r.worker_shots.map((s) => s.id));
+                    if (shotIds.length > 0) unmarkSent(shotIds);
+                    toast.success("Kartu dikembalikan ke daftar aktif.");
+                  } else {
+                    toast.info("Kartu aktif tidak bisa ditandai terkirim tanpa verifikasi pembayaran. Buka \"Verifikasi bayar\" untuk mengirim.");
                   }
                 } finally {
                   setBulkBusy(null);
@@ -1099,8 +1074,8 @@ function BulkToolbar({
       </div>
       <p className="basis-full text-ms-2xs text-muted-foreground">
         {view === "sent"
-          ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
-          : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
+          ? "Tap kartu untuk centang. Hapus akan mengembalikan kartu ke daftar Aktif."
+          : "Tap kartu untuk centang. WA/Chat membuka Verifikasi bayar di halaman detail (satu judul sekaligus)."}
       </p>
     </div>
   );
@@ -1453,9 +1428,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       });
     }
   }, [justMoved]);
-  const [sending, setSending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
   function startLongPress() {
@@ -1471,794 +1444,29 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   function cancelLongPress() {
     if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
   }
+  // Mengembalikan kartu dari Riwayat ke Aktif. TIDAK PERNAH menandai
+  // terkirim — status sent hanya boleh lahir dari alur kirim kanonik.
   function doDelete() {
-    if (shots.length > 0) {
-      if (view === "sent") {
-        unmarkSent(shots.map((s) => s.id));
-        toast.success("Kartu dikembalikan ke daftar aktif.");
-      } else {
-        markSent(shots.map((s) => s.id), {
-          channel: "wa",
-          mapsUrl: null,
-          status: "success",
-          idemKey: `manual-skip-${r.id}-${Date.now()}`,
-        });
-        toast.success("Kartu ditandai terkirim & dipindah ke Riwayat.");
-      }
-    } else {
+    if (shots.length === 0) {
       toast.info("Belum ada kiriman pegawai untuk kartu ini.");
+      return;
     }
-    setConfirmDelete(false);
+    unmarkSent(shots.map((s) => s.id));
+    toast.success("Kartu dikembalikan ke daftar aktif.");
   }
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
-  const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [waPreviewOpen, setWaPreviewOpen] = useState(false);
-  const [waPreviewText, setWaPreviewText] = useState("");
-  const [waPreviewLocation, setWaPreviewLocation] = useState<string | null>(null);
-  const [waPreviewPhotoCount, setWaPreviewPhotoCount] = useState(0);
-  // Ringkasan pengelompokan atomik per folder untuk ditampilkan di pratinjau.
-  const [waPreviewFolders, setWaPreviewFolders] = useState<
-    Array<{ label: string; count: number; included: boolean }>
-  >([]);
-  // Snapshot ekspektasi (folder ids + jumlah foto) yang dihitung saat pratinjau
-  // dibuka. Dipakai sebagai gerbang validasi tepat sebelum kirim WA agar
-  // pratinjau dan pesan yang benar-benar terkirim TIDAK PERNAH beda —
-  // bila `shots` berubah antara klik "Pratinjau" dan "Kirim WA", alur kirim
-  // dibatalkan dan operator diminta membuka pratinjau ulang.
-  const [waPreviewExpected, setWaPreviewExpected] = useState<
-    { folderIds: string[]; photoCount: number } | null
-  >(null);
-  // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
-  // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
-  const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
-  const [pickChatOpen, setPickChatOpen] = useState(false);
-  const [chatSending, setChatSending] = useState(false);
-  const [chatPreparing, setChatPreparing] = useState(false);
-  const [chatPreviewOpen, setChatPreviewOpen] = useState(false);
-  type ChatPreviewState = {
-    conversationId: string;
-    conversationTitle: string;
-    idemKey: string;
-    idemIdsKey: string;
-    caption: string;
-    locationUrl: string | null;
-    chatShots: { id: string; file: File; caption?: string }[];
-    markIds: string[];
-    preview: ChatSharePreviewData;
-    duplicate: ChatShareDuplicateInfo | null;
-    previousLog: SendLogEntry[];
-    fingerprint: string;
-    summary: import("@/lib/idempotency").SendPayloadSummary;
-  };
-  const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
-  const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
+  const [sendStatus] = useState<SendStatus>("idle");
+  const [sendError] = useState<string | null>(null);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
   const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
 
-  async function sendWA(
-    e: React.MouseEvent,
-    expected?: { folderIds: string[]; photoCount: number } | null,
-  ) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (sending) return;
-    if (shots.length === 0) {
-      toast.info("Belum ada kiriman pegawai untuk judul ini.");
-      return;
-    }
-    setLastSendChannel("wa");
-    // Urutan kanonik: sort by id (naik) sebelum slice — sehingga urutan
-    // shots di UI (yang bisa berubah karena pegawai baru menyerobot masuk
-    // atau resort submitted_at) tidak mempengaruhi identitas idempotency
-    // maupun urutan foto/teks yang dikirim.
-    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
-    const take = canonicalShots.slice(0, 6);
-    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
-    const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
-    const existing = getIdem(idemKey);
-    const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
-    const duplicate = duplicateRec
-      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name, fingerprint: duplicateRec.fingerprint, summary: duplicateRec.summary }
-      : null;
-    // Selalu baca log saat ada record (termasuk yang failed) — agar operator
-    // bisa melihat penyebab kegagalan kiriman sebelumnya di pratinjau.
-    let previousLog = existing ? getSendLog(idemKey) : [];
-    const preserveLog = existing?.status === "failed";
-    setSending(true);
-    setSendStatus("sending");
-    setSendError(null);
-    try {
-      // Bangun daftar slot foto secara ATOMIK per folder kiriman: setiap shot
-      // (satu folder kiriman pegawai) dikirim utuh — semua foto di folder itu
-      // ikut, atau folder tsb tidak ikut sama sekali. Ini menjaga janji
-      // "1 folder = 1 kiriman", walau operator menandai beberapa foto atau
-      // slicing 10 memotong di tengah folder. Pertahankan slot yang gagal
-      // agar bisa di-retry dari pratinjau tanpa mengulang alur kirim.
-      type Slot = { path: string; name: string; source: typeof take[number]["source"] };
-      const folderGroups: Array<{ shot: typeof take[number]; slots: Slot[] }> = [];
-      for (const s of take) {
-        const paths = Array.from(new Set([
-          ...((s.photo_paths ?? []) as string[]),
-          ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean).sort();
-        if (paths.length === 0) continue;
-        const group: Slot[] = paths.map((p, pi) => ({
-          path: p,
-          name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`,
-          source: s.source,
-        }));
-        folderGroups.push({ shot: s, slots: group });
-      }
-      const MAX_SLOTS = 10;
-      const freshSlots: Slot[] = [];
-      const includedShots: typeof take = [];
-      for (const g of folderGroups) {
-        // Selalu sertakan folder pertama secara utuh, bahkan bila jumlah foto
-        // > MAX_SLOTS — supaya kiriman tidak terpotong di tengah folder.
-        if (freshSlots.length === 0) {
-          freshSlots.push(...g.slots); includedShots.push(g.shot); continue;
-        }
-        if (freshSlots.length + g.slots.length > MAX_SLOTS) break;
-        freshSlots.push(...g.slots); includedShots.push(g.shot);
-      }
-      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
-      // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
-      // foto di pesan WA konsisten dengan lampiran.
-      const folderName = (s: typeof take[number]) =>
-        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
-      // Gerbang validasi: bila pratinjau menyertakan snapshot ekspektasi,
-      // pastikan folder yang benar-benar akan terkirim (id + jumlah foto)
-      // SAMA PERSIS dengan yang ditampilkan di pratinjau. Kalau tidak,
-      // batalkan sebelum share sheet terbuka dan minta operator membuka
-      // pratinjau ulang — mencegah mismatch pratinjau vs pesan terkirim.
-      if (expected) {
-        const actualIds = [...includedShots.map((s) => s.id)].sort();
-        const idsMatch =
-          actualIds.length === expected.folderIds.length &&
-          actualIds.every((id, i) => id === expected.folderIds[i]);
-        const countMatch = freshSlots.length === expected.photoCount;
-        if (!idsMatch || !countMatch) {
-          toast.warning(
-            `Kiriman berubah sejak pratinjau (folder ${expected.folderIds.length}→${actualIds.length}, foto ${expected.photoCount}→${freshSlots.length}). Buka pratinjau ulang.`,
-          );
-          setSending(false);
-          setSendStatus("idle");
-          return;
-        }
-      }
-      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
-      const omitted = shots.length - includedShots.length;
-      const freshText = [
-        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${freshSlots.length} foto terlampir:`,
-        ...lines,
-        ...(firstLocationFresh ? [``, `📍 Lokasi: ${firstLocationFresh}`] : []),
-      ].join("\n");
-      const freshFingerprint = payloadFingerprint({
-        channel: "wa",
-        text: freshText,
-        url: firstLocationFresh ?? null,
-        expectedCount: freshSlots.length,
-        slots: freshSlots.map((s) => ({ path: s.path, name: s.name })),
-      });
-      // Snapshot idempoten — pengiriman kedua/ketiga menggunakan urutan &
-      // teks yang persis sama seperti pengiriman pertama, walaupun `shots`
-      // di UI sudah berubah di antara klik.
-      const snapshot = await getOrCreateSendSnapshot(idemKey, async () => ({
-        fingerprint: freshFingerprint,
-        orderedIds: take.map((s) => s.id),
-        text: freshText,
-        locationUrl: firstLocationFresh ?? null,
-        slotFileNames: freshSlots.map((s) => s.name),
-        slotPaths: freshSlots.map((s) => s.path),
-        expectedCount: freshSlots.length,
-        meta: { destination: r.name },
-      }));
-      // Rekonstruksi slots dari snapshot supaya path/nama/order = kali pertama.
-      // `source` diambil dari take saat ini bila cocok, fallback ke shot pertama.
-      const idToSource = new Map(canonicalShots.map((s) => [s.id, s.source]));
-      const slots: Slot[] = snapshot.slotPaths.map((p, i) => {
-        const name = snapshot.slotFileNames[i] ?? `${r.name}-${i + 1}.jpg`;
-        const ownerId = snapshot.orderedIds.find((id) => name.includes(id.slice(0, 6)));
-        const source = (ownerId && idToSource.get(ownerId)) || take[0]?.source || "worker";
-        return { path: p, name, source };
-      });
-      async function fetchSlots(list: Slot[]): Promise<{ ok: File[]; failed: Slot[] }> {
-        const ok: File[] = [];
-        const failed: Slot[] = [];
-        for (const sl of list) {
-          const url = await resolveShotSignedUrl(sl.path, sl.source, 600);
-          const f = url ? await urlToFile(url, sl.name) : null;
-          if (f) ok.push(f);
-          else failed.push(sl);
-        }
-        return { ok, failed };
-      }
-      const initial = await fetchSlots(slots);
-      const files: File[] = [...initial.ok];
-      let pendingSlots: Slot[] = initial.failed;
-      const expectedCount = slots.length;
-      const retryMissing = async (): Promise<File[]> => {
-        if (pendingSlots.length === 0) return [];
-        const { ok, failed } = await fetchSlots(pendingSlots);
-        pendingSlots = failed;
-        return ok;
-      };
-      // Peringatan detail: jelaskan foto mana yang gagal dibaca dari bucket
-      // agar operator tahu folder + urutan foto yang tidak ikut terlampir.
-      const describeFailedSlot = (sl: Slot) => {
-        const ownerId = snapshot.orderedIds.find((id) => sl.name.includes(id.slice(0, 6)));
-        const owner = includedShots.find((s) => s.id === ownerId) ?? take.find((s) => s.id === ownerId);
-        const label = owner ? folderName(owner) : (ownerId ? `Kiriman ${ownerId.slice(0, 6)}` : "Kiriman");
-        const idx = sl.name.match(/-(\d+)\.jpg$/)?.[1] ?? "?";
-        return `${label} · foto #${idx}`;
-      };
-      if (initial.failed.length > 0) {
-        const details = initial.failed.map(describeFailedSlot);
-        const preview = details.slice(0, 4).join(", ");
-        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
-        const msg = files.length === 0
-          ? `Semua ${initial.failed.length} foto gagal dibaca: ${preview}${more}`
-          : `${initial.failed.length}/${expectedCount} foto gagal dibaca: ${preview}${more}`;
-        toast.warning(msg, {
-          description: "Bisa dicoba ulang dari tombol Kirim ulang setelah share sheet muncul.",
-        });
-        appendSendLog(idemKey, { kind: "error", label: `Foto gagal dibaca (${initial.failed.length}/${expectedCount})`, detail: details.join(" · ") });
-      }
-      // Payload TETAP diambil dari snapshot — pengiriman kedua/ketiga wajib
-      // menghasilkan teks, urutan foto, dan link lokasi yang identik dengan
-      // pengiriman pertama.
-      const text = snapshot.text;
-      const firstLocation = snapshot.locationUrl;
-      const waFingerprint = snapshot.fingerprint;
-      // Ringkasan payload — disimpan di record idempotency agar saat klik
-      // ganda terdeteksi, banner pratinjau bisa menampilkan perbedaan field
-      // (caption / foto / lokasi / tujuan) dibanding kiriman sebelumnya.
-      const waSummary: import("@/lib/idempotency").SendPayloadSummary = {
-        channel: "wa",
-        destination: r.name,
-        caption: text,
-        photoCount: files.length,
-        locationUrl: firstLocation ?? null,
-      };
-      // Catat snapshot diff payload bila kiriman sebelumnya gagal atau sidik
-      // jari berbeda — supaya bisa direview lewat "Lihat log kiriman sebelumnya".
-      if (existing) {
-        const prevFp = existing.fingerprint;
-        const fpMismatch = !!prevFp && prevFp !== waFingerprint;
-        const prevFailed = existing.status === "failed";
-        if (prevFailed || fpMismatch) {
-          appendPayloadDiffLog(
-            idemKey,
-            existing.summary ?? null,
-            waSummary,
-            prevFailed
-              ? "Kiriman WA sebelumnya gagal — bandingkan payload"
-              : "Sidik jari payload tidak cocok dengan kiriman WA sebelumnya",
-          );
-          previousLog = getSendLog(idemKey);
-        }
-      }
-      const callShare = () => shareToWhatsApp({
-            text,
-            title: r.name,
-            files,
-            url: firstLocation ?? undefined,
-            expectedCount,
-            retryMissing,
-            duplicate,
-            previousLog,
-            currentFingerprint: waFingerprint,
-            currentSummary: waSummary,
-            idemIdsKey,
-          });
-      // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
-      // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
-      // memilih Kirim ulang (paksa), `shareToWhatsApp` mengembalikan shared/fallback —
-      // bersihkan record lama sebelum menulis record baru.
-      let res: { status: "shared"; error?: string };
-      if (duplicate) {
-        const r0 = await callShare();
-        notifyShareResult(r0);
-        if (r0.status === "shared" || r0.status === "fallback") {
-          clearIdem(idemKey);
-          setIdem(idemKey, "done", undefined, waFingerprint, waSummary);
-          // Pindah ke Riwayat terkirim SATU entri per folder yang benar-benar
-          // ikut (includedShots), bukan `take` mentah — supaya folder yang
-          // dilewati batas 10 foto tidak salah-tandai sebagai terkirim.
-          markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
-          res = { status: "shared" };
-        } else if (r0.status === "cancelled") {
-          throw new Error("__cancelled__");
-        } else {
-          throw new Error(r0.error || "share-failed");
-        }
-      } else {
-        // Pertahankan log saat percobaan sebelumnya gagal agar operator
-        // tetap bisa melihat urutan langkah + diff payloadnya.
-        if (!preserveLog) resetSendLog(idemKey);
-        appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
-        res = await withIdempotency(idemKey, {
-          onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
-          fingerprint: waFingerprint,
-          summary: waSummary,
-          run: async () => {
-          const r0 = await callShare();
-          notifyShareResult(r0);
-          if (r0.status === "shared" || r0.status === "fallback") {
-            // Idem: hanya folder yang benar-benar ikut yang pindah ke Riwayat.
-            markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
-            appendSendLog(idemKey, { kind: "step", label: r0.status === "shared" ? "WA dibagikan (Web Share / native)" : "WA dibuka via fallback wa.me" });
-            appendSendLog(idemKey, { kind: "outcome", label: "Selesai" });
-            return { status: "shared" as const, error: undefined as string | undefined };
-          }
-          if (r0.status === "cancelled") {
-            appendSendLog(idemKey, { kind: "outcome", label: "Dibatalkan oleh pengguna" });
-            throw new Error("__cancelled__");
-          }
-          appendSendLog(idemKey, { kind: "error", label: "Gagal kirim WA", detail: r0.error });
-          throw new Error(r0.error || "share-failed");
-        },
-      });
-      }
-      void res;
-      setSendStatus("success");
-    } catch (err) {
-      const msg = (err as Error).message;
-      if (msg === "__cancelled__") {
-        setSendStatus("cancelled");
-      } else {
-        toast.error(`Gagal kirim WA: ${msg}`);
-        setSendStatus("failed");
-        setSendError(msg);
-      }
-    } finally {
-      setSending(false);
-    }
-  }
-
-  function openWAPreview(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (sending) return;
-    if (shots.length === 0) {
-      toast.info("Belum ada kiriman pegawai untuk judul ini.");
-      return;
-    }
-    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
-    const take = canonicalShots.slice(0, 6);
-    // Cerminkan logika atomik-per-folder yang sama dengan sendWA agar
-    // hitungan "kiriman" & daftar item di pratinjau selalu = yang benar-
-    // benar akan terkirim.
-    const MAX_SLOTS = 10;
-    const folderGroups: Array<{ shot: typeof take[number]; count: number }> = [];
-    for (const s of take) {
-      const paths = new Set<string>([
-        ...((s.photo_paths ?? []) as string[]),
-        ...(s.photo_path ? [s.photo_path] : []),
-      ]);
-      const n = Array.from(paths).filter(Boolean).length;
-      if (n > 0) folderGroups.push({ shot: s, count: n });
-    }
-    const includedShots: typeof take = [];
-    let photoCount = 0;
-    for (const g of folderGroups) {
-      if (photoCount === 0) { photoCount += g.count; includedShots.push(g.shot); continue; }
-      if (photoCount + g.count > MAX_SLOTS) break;
-      photoCount += g.count; includedShots.push(g.shot);
-    }
-    // Ringkasan folder untuk pratinjau: tandai mana yang ikut / tidak.
-    const includedIds = new Set(includedShots.map((s) => s.id));
-    const folderName = (s: typeof take[number]) =>
-      s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
-    const folderSummary = folderGroups.map((g, i) => ({
-      label: `Folder ${i + 1}: ${folderName(g.shot)} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
-      count: g.count,
-      included: includedIds.has(g.shot.id),
-    }));
-    const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-    const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
-    const omitted = shots.length - includedShots.length;
-    const text = [
-      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-      `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${photoCount} foto terlampir:`,
-      ...lines,
-      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
-    ].join("\n");
-    setWaPreviewText(text);
-    setWaPreviewLocation(firstLocation);
-    setWaPreviewPhotoCount(photoCount);
-    setWaPreviewFolders(folderSummary);
-    setWaPreviewExpected({
-      folderIds: [...includedShots.map((s) => s.id)].sort(),
-      photoCount,
-    });
-    setWaPreviewOpen(true);
-  }
-
-  async function confirmSendWA() {
-    const expected = waPreviewExpected;
-    setWaPreviewOpen(false);
-    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
-    try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
-  }
-
-  // Aksi "Kembalikan ke aktif" untuk kartu Riwayat dilakukan lewat
-  // DropdownMenu (memakai `doDelete()` yang sudah handle unmarkSent).
-  // Fungsi inline `undoSent` lama dihapus supaya tidak ada handler duplikat.
-
-  async function prepareChat(conversationId: string, convTitle: string) {
-    if (chatSending || chatPreparing) return;
-    if (shots.length === 0) {
-      toast.info("Belum ada kiriman pegawai untuk judul ini.");
-      return;
-    }
-    setLastSendChannel("chat");
-    const take = shots.slice(0, 6);
-    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
-    const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
-    const existing = getIdem(idemKey);
-    const duplicate: ChatShareDuplicateInfo | null =
-      existing && existing.status !== "failed"
-        ? { at: existing.at, status: existing.status, destination: convTitle, fingerprint: existing.fingerprint, summary: existing.summary }
-        : null;
-    let previousLog = existing ? getSendLog(idemKey) : [];
-    setPickChatOpen(false);
-    setChatPreparing(true);
-    setSendError(null);
-    const tid = toast.loading(`Menyiapkan pratinjau untuk ${convTitle}…`);
-    try {
-      // Kumpulkan file dari setiap shot (foto-foto sudah punya signed URL via load()).
-      const chatShots: { id: string; file: File; caption?: string }[] = [];
-      let attemptedPaths = 0;
-      const thumbUrls: string[] = [];
-      const MAX_CHAT_SLOTS = 10;
-      let foldersIncluded = 0;
-      const includedShots: typeof take = [];
-      const failedPhotos: Array<{ shotId: string; folder: string; index: number }> = [];
-      const chatFolderName = (s: typeof take[number]) =>
-        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
-      for (const s of take) {
-        const paths = Array.from(new Set([
-          ...((s.photo_paths ?? []) as string[]),
-          ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
-        if (paths.length === 0) continue;
-        // Atomik per folder: jangan mulai folder baru bila akan memotong
-        // sebelum semua foto terkirim. Folder pertama tetap disertakan
-        // utuh (bahkan bila > MAX_CHAT_SLOTS).
-        if (foldersIncluded > 0 && chatShots.length + paths.length > MAX_CHAT_SLOTS) break;
-        const folderStart = chatShots.length;
-        for (let pi = 0; pi < paths.length; pi++) {
-          const p = paths[pi];
-          attemptedPaths++;
-          const url = await resolveShotSignedUrl(p, s.source, 600);
-          if (!url) { failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 }); continue; }
-          const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
-          if (f) {
-            chatShots.push({ id: `${s.id}:${pi}`, file: f });
-            if (thumbUrls.length < 4) thumbUrls.push(url);
-          } else {
-            failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 });
-          }
-        }
-        if (chatShots.length > folderStart) { foldersIncluded++; includedShots.push(s); }
-      }
-      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
-      // terlampir, agar hitungan "kiriman" dan daftar foto konsisten.
-      const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
-      const folderName = (s: typeof take[number]) =>
-        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
-      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const omitted = shots.length - includedShots.length;
-      const caption = [
-        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${chatShots.length} foto terlampir:`,
-        ...lines,
-      ].join("\n");
-      toast.dismiss(tid);
-      if (failedPhotos.length > 0) {
-        const details = failedPhotos.map((f) => `${f.folder} · foto #${f.index}`);
-        const preview = details.slice(0, 4).join(", ");
-        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
-        toast.warning(
-          `${failedPhotos.length}/${attemptedPaths} foto gagal dibaca: ${preview}${more}`,
-          { description: "Foto tersebut tidak akan ikut dilampirkan ke Chat." },
-        );
-      }
-      const preview: ChatSharePreviewData = {
-        conversationTitle: convTitle,
-        caption,
-        photoCount: chatShots.length,
-        folderCount: foldersIncluded,
-        thumbs: thumbUrls,
-        totalPhotos: chatShots.length,
-        missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
-        failedPhotoLabels: failedPhotos.map((f) => `${f.folder} · foto #${f.index}`),
-        mapsUrl: firstLocation,
-      };
-      // Fingerprint payload Chat: caption + conv + lokasi + daftar id foto.
-      // Dipakai untuk membandingkan dengan payload kiriman sebelumnya agar
-      // tombol "Kirim ulang (paksa)" hanya aktif saat konten benar-benar sama.
-      const chatFingerprint = payloadFingerprint({
-        channel: "chat",
-        conversationId,
-        caption,
-        locationUrl: firstLocation ?? null,
-        shotIds: [...chatShots.map((s) => s.id)].sort(),
-      });
-      const chatSummary: import("@/lib/idempotency").SendPayloadSummary = {
-        channel: "chat",
-        destination: convTitle,
-        caption,
-        photoCount: chatShots.length,
-        locationUrl: firstLocation ?? null,
-      };
-      // Simpan snapshot diff payload bila kiriman chat sebelumnya gagal atau
-      // sidik jari berbeda — tampilkan di "Lihat log kiriman sebelumnya".
-      if (existing) {
-        const prevFp = existing.fingerprint;
-        const fpMismatch = !!prevFp && prevFp !== chatFingerprint;
-        const prevFailed = existing.status === "failed";
-        if (prevFailed || fpMismatch) {
-          appendPayloadDiffLog(
-            idemKey,
-            existing.summary ?? null,
-            chatSummary,
-            prevFailed
-              ? "Kiriman Chat sebelumnya gagal — bandingkan payload"
-              : "Sidik jari payload tidak cocok dengan kiriman Chat sebelumnya",
-          );
-          previousLog = getSendLog(idemKey);
-        }
-      }
-      setChatPreview({
-        conversationId,
-        conversationTitle: convTitle,
-        idemKey,
-        idemIdsKey,
-        caption,
-        locationUrl: firstLocation,
-        chatShots,
-        // Pindah ke Riwayat terkirim = SATU entri per folder yang benar-benar
-        // ikut atomically (includedShots), bukan `take` mentah.
-        markIds: includedShots.map((s) => s.id),
-        preview,
-        duplicate,
-        previousLog,
-        fingerprint: chatFingerprint,
-        summary: chatSummary,
-      });
-      setChatPreviewOpen(true);
-    } catch (err) {
-      toast.dismiss(tid);
-      const msg = (err as Error).message;
-      setSendStatus("failed");
-      setSendError(msg);
-      toast.error(`Gagal menyiapkan pratinjau: ${msg}`);
-    } finally {
-      setChatPreparing(false);
-    }
-  }
-
-  async function confirmChatSend(opts?: { force?: boolean }) {
-    const ctx = chatPreview;
-    if (!ctx || chatSending) return;
-    // Gerbang validasi: recompute folder atomik & jumlah foto dari `shots`
-    // saat ini menggunakan logika yang sama dengan prepareChat. Bila hasilnya
-    // berbeda dari snapshot pratinjau (ctx.markIds / ctx.chatShots), batalkan
-    // agar pratinjau tidak pernah menyesatkan pesan yang benar-benar terkirim.
-    {
-      const takeNow = shots.slice(0, 6);
-      const MAX_CHAT_SLOTS = 10;
-      const includedNowIds: string[] = [];
-      let photosNow = 0;
-      let foldersIncluded = 0;
-      for (const s of takeNow) {
-        const paths = Array.from(new Set([
-          ...((s.photo_paths ?? []) as string[]),
-          ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
-        if (paths.length === 0) continue;
-        if (foldersIncluded > 0 && photosNow + paths.length > MAX_CHAT_SLOTS) break;
-        photosNow += paths.length;
-        foldersIncluded++;
-        includedNowIds.push(s.id);
-      }
-      const expectedIds = [...ctx.markIds].sort();
-      const actualIds = [...includedNowIds].sort();
-      const idsMatch =
-        actualIds.length === expectedIds.length &&
-        actualIds.every((id, i) => id === expectedIds[i]);
-      // ctx.chatShots.length adalah jumlah foto yang benar-benar berhasil di-fetch;
-      // jumlah *paths* saat pratinjau = photosNow saat itu. Bandingkan dengan
-      // `photosNow` hasil recompute untuk mendeteksi perubahan sumber.
-      const countMatch = photosNow === ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0);
-      if (!idsMatch || !countMatch) {
-        toast.warning(
-          `Kiriman berubah sejak pratinjau (folder ${expectedIds.length}→${actualIds.length}, foto ${ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0)}→${photosNow}). Buka pratinjau ulang.`,
-        );
-        setChatPreviewOpen(false);
-        setChatPreview(null);
-        return;
-      }
-    }
-    // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
-    // record lama agar withIdempotency tidak men-skip eksekusi.
-    if (opts?.force) {
-      clearIdem(ctx.idemKey);
-    }
-    resetSendLog(ctx.idemKey);
-    appendSendLog(ctx.idemKey, { kind: "info", label: `Mulai kirim Chat ke "${ctx.conversationTitle}"`, detail: `${ctx.chatShots.length} foto${ctx.locationUrl ? " + lokasi" : ""}` });
-    const captionStep = ctx.caption.trim().length > 0;
-    const locationStep = !!(ctx.locationUrl && ctx.locationUrl.trim());
-    const photosTotal = ctx.chatShots.length;
-    const liveStatus: ChatShareLiveStatus = {
-      captionStep,
-      captionStatus: captionStep ? "pending" : "ok",
-      photosTotal,
-      photosSent: 0,
-      photosFailed: 0,
-      photoCurrent: null,
-      locationStep,
-      locationStatus: locationStep ? "pending" : "ok",
-      outcome: null,
-    };
-    setChatStatus(liveStatus);
-    setChatSending(true);
-    setSendStatus("sending");
-    setSendError(null);
-    try {
-      const res = await withIdempotency(ctx.idemKey, {
-        onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
-        fingerprint: ctx.fingerprint,
-        summary: ctx.summary,
-        run: async () => {
-          const r0 = await shareToChat({
-            conversationId: ctx.conversationId,
-            caption: ctx.caption,
-            locationUrl: ctx.locationUrl,
-            shots: ctx.chatShots,
-            markIds: ctx.markIds,
-            idemKey: ctx.idemKey,
-            onProgress: (p) => {
-              if (p.type === "caption") {
-                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: "Mengirim caption…" });
-                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: "Caption terkirim" });
-                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: "Caption gagal", detail: p.error });
-              } else if (p.type === "photo") {
-                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: `Mengirim foto ${p.index + 1}/${p.total}…` });
-                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: `Foto ${p.index + 1}/${p.total} terkirim` });
-                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: `Foto ${p.index + 1}/${p.total} gagal`, detail: p.error });
-              } else if (p.type === "location") {
-                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: "Mengirim link Maps…" });
-                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: "Link Maps terkirim" });
-                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: "Link Maps gagal", detail: p.error });
-              }
-              setChatStatus((prev) => {
-                if (!prev) return prev;
-                const next = { ...prev };
-                if (p.type === "caption") {
-                  next.captionStatus = p.status === "ok" ? "ok" : p.status === "fail" ? "fail" : "running";
-                } else if (p.type === "photo") {
-                  if (p.status === "start") next.photoCurrent = p.index;
-                  else if (p.status === "ok") { next.photosSent = prev.photosSent + 1; next.photoCurrent = null; }
-                  else if (p.status === "fail") { next.photosFailed = prev.photosFailed + 1; next.photoCurrent = null; }
-                } else if (p.type === "location") {
-                  next.locationStatus = p.status === "ok" ? "ok" : p.status === "fail" ? "fail" : "running";
-                }
-                return next;
-              });
-            },
-          });
-          if (r0.status !== "shared") throw new Error(r0.error || "share-failed");
-          return r0;
-        },
-      });
-      setSendStatus("success");
-      const msgCount = "messageCount" in res ? res.messageCount ?? 0 : 0;
-      appendSendLog(ctx.idemKey, { kind: "outcome", label: `Selesai · ${msgCount} pesan terkirim` });
-      // Pindahkan kartu (foto + link) ke Riwayat terkirim secara otomatis,
-      // agar simetris dengan alur WA. Tanpa ini, kiriman via Chat tidak
-      // pernah pindah ke tab Riwayat sehingga terasa "belum terkirim".
-      if (ctx.markIds.length > 0) {
-        markSent(ctx.markIds, {
-          channel: "chat",
-          mapsUrl: ctx.locationUrl ?? null,
-          status: "success",
-          idemKey: ctx.idemKey,
-        });
-      }
-      setChatStatus((prev) => prev ? {
-        ...prev,
-        outcome: {
-          kind: prev.photosFailed > 0 ? "partial" : "success",
-          messageCount: msgCount,
-        },
-      } : prev);
-    } catch (err) {
-      const msg = (err as Error).message;
-      setSendStatus("failed");
-      setSendError(msg);
-      appendSendLog(ctx.idemKey, { kind: "error", label: "Gagal mengirim ke chat", detail: msg });
-      setChatStatus((prev) => prev ? {
-        ...prev,
-        outcome: { kind: "failed", messageCount: 0, error: msg },
-      } : prev);
-    } finally {
-      setChatSending(false);
-    }
-  }
-
-  // ---------- Bulk action listeners (multi-pilih dari toolbar) ----------
-  const autoBulkChat = useRef(false);
-  useEffect(() => {
-    const dispatchDone = () => window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
-    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
-    const handleWa = async () => {
-      try { await sendWA(fake); } catch { /* dilaporkan di kartu */ } finally { dispatchDone(); }
-    };
-    const handleChat = async (e: Event) => {
-      const ev = e as CustomEvent<{ conversationId: string; conversationTitle: string }>;
-      if (!ev.detail) { dispatchDone(); return; }
-      autoBulkChat.current = true;
-      try { await prepareChat(ev.detail.conversationId, ev.detail.conversationTitle); }
-      catch { autoBulkChat.current = false; dispatchDone(); }
-      // Lanjutan: effect auto-confirm di bawah akan menutup dialog & dispatch done.
-    };
-    const handleUndo = () => {
-      try { unmarkSent(shots.map((s) => s.id)); } finally { dispatchDone(); }
-    };
-    const handleSkip = () => {
-      try {
-        if (shots.length > 0) {
-          markSent(shots.map((s) => s.id), {
-            channel: "wa",
-            mapsUrl: null,
-            status: "success",
-            idemKey: `bulk-skip-${r.id}-${Date.now()}`,
-          });
-        }
-      } finally { dispatchDone(); }
-    };
-    window.addEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
-    window.addEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
-    window.addEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
-    window.addEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
-    return () => {
-      window.removeEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
-      window.removeEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
-      window.removeEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
-      window.removeEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [r.id, shots]);
-
-  // Auto-confirm bulk-chat saat tidak ada duplikat — supaya satu klik bulk
-  // memproses semua kartu tanpa harus menekan tombol Kirim di tiap pratinjau.
-  useEffect(() => {
-    if (!autoBulkChat.current) return;
-    if (chatPreview && !chatPreview.duplicate && !chatSending && chatPreviewOpen) {
-      void confirmChatSend();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatPreview, chatPreviewOpen]);
-
-  // Tutup dialog & beritahu orkestrator bulk saat satu kartu selesai.
-  useEffect(() => {
-    if (!autoBulkChat.current) return;
-    if (!chatSending && chatStatus?.outcome) {
-      autoBulkChat.current = false;
-      setChatPreviewOpen(false);
-      setChatPreview(null);
-      setChatStatus(null);
-      window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
-    }
-  }, [chatSending, chatStatus, r.id]);
+  // Semua alur "kirim ke pembeli" (WA maupun Ace Chat) dihapus dari kartu
+  // dashboard. Satu-satunya jalur sah adalah dialog verifikasi pembayaran
+  // kanonik di halaman /ecer (`send=1`) yang memakai urutan
+  // share -> konfirmasi eksplisit -> RPC finansial. Kartu di sini hanya
+  // menavigasi ke sana; tidak pernah memanggil share, RPC, atau markSent.
 
   return (
     <div
@@ -2389,9 +1597,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 </DropdownMenuItem>
               </>
             ) : (
-              <DropdownMenuItem onSelect={() => { setMenuOpen(false); setConfirmDelete(true); }} className="text-destructive focus:text-destructive">
-                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Hapus (tandai terkirim)
+              <DropdownMenuItem disabled className="text-muted-foreground">
+                <Send className="mr-2 h-3.5 w-3.5" />
+                Kirim lewat Verifikasi bayar
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -2416,86 +1624,6 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus kartu "{r.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Kartu akan ditandai terkirim tanpa mengirim ke WA atau Chat, lalu pindah ke tab Riwayat terkirim. Anda bisa mengembalikannya dari sana.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={doDelete}>Ya, hapus</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog open={waPreviewOpen} onOpenChange={setWaPreviewOpen}>
-        <AlertDialogContent onClick={(e) => e.stopPropagation()} className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Pratinjau pesan WhatsApp</AlertDialogTitle>
-            <AlertDialogDescription>
-              Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-ms-2.5">
-            <div className="flex items-center justify-between text-ms-xs font-semibold">
-              <span className="text-foreground">Ringkasan payload</span>
-              <span className="text-primary">
-                {waPreviewFolders.filter((f) => f.included).length} kiriman · {waPreviewPhotoCount} foto terlampir
-              </span>
-            </div>
-          </div>
-          {waPreviewFolders.length > 0 && (
-            <div className="rounded-md border bg-background p-ms-2">
-              <div className="mb-1 flex items-center justify-between text-ms-2xs font-semibold">
-                <span>Pengelompokan folder</span>
-                <span className="text-muted-foreground">
-                  {waPreviewFolders.filter((f) => f.included).length}/{waPreviewFolders.length} folder · {waPreviewPhotoCount} foto
-                </span>
-              </div>
-              <ul className="space-y-0.5 text-ms-2xs">
-                {waPreviewFolders.map((f, i) => (
-                  <li
-                    key={i}
-                    className={`flex items-center justify-between gap-ms-2 rounded px-1.5 py-1 ${
-                      f.included ? "bg-success/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
-                    }`}
-                  >
-                    <span className="truncate">{f.label}</span>
-                    <span className="shrink-0 tabular-nums">{f.count} foto{f.included ? "" : " · dilewati"}</span>
-                  </li>
-                ))}
-              </ul>
-              {waPreviewFolders.some((f) => !f.included) && (
-                <p className="mt-1 text-ms-2xs text-muted-foreground">
-                  Folder dilewati karena batas 10 foto per pengiriman. Kirim sisanya di batch berikutnya.
-                </p>
-              )}
-            </div>
-          )}
-          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-ms-3">
-            <pre className="whitespace-pre-wrap break-words font-sans text-ms-xs leading-relaxed text-foreground">{waPreviewText}</pre>
-            {waPreviewLocation && (
-              <a
-                href={waPreviewLocation}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-ms-1 text-ms-2xs font-medium text-primary underline underline-offset-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MapPin className="h-3 w-3" /> Buka lokasi di peta
-              </a>
-            )}
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSendWA} className="bg-wa text-wa-foreground hover:bg-wa/90">
-              <MessageCircle className="mr-1 h-3.5 w-3.5" /> Kirim WA
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       {selectMode && (
         <button
           type="button"
@@ -2603,32 +1731,6 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
             now={now}
-            resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
-            onResend={
-              sending || chatSending || chatPreparing
-                ? undefined
-                : () => {
-                    const fake = {
-                      preventDefault() {},
-                      stopPropagation() {},
-                    } as unknown as React.MouseEvent;
-                    if (lastSendChannel === "chat") {
-                      // Buka lagi pratinjau Chat terakhir tanpa menandai foto ulang.
-                      // chatPreview + snapshot idempotency masih tersedia — pengguna
-                      // cukup menekan "Kirim" lagi di dialog.
-                      if (chatPreview) {
-                        setChatPreviewOpen(true);
-                      } else {
-                        toast.info("Pilih tujuan Chat lagi untuk mengirim ulang.");
-                        setPickChatOpen(true);
-                      }
-                    } else {
-                      // WA: buka pratinjau supaya folder yang sama (via snapshot
-                      // idempotency) dikirim ulang tanpa foto perlu ditandai ulang.
-                      openWAPreview(fake);
-                    }
-                  }
-            }
           />
           {/* Popover "Cocok: produk + Xg" dihapus dari kartu Beranda — info
               sama sudah tampil di baris produk di atas. Aturan pencocokan +
@@ -2760,33 +1862,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </>
         )}
       </div>
-      <PickChatConversationDialog
-        open={pickChatOpen}
-        onOpenChange={setPickChatOpen}
-        onPick={(id, title) => { void prepareChat(id, title); }}
-        title={`Kirim "${r.name}" ke percakapan`}
-      />
-      <ChatSharePreviewDialog
-        open={chatPreviewOpen}
-        onOpenChange={(o) => {
-          if (chatSending) return;
-          setChatPreviewOpen(o);
-          if (!o) { setChatPreview(null); setChatStatus(null); }
-        }}
-        data={chatPreview?.preview ?? null}
-        sending={chatSending}
-        onConfirm={() => { void confirmChatSend(); }}
-        status={chatStatus}
-        onRetry={() => { setChatStatus(null); void confirmChatSend(); }}
-        duplicate={chatPreview?.duplicate ?? null}
-        onForceSend={() => { void confirmChatSend({ force: true }); }}
-        previousLog={chatPreview?.previousLog ?? []}
-        currentFingerprint={chatPreview?.fingerprint}
-        currentSummary={chatPreview?.summary}
-        idemIdsKey={chatPreview?.idemIdsKey}
-        conversationId={chatPreview?.conversationId ?? null}
-        peer={chatPreview ? { name: chatPreview.conversationTitle } : null}
-      />
+      {/* Dialog pilih chat & pratinjau chat dihapus: semua pengiriman ke
+          pembeli WAJIB lewat dialog verifikasi pembayaran kanonik di /ecer. */}
     </div>
   );
 }

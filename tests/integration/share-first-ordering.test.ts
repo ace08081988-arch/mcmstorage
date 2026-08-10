@@ -31,32 +31,19 @@ describe("share-first: paket request (ReadyPackagesPanel)", () => {
   });
 });
 
-describe("share-first: ecer (ReadyEcerSection)", () => {
+describe("ReadyEcerSection: tidak ada jalur kirim pintas", () => {
   const src = read("src/components/ReadyEcerSection.tsx");
 
-  it("hanya menandai terkirim setelah status shared/fallback", () => {
-    const occurrences = [...src.matchAll(/markSent\(/g)].map((m) => m.index ?? 0);
-    expect(occurrences.length).toBeGreaterThan(0);
-    for (const idx of occurrences) {
-      const before = src.slice(Math.max(0, idx - 400), idx);
-      // setiap markSent pada jalur share harus didahului cek sukses
-      if (before.includes("await callShare()")) {
-        expect(before).toMatch(/r0\.status === "shared" \|\| r0\.status === "fallback"/);
-      }
-    }
+  it("tidak pernah memanggil markSent", () => {
+    expect(src).not.toMatch(/\bmarkSent\(/);
   });
 
-  it("cancelled melempar __cancelled__ tanpa menandai terkirim", () => {
-    expect(src).toContain('r0.status === "cancelled"');
-    expect(src).toContain('throw new Error("__cancelled__")');
+  it("tidak memanggil share WA/Chat langsung dari kartu dashboard", () => {
+    expect(src).not.toContain("shareToWhatsApp(");
+    expect(src).not.toContain("shareToChat(");
   });
 
-  it("commit dibungkus withIdempotency sehingga retry tidak menggandakan", () => {
-    expect(src).toContain("withIdempotency(idemKey");
-    expect(src).toContain("onSkip:");
-  });
-
-  it("label kanal share menyebut WhatsApp secara jujur", () => {
-    expect(src).toMatch(/channel: "wa"/);
+  it("aksi kirim mengarahkan ke alur kanonik /ecer dengan send=1", () => {
+    expect(src).toContain('send: "1"');
   });
 });

@@ -40,6 +40,7 @@ import {
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
+import { confirmWhatsAppDelivered, createReentryLock } from "@/lib/post-share-confirm";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
@@ -2997,7 +2998,19 @@ function SendPrepToCustomerDialog({
     return files;
   }
 
+  const sendLock = useRef(createReentryLock());
+
+  /** Bungkus re-entry: double tap / event ganda tidak pernah memicu dua commit. */
   async function doSend(chosenConv?: { id: string; title: string }) {
+    if (!sendLock.current.acquire()) return;
+    try {
+      await doSendInner(chosenConv);
+    } finally {
+      sendLock.current.release();
+    }
+  }
+
+  async function doSendInner(chosenConv?: { id: string; title: string }) {
     if (!canSend) return;
     if (!resolvedParty.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
     if (totalAmount <= 0) {
@@ -3051,6 +3064,16 @@ function SendPrepToCustomerDialog({
         if (res.status === "failed") {
           throw new Error(res.error || "Gagal kirim ke WhatsApp");
         }
+        // Membuka share sheet/WhatsApp BUKAN bukti pesan terkirim.
+        // Wajib konfirmasi eksplisit sebelum RPC finansial dipanggil.
+        const delivered = await confirmWhatsAppDelivered(
+          `${titleName} · ${rupiah(payment.total)} · ${resolvedParty.name}`,
+        );
+        if (!delivered) {
+          toast.info("Ditandai belum terkirim — paket tetap Siap Dikirim, tidak ada penjualan/piutang yang dicatat.");
+          setBusy(false);
+          return;
+        }
         channelSummary = `Tujuan: WhatsApp${resolvedParty.contact ? ` → ${resolvedParty.contact}` : ""}`;
       }
 
@@ -3064,7 +3087,17 @@ function SendPrepToCustomerDialog({
         _note: note.trim() || null,
         _paid_amount: payment.method === "partial" ? payment.paid : null,
       });
-      if (rpcErr) throw rpcErr;
+      if (rpcErr) {
+        // Read-back sebelum melaporkan gagal: kalau RPC sebenarnya sudah
+        // commit (timeout jaringan), jangan tawarkan retry yang menggandakan.
+        const { data: back } = await sb
+          .from("request_preparations")
+          .select("id, sold_at")
+          .eq("id", prep.id)
+          .maybeSingle();
+        const committed = isSentPrep((back ?? {}) as { sold_at?: string | null });
+        if (!committed) throw rpcErr;
+      }
 
       // Sabuk pengaman: broadcast agar ReadyRequestSection / ReadyEcerSection /
       // panel Piutang di /index refetch tanpa nunggu realtime.
