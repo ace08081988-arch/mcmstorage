@@ -1,18 +1,86 @@
-# Build APK Android (Capacitor)
+# Build APK Android (Capacitor 8)
 
-Ace Storage dibungkus dengan Capacitor sehingga bisa di-install sebagai APK
+ACE STORAGE dibungkus dengan Capacitor 8 sehingga bisa di-install sebagai APK
 Android. Web app tetap berjalan seperti biasa — APK hanya menambahkan
-akses ke izin perangkat (Notifikasi, Kamera, Lokasi, Galeri) saat pertama
-kali dibuka.
+akses ke izin perangkat (Notifikasi, Kamera, Lokasi, Galeri) saat fiturnya
+dipakai.
+
+- `appId`: `biz.mcmstorage.app` (varian chat: `biz.mcmstorage.chat`)
+- Nama aplikasi native: **ACE STORAGE** (varian chat: `Ace Chat`)
 
 ## Prasyarat (di komputer kamu)
 
-- Node 20+ dan Bun (untuk build web).
+- **Node.js 22+** (syarat Capacitor 8) dan Bun untuk build web.
 - **Android Studio** terbaru + Android SDK (Lovable tidak bisa build APK
   dari sini).
-- JDK 17.
+- **JDK 21** (Temurin) — sama seperti runner CI.
 
-## Langkah build
+## Cara termudah: workflow GitHub Actions (manual)
+
+Workflow `.github/workflows/android-apk.yml` (**Android APK (manual)**)
+hanya bisa dijalankan manual — tidak pernah otomatis pada push/PR.
+
+1. Buka repo di GitHub → tab **Actions** → **Android APK (manual)**.
+2. Klik **Run workflow**, isi:
+   - `variant`: `debug` (tanpa secret) atau `release` (butuh keystore).
+   - `version_name`: mis. `1.0.0`
+   - `version_code`: mis. `1`
+3. Setelah run selesai, unduh artifact di halaman run:
+   `ace-storage-<variant>-<version_name>-<version_code>` berisi
+   `dist/qa/ace-storage-<variant>-<version_name>-<version_code>.apk`
+   dan file `.apk.sha256`. Retensi artifact **7 hari**.
+4. Verifikasi checksum setelah unduh:
+   ```bash
+   sha256sum -c ace-storage-debug-1.0.0-1.apk.sha256
+   ```
+
+Workflow menjalankan `apksigner verify --verbose --print-certs` dan **gagal**
+bila APK tidak tertanda tangan valid.
+
+### Debug vs signed release
+
+| | `debug` | `release` |
+|---|---|---|
+| Keystore | debug keystore bawaan Android SDK | keystore rilis milik pemilik |
+| Secret dibutuhkan | tidak ada | 4 secret di bawah |
+| Distribusi | hanya QA internal | siap unggah manual ke Play Console |
+| Minify/R8 | mati | aktif |
+
+### Secrets signing (dipasang di GitHub, bukan di Lovable atau repo)
+
+Pasang di **GitHub → Settings → Secrets and variables → Actions →
+New repository secret**:
+
+| Secret | Isi |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | isi file keystore `.jks` yang di-encode base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | password store |
+| `ANDROID_KEY_ALIAS` | alias kunci (mis. `mcm`) |
+| `ANDROID_KEY_PASSWORD` | password key |
+
+Encode keystore di komputer sendiri:
+
+```bash
+base64 -w0 ace-release.jks > ace-release.jks.b64   # Linux
+base64 -i ace-release.jks | tr -d '\n' > ace-release.jks.b64   # macOS
+```
+
+Salin isi file `.b64` itu langsung ke kolom secret GitHub, lalu hapus file
+`.b64`. Keystore keytool JDK 17 default berformat **PKCS12** meski
+berekstensi `.jks` — workflow sudah menyetel `storeType PKCS12`.
+
+**Aturan keamanan (tanpa pengecualian):**
+
+- Jangan pernah mengirim file keystore atau password lewat chat, issue,
+  commit, log, atau artifact.
+- Jangan commit `*.jks`, `*.keystore`, `*.p12`, `*.pfx`,
+  `keystore.properties`, atau `android/key.properties` — semuanya sudah
+  di-`.gitignore`.
+- Kalau keystore hilang, aplikasi tidak bisa di-update lagi di Play Store.
+  Simpan cadangan offline.
+- Workflow menghapus keystore hasil decode dengan langkah `if: always()`.
+
+## Langkah build lokal
 
 ```bash
 # 1. install dependency
@@ -29,6 +97,13 @@ bunx cap sync android
 
 # 5. buka di Android Studio
 bunx cap open android
+```
+
+Patch versi & nama aplikasi tanpa secret (dipakai juga oleh CI):
+
+```bash
+node scripts/patch-android-build.mjs \
+  --app-name "ACE STORAGE" --version-name 1.0.0 --version-code 1
 ```
 
 Di Android Studio: pilih **Build → Build Bundle(s)/APK(s) → Build APK(s)**.
@@ -138,4 +213,6 @@ mengklaim push berfungsi.
 ## Catatan
 
 - `appId`: `biz.mcmstorage.app` (varian chat: `biz.mcmstorage.chat`).
-- Nama aplikasi: `Ace Storage` / `Ace Chat`.
+- Nama aplikasi: `ACE STORAGE` / `Ace Chat`.
+- Workflow tidak melakukan publish/deploy situs dan tidak mengunggah apa pun
+  ke Play Store — unggahan ke Play Console selalu manual oleh pemilik.
