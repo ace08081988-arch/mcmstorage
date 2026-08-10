@@ -226,9 +226,14 @@ jobs:
           dry='${{ github.event.inputs.dry_run || (github.event_name == 'push' && 'true') || 'true' }}'
           skip='${{ github.event.inputs.skip_version_check || 'false' }}'
 
-          args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
-          [ "$dry" = "true" ] && args+=(--upload-dry-run)
-          [ "$skip" = "true" ] && args+=(--skip-version-check)
+          if [ "$dry" = "true" ]; then
+            # BUILD-ONLY: signed AAB + artifact saja. Tidak ada panggilan ke
+            # Play Developer API (tidak upload, tidak cek versionCode remote).
+            args=(--variant "$variant")
+          else
+            args=(--variant "$variant" --upload --upload-track "$track" --release-status "$status")
+            [ "$skip" = "true" ] && args+=(--skip-version-check)
+          fi
 
           echo "▶ node scripts/build-aab.mjs ${args[*]}"
           node scripts/build-aab.mjs "${args[@]}"
