@@ -1,6 +1,9 @@
 # Panduan Rilis ke Google Play Console
 
-Dokumen ringkas ini menjelaskan langkah menyiapkan secrets, menjalankan dry-run, dan memastikan versi benar sebelum upload AAB ke Play Console.
+Dokumen ringkas ini menjelaskan langkah menyiapkan secrets, menjalankan mode **build-only** (signed AAB + artifact), dan memastikan versi benar sebelum upload AAB ke Play Console.
+
+**Package name aplikasi ACE STORAGE di Play Console: `mcmstorage.app`** (varian chat: `biz.mcmstorage.chat`).
+`namespace` sumber Android tetap `biz.mcmstorage.app` — itu hanya paket kelas Java, bukan identitas app di Play.
 
 ---
 
@@ -14,8 +17,11 @@ Buka **Settings → Secrets and variables → Actions → New repository secret*
 | `KEYSTORE_ALIAS` | Alias yang dipakai saat membuat keystore |
 | `KEYSTORE_STORE_PASS` | Password store keystore |
 | `KEYSTORE_KEY_PASS` | Password key keystore |
-| `PLAY_SERVICE_ACCOUNT_JSON_B64` | `base64 -w0 service-account.json` dari Google Play Console |
+| `PLAY_SERVICE_ACCOUNT_JSON_B64` | *(hanya untuk `dry_run=false`/upload otomatis)* `base64 -w0 service-account.json` dari Google Play Console |
 | `SLACK_WEBHOOK_URL` | *(opsional)* Webhook Slack untuk notifikasi rilis |
+
+> Mode default workflow (`dry_run=true`) adalah **build-only**: hanya 4 secret keystore
+> di atas yang wajib. Play Developer API tidak dipanggil sama sekali.
 
 > **Catatan:** Semua nilai di atas harus di-generate/sendiri oleh pemilik akun Play Console. Jangan bagikan file keystore atau service account ke siapa pun.
 
@@ -72,7 +78,7 @@ Untuk rilis berikutnya, naikkan `versionCode` secara manual atau biarkan workflo
 
 ---
 
-## 4. Jalankan dry-run pertama
+## 4. Jalankan build-only (upload manual ke Play Console)
 
 1. Buka tab **Actions** di GitHub.
 2. Pilih workflow **"Build & Release AAB"**.
@@ -81,16 +87,18 @@ Untuk rilis berikutnya, naikkan `versionCode` secara manual atau biarkan workflo
    - **variant**: `full`
    - **track**: `internal`
    - **release_status**: `draft`
-   - **dry_run**: ✅ **true** (centang)
+   - **dry_run**: ✅ **true** (centang) → build-only
    - **skip_version_check**: ❌ **false**
 5. Klik **Run workflow**.
 
-Dry-run akan:
+Build-only akan:
 
-- Build AAB
+- Build **signed** AAB (`app-release.aab`)
 - Validasi keystore
-- Cek `versionCode` lokal vs Play Console
-- **Tidak mengupload** apa pun
+- Mengunggah artifact `aab-full-<run_number>` (berisi `app-release.aab` + mapping + SHA-256)
+- **Tidak** memanggil Play Developer API (tidak upload, tidak cek versi remote)
+
+Unduh artifact-nya, lalu unggah `app-release.aab` secara manual di Play Console.
 
 Tunggu sampai workflow selesai. Buka **Actions → run → Summary** untuk melihat:
 
@@ -100,13 +108,14 @@ Tunggu sampai workflow selesai. Buka **Actions → run → Summary** untuk melih
 
 ---
 
-## 5. Pastikan dry-run lolos
+## 5. Pastikan build-only lolos
 
 Cek di job summary:
 
 - ✅ **"job berhasil"**
 - ✅ Tidak ada pesan error di step "Build + release AAB"
-- ✅ Tabel perbandingan versi lokal vs Play Console menunjukkan `versionCode` lebih tinggi dari yang sudah terbit
+- ✅ `versionCode` yang di-build lebih tinggi dari yang sudah pernah diunggah di Play Console
+  (saat ini `versionCode=2`, `versionName=1.0.0`)
 
 Kalau ada error, perbaiki dulu sebelum lanjut ke upload nyata.
 
@@ -114,7 +123,7 @@ Kalau ada error, perbaiki dulu sebelum lanjut ke upload nyata.
 
 ## 6. Upload ke Play Console
 
-Setelah dry-run lolos:
+Setelah build-only lolos (opsi otomatis; butuh `PLAY_SERVICE_ACCOUNT_JSON_B64`):
 
 1. Buka workflow **"Build & Release AAB"** lagi.
 2. Klik **Run workflow**.
