@@ -1,3 +1,4 @@
+import { isNativeApp } from "./is-native";
 /**
  * Cache-buster berbasis BUILD_ID.
  *
@@ -147,6 +148,8 @@ export function recheckBuildVersion(): void {
 }
 
 export function installBuildCacheBuster(): void {
+  // APK: bundle ikut versi APK, tidak ada SW/hard reload web.
+  if (isNativeApp()) return;
   if (installed) return;
   installed = true;
   if (typeof window === "undefined") return;

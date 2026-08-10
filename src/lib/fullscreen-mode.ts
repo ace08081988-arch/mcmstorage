@@ -1,3 +1,4 @@
+import { isNativeApp } from "./is-native";
 /**
  * Mode layar penuh untuk PWA (iOS & Android).
  *
@@ -216,6 +217,9 @@ export function isMobileViewport(): boolean {
  * sentuhan berikutnya mengembalikan mode penuh tanpa perlu muat ulang.
  */
 export function startAutoFullscreenOnInstalled(): () => void {
+  // APK sudah fullscreen lewat konfigurasi native; jangan pasang listener
+  // pointer/keydown untuk Fullscreen API web.
+  if (isNativeApp()) return () => {};
   if (typeof window === "undefined") return () => {};
   if (!canRequestFullscreen()) return () => {};
 
