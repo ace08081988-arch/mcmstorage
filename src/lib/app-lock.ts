@@ -514,7 +514,7 @@ export async function openBiometricEnrollment(): Promise<boolean> {
 // Buka halaman detail izin aplikasi (App Info) langsung untuk paket ini.
 // Ini adalah rute yang diperlukan saat izin biometrik ditolak permanen.
 export async function openAppPermissionSettings(
-  packageId = "biz.mcmstorage.app",
+  packageId = "mcmstorage.app",
   opts: { preferBiometric?: boolean } = {},
 ): Promise<boolean> {
   if (!isNative()) return false;
