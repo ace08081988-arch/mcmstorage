@@ -872,6 +872,8 @@ function PublicPrepPage() {
     // sempat dilewati saat busy).
     if (activeWorkerOpsRef.current === 0) {
       runIdleQueue();
+      // Expiry sesi yang tadi ditunda dijalankan tepat sekali di sini.
+      try { sessionTimerRef.current?.flushPending(); } catch { /* noop */ }
       // Refresh ringan sekali setelah idle supaya data pasti terkini.
       try { void silentRefreshRef.current?.(); } catch { /* noop */ }
       // Cek versi sekali lagi: bila deploy baru sudah live sementara
@@ -882,6 +884,7 @@ function PublicPrepPage() {
   // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
   // tanpa menciptakan siklus dependensi.
   const silentRefreshRef = useRef<null | (() => Promise<RefreshResult>)>(null);
+  const sessionTimerRef = useRef<ReturnType<typeof createSessionExpiryTimer> | null>(null);
   // Snapshot terakhir yang sudah dipakai render — dipakai untuk melewati
   // setState ketika server mengirim payload yang identik secara semantik.
   const lastSnapshotRef = useRef<{ task: unknown; items: unknown } | null>(null);
