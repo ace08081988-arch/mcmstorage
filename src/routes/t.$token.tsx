@@ -834,22 +834,12 @@ function PublicPrepPage() {
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
-  const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
   // Status "reload versi baru sedang ditahan" dari build-cache-buster.
   const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
     pending: false, reason: null, serverBuildId: null, since: null,
   });
-  const [deferredTick, setDeferredTick] = useState(0);
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
-  useEffect(() => {
-    if (!deferredReload.pending || !deferredReload.since) return;
-    const since = deferredReload.since;
-    const update = () => setDeferredTick(Math.max(0, Math.round((Date.now() - since) / 1000)));
-    update();
-    const id = window.setInterval(update, 1000);
-    return () => window.clearInterval(id);
-  }, [deferredReload.pending, deferredReload.since]);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
