@@ -6,7 +6,7 @@
  * (input `Uint8Array`) supaya bisa dijalankan di worker maupun diuji unit.
  */
 export type SniffedImage = {
-  mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  mime: "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "image/heic";
   width: number | null;
   height: number | null;
 };
@@ -64,8 +64,18 @@ export function sniffImage(bytes: Uint8Array): SniffedImage | null {
   if (startsWith(bytes, [0x47, 0x49, 0x46, 0x38])) return { mime: "image/gif", ...gifSize(bytes) };
   if (startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWith(bytes, [0x57, 0x45, 0x42, 0x50], 8))
     return { mime: "image/webp", ...webpSize(bytes) };
+  // HEIC/HEIF (iPhone). Kotak ISO-BMFF: [size][ftyp][brand]. Dimensi tidak
+  // dibaca — konversi ke JPEG terjadi di jalur unggah sebelum dipakai.
+  if (startsWith(bytes, [0x66, 0x74, 0x79, 0x70], 4)) {
+    const brand = String.fromCharCode(bytes[8]!, bytes[9]!, bytes[10]!, bytes[11]!);
+    if (HEIF_BRANDS.has(brand)) return { mime: "image/heic", width: null, height: null };
+  }
   return null;
 }
+
+const HEIF_BRANDS = new Set([
+  "heic", "heix", "hevc", "hevx", "heim", "heis", "hevm", "hevs", "mif1", "msf1",
+]);
 
 export const IMAGE_HARD_MAX_BYTES = 12 * 1024 * 1024;
 export const IMAGE_MAX_DIMENSION = 12_000;
@@ -90,7 +100,12 @@ export function validateImageBytes(
   if (!sniffed) return { ok: false, reason: "not_an_image" };
   const declared = (opts.declaredMime ?? "").toLowerCase().split(";")[0]?.trim();
   if (declared) {
-    const normalized = declared === "image/jpg" ? "image/jpeg" : declared;
+    const normalized =
+      declared === "image/jpg"
+        ? "image/jpeg"
+        : declared === "image/heif"
+          ? "image/heic"
+          : declared;
     if (normalized !== sniffed.mime) return { ok: false, reason: "mime_mismatch" };
   }
   const { width, height } = sniffed;
