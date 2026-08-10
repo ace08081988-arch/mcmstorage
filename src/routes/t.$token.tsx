@@ -251,9 +251,10 @@ type NativePickedPhoto = {
 };
 
 async function beginPortalNativePicker(): Promise<() => void> {
-  const { beginNativePicker, endNativePicker } = await import("@/lib/app-lock");
-  beginNativePicker();
-  return endNativePicker;
+  // Reference-counted: release hanya melepas token milik pemanggil ini,
+  // picker bersarang tetap menjaga app-lock tersuppress.
+  const { beginNativePicker } = await import("@/lib/app-lock");
+  return beginNativePicker();
 }
 
 /**

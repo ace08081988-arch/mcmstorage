@@ -1,5 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
+import { armFilePickerLock, withNativePicker } from "@/lib/app-lock";
 
 export type UploadedAttachment = {
   path: string;
@@ -69,7 +70,8 @@ export async function pickFromCamera(opts: { video?: boolean } = {}): Promise<Fi
   if (!Capacitor.isNativePlatform()) {
     return pickViaInput({ accept: opts.video ? "video/*" : "image/*", capture: true });
   }
-  try {
+  return withNativePicker(async () => {
+   try {
     const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
     const res = await Camera.getPhoto({
       source: CameraSource.Camera,
@@ -81,10 +83,11 @@ export async function pickFromCamera(opts: { video?: boolean } = {}): Promise<Fi
     const blob = await r.blob();
     const ext = res.format || "jpg";
     return new File([blob], `camera_${Date.now()}.${ext}`, { type: blob.type || `image/${ext}` });
-  } catch (e) {
+   } catch (e) {
     if ((e as { message?: string })?.message?.toLowerCase().includes("cancel")) return null;
     throw e;
-  }
+   }
+  });
 }
 
 export function pickViaInput(opts: { accept: string; multiple?: boolean; capture?: boolean }): Promise<File | null> {
@@ -94,11 +97,13 @@ export function pickViaInput(opts: { accept: string; multiple?: boolean; capture
     inp.accept = opts.accept;
     if (opts.multiple) inp.multiple = true;
     if (opts.capture) inp.setAttribute("capture", "environment");
+    const release = armFilePickerLock(inp);
     inp.onchange = () => {
+      release();
       const f = inp.files?.[0] ?? null;
       resolve(f);
     };
-    inp.oncancel = () => resolve(null);
+    inp.oncancel = () => { release(); resolve(null); };
     inp.click();
   });
 }
@@ -109,8 +114,9 @@ export function pickMultipleViaInput(opts: { accept: string }): Promise<File[]> 
     inp.type = "file";
     inp.accept = opts.accept;
     inp.multiple = true;
-    inp.onchange = () => resolve(Array.from(inp.files ?? []));
-    inp.oncancel = () => resolve([]);
+    const release = armFilePickerLock(inp);
+    inp.onchange = () => { release(); resolve(Array.from(inp.files ?? [])); };
+    inp.oncancel = () => { release(); resolve([]); };
     inp.click();
   });
 }

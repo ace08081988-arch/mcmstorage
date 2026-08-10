@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditorV2 as PhotoEditor } from "@/components/photo-editor/LazyPhotoEditorV2";
 import { displayUnit } from "@/lib/unit-label";
+import { openFilePickerWithLock } from "@/lib/app-lock";
 import {
   UNIT_GROUPS,
   UNIT_LABEL_ID,
@@ -3847,10 +3848,10 @@ function PrepEditorDialog({
             </div>
           ) : (
             <div id="prep-sec-foto" className="grid grid-cols-1 gap-ms-2.5 sm:grid-cols-2 sm:gap-ms-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
-              <Button variant="outline" onClick={() => cameraRef.current?.click()}>
+              <Button variant="outline" onClick={() => openFilePickerWithLock(cameraRef.current)}>
                 <Camera className="mr-1 h-4 w-4" /> Kamera
               </Button>
-              <Button variant="outline" onClick={() => galleryRef.current?.click()}>
+              <Button variant="outline" onClick={() => openFilePickerWithLock(galleryRef.current)}>
                 <ImageIcon className="mr-1 h-4 w-4" /> Galeri
               </Button>
             </div>
