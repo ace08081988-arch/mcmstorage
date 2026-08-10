@@ -30,10 +30,14 @@ import {
   MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
   ArrowBigRight, ArrowBigLeft, ChevronsRight, ChevronsLeft, ChevronRight,
   Zap, Heart, Star, ThumbsUp, Flame,
+  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   type Scene, type SceneObject, type DrawObj, type ShapeObj, type TextObj, type StickerObj,
   emptyScene, serializeScene, deserializeScene, newId,
