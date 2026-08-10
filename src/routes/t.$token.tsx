@@ -395,6 +395,12 @@ async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
   }
 }
 
+/**
+ * Batas paralel decode/compress foto (galeri multi-pilih). Nilai kecil
+ * menjaga memori puncak WebView Android tetap rendah.
+ */
+const PHOTO_DECODE_CONCURRENCY = 2;
+
 async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   if (typeof window === "undefined") return "fallback";
   const { Capacitor } = await import("@capacitor/core");
