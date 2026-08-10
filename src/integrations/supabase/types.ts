@@ -4297,6 +4297,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_reconcile_report_v1: { Args: never; Returns: Json }
       admin_reject_payment: {
         Args: { _note: string; _payment_id: string }
         Returns: Json
@@ -4713,6 +4714,10 @@ export type Database = {
       storage_upload_within_limits: {
         Args: { _max_bytes?: number; _metadata: Json }
         Returns: boolean
+      }
+      telemetry_cleanup_v1: {
+        Args: { _days?: number; _dry_run?: boolean }
+        Returns: Json
       }
       unsend_request_prep: { Args: { _prep_id: string }; Returns: Json }
       unsend_request_prep_check: { Args: { _prep_id: string }; Returns: Json }
