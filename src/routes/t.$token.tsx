@@ -3835,6 +3835,8 @@ function ItemCardImpl({
   );
 }
 
+const ItemCard = memo(ItemCardImpl);
+
 function SubmissionThumb({ path }: { path: string | null }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
