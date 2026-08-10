@@ -401,6 +401,10 @@ async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
  */
 const PHOTO_DECODE_CONCURRENCY = 2;
 
+/** Hasil satu putaran silentRefresh — dipakai pemanggil agar tidak
+ *  bergantung pada closure `lastSyncAt` yang bisa basi setelah await. */
+type RefreshResult = { ok: boolean; at: number | null };
+
 async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   if (typeof window === "undefined") return "fallback";
   const { Capacitor } = await import("@capacitor/core");
