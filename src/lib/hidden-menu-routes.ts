@@ -25,6 +25,7 @@ export const HIDDEN_MENU_URLS: ReadonlySet<string> = new Set<string>([
   // Admin internal
   "/admin/dependensi",
   "/admin/web-vitals",
+  "/admin/rekonsiliasi",
   "/chat-audit",
   "/hubungkan-agen",
 ]);
