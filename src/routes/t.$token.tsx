@@ -4585,10 +4585,17 @@ function RequestForm({
     let cancelled = false;
     (async () => {
       try {
-        const blobs = await loadDraftPhotos(draftKey);
+        const entries = await loadDraftPhotoEntries(draftKey);
         if (cancelled) return;
-        if (blobs.length > 0) {
-          const staged = await mapWithConcurrency(blobs, PHOTO_DECODE_CONCURRENCY, (b) => stageFile(b));
+        if (entries.length > 0) {
+          const staged = await mapWithConcurrency(
+            entries,
+            PHOTO_DECODE_CONCURRENCY,
+            async (e) => {
+              const s = await stageFile(e.blob);
+              return e.edited ? { ...s, edited: true } : s;
+            },
+          );
           if (!cancelled) setPhotos(staged);
         }
       } catch {
@@ -4606,6 +4613,7 @@ function RequestForm({
     void saveDraftPhotos(
       draftKey,
       photos.map((p) => p.blob),
+      photos.map((p) => p.edited === true),
     );
   }, [photos, draftKey]);
 
