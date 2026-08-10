@@ -1570,6 +1570,8 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             style={{
               bottom: "var(--app-keyboard-inset, 0px)",
               maxHeight: "calc(var(--app-vh-visible, var(--app-vh, 100dvh)) - 6rem)",
+              paddingBottom:
+                "calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 16px)",
             }}
             className="absolute inset-x-0 z-40 overflow-y-auto overscroll-contain rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in"
           >
