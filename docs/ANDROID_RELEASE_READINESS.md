@@ -1,7 +1,9 @@
 # Sprint 4 — Android/APK Release Readiness (laporan)
 
 Tanggal: 9 Agustus 2026 · Merek: **Ace Storage** / **Ace Chat**
-`applicationId`: `biz.mcmstorage.app` (chat: `biz.mcmstorage.chat`) — tidak diubah.
+`applicationId`: `mcmstorage.app` (chat: `biz.mcmstorage.chat`) — disamakan dengan
+package name aplikasi ACE STORAGE di Play Console. `namespace` Android tetap
+`biz.mcmstorage.app` (paket kelas Java/R saja).
 Tidak ada keystore dibuat/diganti, tidak ada secret ditulis ke repo/log,
 tidak ada upload Play Store, tidak ada deploy web.
 
