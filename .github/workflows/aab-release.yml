@@ -40,7 +40,11 @@ on:
         default: ""
 
   # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
+  # Selain itu: push ke branch "Mcmstorage.biz" memicu build-only otomatis,
+  # tapi HANYA bila file workflow ini yang berubah (lihat guard `if` di job).
   push:
+    branches:
+      - "Mcmstorage.biz"
     tags:
       - "v*"
 
@@ -52,6 +56,13 @@ jobs:
   build-and-release:
     name: aab:release (${{ github.event.inputs.variant || 'full' }} → ${{ github.event.inputs.track || 'internal' }})
     runs-on: ubuntu-latest
+    # Push ke branch hanya jalan kalau commit menyentuh file workflow ini.
+    # Tag v* dan workflow_dispatch tidak terpengaruh.
+    if: >-
+      github.event_name != 'push'
+      || startsWith(github.ref, 'refs/tags/v')
+      || contains(toJSON(github.event.commits.*.modified), '.github/workflows/aab-release.yml')
+      || contains(toJSON(github.event.commits.*.added), '.github/workflows/aab-release.yml')
     timeout-minutes: 45
     env:
       # Kredensial keystore — dibaca oleh scripts/validate-keystore.mjs
@@ -200,9 +211,12 @@ jobs:
       - name: Materialize keystore file
         run: |
           mkdir -p android
-          # Secret bisa mengandung CR/LF/spasi hasil copy-paste dari HP.
-          # Bersihkan whitespace dulu, lalu decode. Tidak ada isi/checksum yang di-log.
-          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > android/mcm.keystore
+          # Secret bisa mengandung CR/LF/spasi atau karakter sisipan lain hasil
+          # copy-paste dari HP. Sisakan hanya alfabet Base64 + padding, lalu decode.
+          # Tidak ada isi/checksum/password yang di-log.
+          printf '%s' "$KEYSTORE_BASE64" \
+            | LC_ALL=C tr -cd 'A-Za-z0-9+/=' \
+            | base64 --decode > android/mcm.keystore
           if ! test -s android/mcm.keystore; then
             echo "::error::Keystore gagal di-decode (hasil kosong). Periksa nilai secret KEYSTORE_BASE64."
             exit 1
