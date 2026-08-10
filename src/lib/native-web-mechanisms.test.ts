@@ -91,7 +91,9 @@ describe("guard native pada mekanisme web", () => {
   it("daftar chat mengirim rowVersion berisi selecting + selectedIds", () => {
     const src = readFileSync("src/routes/_authenticated.chat.index.tsx", "utf8");
     expect(src).toContain("rowVersion=");
-    expect(src).toMatch(/rowVersion=\{[^}]*selecting[^}]*selectedIds/s);
+    const line = src.split("\n").find((l) => l.includes("rowVersion=")) ?? "";
+    expect(line).toContain("selecting");
+    expect(line).toContain("selectedIds");
   });
 
   it("native push & deep-link listener TIDAK diguard oleh isNativeApp()", () => {
