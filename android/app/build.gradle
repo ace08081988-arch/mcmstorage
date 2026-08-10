@@ -21,6 +21,7 @@ def ksStorePath = System.getenv('KEYSTORE_FILE') ?: keystoreProps['storeFile']
 def ksStorePass = System.getenv('KEYSTORE_STORE_PASS') ?: keystoreProps['storePassword']
 def ksAlias     = System.getenv('KEYSTORE_ALIAS') ?: keystoreProps['keyAlias']
 def ksKeyPass   = System.getenv('KEYSTORE_KEY_PASS') ?: keystoreProps['keyPassword']
+def ksStoreType = System.getenv('KEYSTORE_STORE_TYPE') ?: (keystoreProps['storeType'] ?: 'PKCS12')
 def hasReleaseSigning = ksStorePath && ksStorePass && ksAlias && ksKeyPass && file(ksStorePath).exists()
 if (!hasReleaseSigning) {
     logger.lifecycle("[signing] keystore release belum tersedia — assembleDebug tetap jalan, assembleRelease/bundleRelease akan menghasilkan artefak UNSIGNED.")
@@ -50,6 +51,7 @@ android {
                 storePassword ksStorePass
                 keyAlias ksAlias
                 keyPassword ksKeyPass
+                storeType ksStoreType
             }
         }
     }

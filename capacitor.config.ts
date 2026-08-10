@@ -8,7 +8,7 @@ const isChat = variant === "chat";
 
 const config: CapacitorConfig = {
   appId: isChat ? "biz.mcmstorage.chat" : "biz.mcmstorage.app",
-  appName: isChat ? "Ace Chat" : "Ace Storage",
+  appName: isChat ? "Ace Chat" : "ACE STORAGE",
   webDir: "dist",
   server: {
     androidScheme: "https",
