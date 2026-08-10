@@ -1156,10 +1156,10 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             walau ukuran/zoom berubah. */}
         {selectedObj && (
           <div
-            className="pointer-events-none absolute left-1/2 right-2 z-30 flex max-w-[min(96vw,720px)] -translate-x-1/2 flex-col items-center gap-ms-2"
+            className="pointer-events-none absolute left-2 right-2 z-30 flex w-auto max-w-full translate-x-0 flex-col items-center gap-ms-2"
             style={{ top: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 68px)" }}
           >
-            <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl">
+            <div className="pointer-events-auto flex max-w-full items-center gap-ms-1 overflow-x-auto overscroll-x-contain rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl [scrollbar-width:none]">
               <IconPill onClick={() => duplicateObject(selectedObj.id)} label="Duplikat"><Copy className="h-4 w-4" /></IconPill>
               <IconPill onClick={() => bringForward(selectedObj.id)} label="Ke depan"><span className="text-ms-sm">↑</span></IconPill>
               <IconPill onClick={() => sendBackward(selectedObj.id)} label="Ke belakang"><span className="text-ms-sm">↓</span></IconPill>
