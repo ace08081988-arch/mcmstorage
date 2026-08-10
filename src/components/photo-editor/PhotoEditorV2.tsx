@@ -1684,7 +1684,7 @@ function IconPill(props: {
       aria-pressed={active}
       disabled={disabled}
       className={cn(
-        "grid h-10 w-10 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
+        "grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all",
         !disabled && "hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95",
         active && "bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]",
         tone === "danger" && "text-destructive-foreground hover:bg-destructive/30",
