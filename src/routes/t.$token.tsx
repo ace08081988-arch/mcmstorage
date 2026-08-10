@@ -36,6 +36,7 @@ import {
   type StagedPhoto as StagedPhotoT,
 } from "@/lib/prep-file-staging";
 import { mergeStagedPhotos } from "@/lib/prep-photo-merge";
+import { validateSubmitGate } from "@/lib/prep-submit-gate";
 import {
   saveDraftPhotos,
   loadDraftPhotos,
@@ -43,6 +44,11 @@ import {
   itemDraftKey,
   requestDraftKey,
 } from "@/lib/prep-draft-store";
+import {
+  loadDraftFields,
+  saveDraftFields,
+  clearDraftFields,
+} from "@/lib/prep-draft-fields";
 import {
   queryCameraPermission,
   permissionToastMessage,
@@ -2897,6 +2903,21 @@ function ItemCard({
     );
   }, [photos, draftKey]);
 
+  // Draft field non-foto (catatan, lokasi, GPS) ikut bertahan supaya progres
+  // pegawai tidak hilang saat WebView Android me-recreate halaman.
+  const fieldsHydratedRef = useRef(false);
+  useEffect(() => {
+    const d = loadDraftFields(draftKey);
+    if (d.note) setNote(d.note);
+    if (d.locUrl) setLocUrl(d.locUrl);
+    if (d.gps) setGps(d.gps);
+    fieldsHydratedRef.current = true;
+  }, [draftKey]);
+  useEffect(() => {
+    if (!fieldsHydratedRef.current) return;
+    saveDraftFields(draftKey, { note, locUrl, gps });
+  }, [draftKey, note, locUrl, gps]);
+
   async function pickCamera() {
     onKeepAlive();
     onActivityChange(true);
@@ -3076,7 +3097,9 @@ function ItemCard({
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
     if (!tryOpenEditForIdx(idxs[0])) {
-      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+      toast.warning(
+        `${okCount} foto masuk, tapi belum diedit. Ketuk foto untuk membuka editor sebelum kirim.`,
+      );
     }
   }
 
@@ -3098,22 +3121,11 @@ function ItemCard({
       toast.error("Item baru saja diubah admin. Tinjau ulang sebelum kirim.");
       return;
     }
-    if (photos.length === 0) {
-      toast.error("Wajib lampirkan foto bukti timbangan/barang");
-      setSendStatus({ kind: "failed", error: "Belum ada foto bukti" });
+    const gate = validateSubmitGate({ photos, locUrl, gps });
+    if (!gate.ok) {
+      toast.error(gate.message);
+      setSendStatus({ kind: "failed", error: gate.message });
       return;
-    }
-    if (locUrl) {
-      if (locUrl.length > 2048) {
-        toast.error("URL lokasi terlalu panjang");
-        setSendStatus({ kind: "failed", error: "URL lokasi terlalu panjang" });
-        return;
-      }
-      if (!/^https:\/\//i.test(locUrl)) {
-        toast.error("URL lokasi harus diawali https://");
-        setSendStatus({ kind: "failed", error: "URL lokasi harus diawali https://" });
-        return;
-      }
     }
     onKeepAlive();
     onActivityChange(true);
@@ -3229,6 +3241,7 @@ function ItemCard({
       setNote("");
       setUploads([]);
       void clearDraftPhotos(draftKey);
+      clearDraftFields(draftKey);
       onSubmitted(item.id);
       clearSubmitKey(`prep:${item.id}`);
     } catch (e) {
@@ -3713,6 +3726,7 @@ function ItemCard({
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
+        onFocus={(e) => e.currentTarget.scrollIntoView({ block: "center" })}
             placeholder="Catatan (opsional)"
             className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
@@ -3750,9 +3764,12 @@ function ItemCard({
             src={editorSrc}
             onCancel={() => {
               // Batalkan seluruh antrian edit galeri saat pengguna menutup editor.
+              // Foto tetap terlampir, tapi ditandai belum diedit sehingga
+              // gate submit menolaknya sampai user membuka editor lagi.
               editQueueRef.current = [];
               setEditingIdx(null);
               setEditorOpen(false);
+              toast.warning("Foto belum diedit. Ketuk foto untuk mengedit sebelum kirim.");
             }}
             onSave={(blob, dataUrl) => {
               setPhotos((prev) => {
@@ -4541,6 +4558,30 @@ function RequestForm({
     );
   }, [photos, draftKey]);
 
+  const fieldsHydratedRef = useRef(false);
+  useEffect(() => {
+    const d = loadDraftFields(draftKey);
+    if (d.note) setNote(d.note);
+    if (d.locUrl) setLocUrl(d.locUrl);
+    if (d.gps) setGps(d.gps);
+    if (d.quantities) {
+      setRows((rs) =>
+        rs.map((r, i) =>
+          d.quantities?.[String(i)] !== undefined
+            ? { ...r, actual_grams: d.quantities[String(i)] }
+            : r,
+        ),
+      );
+    }
+    fieldsHydratedRef.current = true;
+  }, [draftKey]);
+  useEffect(() => {
+    if (!fieldsHydratedRef.current) return;
+    const quantities: Record<string, string> = {};
+    rows.forEach((r, i) => { quantities[String(i)] = r.actual_grams; });
+    saveDraftFields(draftKey, { note, locUrl, gps, quantities });
+  }, [draftKey, note, locUrl, gps, rows]);
+
   async function pickCamera() {
     onKeepAlive();
     onActivityChange(true);
@@ -4712,7 +4753,9 @@ function RequestForm({
     const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
     editQueueRef.current = idxs.slice(1);
     if (!tryOpenEditForIdx(idxs[0])) {
-      toast.success(`${okCount} foto masuk. Ketuk foto untuk edit.`);
+      toast.warning(
+        `${okCount} foto masuk, tapi belum diedit. Ketuk foto untuk membuka editor sebelum kirim.`,
+      );
     }
   }
 
@@ -4731,8 +4774,9 @@ function RequestForm({
   }
 
   async function submit() {
-    if (photos.length === 0) {
-      toast.error("Wajib lampirkan foto bukti");
+    const gate = validateSubmitGate({ photos, locUrl, gps });
+    if (!gate.ok) {
+      toast.error(gate.message);
       return;
     }
     const validRows = rows.filter((r) => Number(r.actual_grams) > 0);
@@ -4881,6 +4925,7 @@ function RequestForm({
       setUploads([]);
       setExtraLocs([]);
       void clearDraftPhotos(draftKey);
+      clearDraftFields(draftKey);
       onDone();
       clearSubmitKey(`req:${title.id}`);
     } catch (e) {
@@ -4916,25 +4961,37 @@ function RequestForm({
     <div className="space-ms-3">
       <div className="space-y-1.5">
         {rows.map((r, idx) => (
-          <div key={idx} className="grid grid-cols-12 gap-ms-1.5">
-            <div className="col-span-8 flex items-center rounded-md border bg-background px-ms-2 text-ms-xs">
+          <div
+            key={idx}
+            className="rounded-md border bg-background p-ms-2 min-[400px]:grid min-[400px]:grid-cols-[minmax(0,1fr)_auto] min-[400px]:items-center min-[400px]:gap-ms-2"
+          >
+            <label
+              htmlFor={`qty-${idx}`}
+              className="block min-w-0 truncate text-ms-xs font-medium text-foreground"
+            >
               {r.product_name ?? "?"}
-            </div>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="any"
-              min="0"
-              value={r.actual_grams}
-              onChange={(e) =>
-                setRows((rs) =>
-                  rs.map((x, i) => (i === idx ? { ...x, actual_grams: e.target.value } : x)),
-                )
-              }
-              className="col-span-3 h-9 rounded-md border bg-background px-ms-2 text-ms-xs"
-            />
-            <div className="col-span-1 flex items-center text-ms-2xs text-muted-foreground">
-              {shortUnitLabel(r.product_name, r.unit_label)}
+            </label>
+            <div className="mt-1.5 flex shrink-0 items-center gap-ms-1.5 min-[400px]:mt-0">
+              <input
+                id={`qty-${idx}`}
+                type="number"
+                inputMode="decimal"
+                step="any"
+                min="0"
+                aria-label={`Jumlah ${r.product_name ?? "produk"} (${shortUnitLabel(r.product_name, r.unit_label)})`}
+                placeholder="0"
+                value={r.actual_grams}
+                onChange={(e) =>
+                  setRows((rs) =>
+                    rs.map((x, i) => (i === idx ? { ...x, actual_grams: e.target.value } : x)),
+                  )
+                }
+                onFocus={(e) => e.currentTarget.scrollIntoView({ block: "center" })}
+                className="h-11 w-24 rounded-md border bg-background px-ms-2 text-ms-sm"
+              />
+              <span className="w-10 shrink-0 text-ms-2xs text-muted-foreground">
+                {shortUnitLabel(r.product_name, r.unit_label)}
+              </span>
             </div>
           </div>
         ))}
@@ -5254,6 +5311,7 @@ function RequestForm({
       <input
         value={note}
         onChange={(e) => setNote(e.target.value)}
+        onFocus={(e) => e.currentTarget.scrollIntoView({ block: "center" })}
         placeholder="Catatan (opsional)"
         className="h-10 w-full rounded-lg border bg-background px-ms-3 text-ms-xs"
       />
@@ -5283,7 +5341,7 @@ function RequestForm({
         return (
           <div
             className="sticky bottom-0 z-10 -mx-3 -mb-3 mt-2 border-t bg-background/95 px-ms-3 py-ms-2 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-            style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + 0.5rem)` }}
+            style={{ paddingBottom: `calc(var(--app-safe-bottom, env(safe-area-inset-bottom, 0px)) + var(--app-keyboard-inset, 0px) + 0.5rem)` }}
           >
             {reason ? (
               <p className="mb-1.5 text-center text-ms-2xs font-medium text-warning dark:text-warning">
@@ -5358,6 +5416,7 @@ function RequestForm({
             editQueueRef.current = [];
             setEditingIdx(null);
             setEditorOpen(false);
+            toast.warning("Foto belum diedit. Ketuk foto untuk mengedit sebelum kirim.");
           }}
           onSave={(blob, dataUrl) => {
             setPhotos((prev) => {
