@@ -1,3 +1,4 @@
+import { inspectImageBlob, UPLOAD_IMAGE_MAX_BYTES } from "./upload-image-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 
@@ -107,6 +108,14 @@ export async function uploadRequestPhoto(
   ext = "jpg",
   client: StorageClient = supabase,
 ): Promise<string | null> {
+  const guard = await inspectImageBlob(blob, { maxBytes: UPLOAD_IMAGE_MAX_BYTES });
+  if (!guard.ok) {
+    logStorageError(
+      { bucket: REQUEST_BUCKET, op: "upload", path: "(magic-byte)", source: "uploadRequestPhoto" },
+      new Error(`file ditolak: ${guard.reason}`),
+    );
+    return null;
+  }
   const path = `${userId}/req-${titleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await client.storage.from(REQUEST_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
@@ -126,6 +135,14 @@ export async function uploadRequestPhotoViaToken(
   ext = "jpg",
   client: StorageClient = supabase,
 ): Promise<string | null> {
+  const guard = await inspectImageBlob(blob, { maxBytes: UPLOAD_IMAGE_MAX_BYTES });
+  if (!guard.ok) {
+    logStorageError(
+      { bucket: REQUEST_BUCKET, op: "upload", path: "(magic-byte)", source: "uploadRequestPhotoViaToken" },
+      new Error(`file ditolak: ${guard.reason}`),
+    );
+    return null;
+  }
   const path = `${ownerUserId}/${shareToken}/req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await client.storage.from(REQUEST_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",

@@ -45,3 +45,6 @@ export async function rejectionReasonForImage(
   const res = await inspectImageBlob(blob, opts);
   return res.ok ? null : UPLOAD_GUARD_REASON_ID[res.reason];
 }
+
+/** Batas ukuran unggah gambar bersama (12 MB) — selaras dengan prep. */
+export const UPLOAD_IMAGE_MAX_BYTES = 12 * 1024 * 1024;

@@ -1,3 +1,4 @@
+import { inspectImageBlob, UPLOAD_IMAGE_MAX_BYTES } from "./upload-image-guard";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 
@@ -55,6 +56,14 @@ export async function uploadEcerPhoto(
   blob: Blob,
   ext = "jpg",
 ): Promise<string | null> {
+  const guard = await inspectImageBlob(blob, { maxBytes: UPLOAD_IMAGE_MAX_BYTES });
+  if (!guard.ok) {
+    logStorageError(
+      { bucket: ECER_BUCKET, op: "upload", path: "(magic-byte)", source: "uploadEcerPhoto" },
+      new Error(`file ditolak: ${guard.reason}`),
+    );
+    return null;
+  }
   const path = `${userId}/${titleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from(ECER_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
