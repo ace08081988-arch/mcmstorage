@@ -131,3 +131,67 @@ describe("Request: share -> konfirmasi -> RPC finansial", () => {
     expect(src).toContain("sendLock.current.release();");
   });
 });
+
+// ---------- Kanal ganda ECER: WhatsApp & Ace Chat ----------
+describe("ECER: dua kanal nyata (WA & Ace Chat) lewat payment gate yang sama", () => {
+  const src = read("src/routes/_authenticated.ecer.tsx");
+
+  it("dialog kanonik menyediakan aksi Ace Chat, bukan hanya WhatsApp", () => {
+    expect(src).toContain('setChannel("chat")');
+    expect(src).toContain('setChannel("wa")');
+    expect(src).toContain("PickChatConversationDialog");
+    expect(src).toContain("await shareToChat(");
+  });
+
+  it("kanal Chat commit hanya bila shareToChat benar-benar shared", () => {
+    const chat = src.indexOf("const chatRes = await shareToChat(");
+    const guard = src.indexOf('chatRes.status !== "shared"');
+    const rpc = src.indexOf('rpc("send_ecer_preps_to_customer"');
+    expect(chat).toBeGreaterThan(-1);
+    expect(guard).toBeGreaterThan(chat);
+    expect(rpc).toBeGreaterThan(guard);
+    // Gagal/cancel -> event failed, tidak ada RPC finansial.
+    const failBlock = src.slice(guard, guard + 400);
+    expect(failBlock).toContain('logSendEvent("failed"');
+    expect(failBlock).toContain("return;");
+  });
+
+  it("payment gate berlaku untuk kedua kanal (satu jalur handleSend)", () => {
+    const gate = src.indexOf('title: "Konfirmasi pembayaran"');
+    const chat = src.indexOf("const chatRes = await shareToChat(");
+    const wa = src.indexOf("await shareToWhatsApp({ text: buildCaption()");
+    expect(gate).toBeGreaterThan(-1);
+    expect(chat).toBeGreaterThan(gate);
+    expect(wa).toBeGreaterThan(gate);
+  });
+
+  it("event kirim memakai kanal aktual, bukan hardcode wa", () => {
+    expect(src).toContain("channel: activeChannel,");
+    expect(src).not.toContain('channel: "wa",\n          outcome');
+  });
+
+  it("Chat tidak memakai konfirmasi manual WA", () => {
+    const chat = src.indexOf("const chatRes = await shareToChat(");
+    const waConfirm = src.indexOf("await confirmWhatsAppDelivered(");
+    expect(waConfirm).toBeGreaterThan(chat); // konfirmasi manual hanya di cabang WA
+  });
+});
+
+describe("Copy share WhatsApp tidak mengklaim terkirim sebelum konfirmasi", () => {
+  const src = read("src/lib/share-wa.ts");
+  it("tidak ada klaim 'Foto terkirim' / 'Dibagikan ke WhatsApp'", () => {
+    expect(src).not.toContain("Foto terkirim");
+    expect(src).not.toContain("Dibagikan ke WhatsApp.");
+  });
+  it("memakai copy netral 'Share dibuka'", () => {
+    expect(src).toContain("Share dibuka");
+  });
+});
+
+describe("ReadyEcerSection meneruskan intent kanal yang benar", () => {
+  const src = read("src/components/ReadyEcerSection.tsx");
+  it("tombol WA massal membawa ch: wa dan tombol Chat membawa ch: chat", () => {
+    expect(src).toContain('send: "1", ch: "wa"');
+    expect(src).toContain('send: "1", ch: "chat"');
+  });
+});
