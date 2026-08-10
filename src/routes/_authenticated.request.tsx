@@ -40,7 +40,7 @@ import {
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
-import { confirmWhatsAppDelivered, createReentryLock } from "@/lib/post-share-confirm";
+import { confirmWhatsAppDelivered, isShareOpened, createReentryLock } from "@/lib/post-share-confirm";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { CaptionPreviewDialog } from "@/components/CaptionPreviewDialog";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
@@ -3063,6 +3063,12 @@ function SendPrepToCustomerDialog({
         }
         if (res.status === "failed") {
           throw new Error(res.error || "Gagal kirim ke WhatsApp");
+        }
+        if (!isShareOpened(res.status)) {
+          // Status tak dikenal → perlakukan sebagai belum terkirim.
+          toast.info("Pengiriman belum dipastikan — penjualan BELUM dicatat.");
+          setBusy(false);
+          return;
         }
         // Membuka share sheet/WhatsApp BUKAN bukti pesan terkirim.
         // Wajib konfirmasi eksplisit sebelum RPC finansial dipanggil.
