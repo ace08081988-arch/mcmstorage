@@ -2488,8 +2488,8 @@ function PublicPrepPage() {
                                   token={token}
                                   pin={pinRef.current}
                                   isStale={!!staleItemIds[it.id]}
-                                  onAcknowledgeStale={() => clearStale(it.id)}
-                                  onSubmitted={handleItemSubmitted}
+                                  onAcknowledgeStale={stableClearStale}
+                                  onSubmitted={stableItemSubmitted}
                                   autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
                                   onActivityChange={setWorkerOperationActive}
                                   onKeepAlive={keepWorkerSessionAlive}
@@ -2673,7 +2673,16 @@ function PublicPrepPage() {
   );
 }
 
-function ItemCard({
+/**
+ * Kartu satu item penyiapan.
+ *
+ * Di-memo: label waktu (countdown sesi / "x dtk lalu") kini punya timer
+ * sendiri, dan semua prop fungsi dari parent ber-identitas stabil, sehingga
+ * kartu ini TIDAK ikut rerender saat portal berdetak. Perbandingan memakai
+ * shallow-compare bawaan React (bukan comparator custom) supaya tidak ada
+ * risiko UI stale seperti bug VirtualizedList.
+ */
+function ItemCardImpl({
   item,
   index,
   token,
@@ -2690,7 +2699,7 @@ function ItemCard({
   token: string;
   pin: string;
   isStale?: boolean;
-  onAcknowledgeStale?: () => void;
+  onAcknowledgeStale?: (itemId: string) => void;
   onSubmitted: (justDoneId: string) => void;
   /** Berubah (tick > 0) ketika parent minta kartu ini otomatis terbuka. */
   autoOpen?: number;
@@ -3351,7 +3360,7 @@ function ItemCard({
           </div>
           <button
             type="button"
-            onClick={onAcknowledgeStale}
+            onClick={() => onAcknowledgeStale?.(item.id)}
             className="inline-flex h-7 items-center gap-ms-1 rounded-md border border-warning/40 bg-background px-ms-2 text-ms-2xs font-semibold text-warning hover:bg-warning/10 dark:text-warning"
           >
             <RefreshCw className="h-3 w-3" /> Lanjutkan
