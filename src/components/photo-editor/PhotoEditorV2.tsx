@@ -30,9 +30,12 @@ import {
   MoveRight, MoveLeft, MoveUp, MoveDown, RefreshCw,
   ArrowBigRight, ArrowBigLeft, ChevronsRight, ChevronsLeft, ChevronRight,
   Zap, Heart, Star, ThumbsUp, Flame,
-  MoreHorizontal,
+  MoreHorizontal, Camera, ImagePlus, Images, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { openFilePickerWithLock } from "@/lib/app-lock";
+import { fileToImageLayer, ImageLayerError } from "@/lib/image-layer";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +43,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   type Scene, type SceneObject, type DrawObj, type ShapeObj, type TextObj, type StickerObj,
-  emptyScene, serializeScene, deserializeScene, newId,
+  type ImageObj,
+  emptyScene, serializeScene, deserializeScene, newId, visibleObjectsForExport,
 } from "./engine/scene";
 import { initHistory, pushHistory, undo as histUndo, redo as histRedo, canUndo, canRedo, readScene } from "./engine/history";
 import { useAutosaveScene, loadSceneDraft, clearSceneDraft } from "./hooks/useAutosaveScene";
@@ -450,10 +454,81 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     setShowStickers(false);
   };
 
+  // ── Tambah Foto (merge photo) ─────────────────────────────────────
+  // Dua input tersembunyi: kamera (capture) & galeri. Keduanya dibuka
+  // lewat openFilePickerWithLock supaya App Lock tidak menyambut pemilik
+  // saat WebView kembali dari aplikasi kamera/galeri native.
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const releasePickerRef = useRef<null | (() => void)>(null);
+  const [addingImage, setAddingImage] = useState(false);
+  const addingImageRef = useRef(false);
+
+  const releasePicker = useCallback(() => {
+    const rel = releasePickerRef.current;
+    releasePickerRef.current = null;
+    if (rel) { try { rel(); } catch { /* ignore */ } }
+  }, []);
+
+  const openImagePicker = useCallback((source: "camera" | "gallery") => {
+    if (addingImageRef.current) return;
+    const input = source === "camera" ? cameraInputRef.current : galleryInputRef.current;
+    if (!input) return;
+    input.value = "";
+    releasePicker();
+    releasePickerRef.current = openFilePickerWithLock(input, { reasonMs: 120_000 });
+  }, [releasePicker]);
+
+  const handlePickedImage = useCallback(async (file: File | null | undefined) => {
+    releasePicker();
+    if (!file) return;
+    addingImageRef.current = true;
+    setAddingImage(true);
+    try {
+      const decoded = await fileToImageLayer(file);
+      // Tempatkan di tengah, lebar maksimal 60% kanvas, rasio dijaga.
+      const targetW = Math.max(48, Math.round((scene.width || decoded.width) * 0.6));
+      const scale = Math.min(1, targetW / decoded.width);
+      const w = Math.max(24, Math.round(decoded.width * scale));
+      const h = Math.max(24, Math.round(decoded.height * scale));
+      const obj: ImageObj = {
+        id: newId("i"),
+        kind: "image",
+        src: decoded.dataUrl,
+        x: Math.round((scene.width || w) / 2 - w / 2),
+        y: Math.round((scene.height || h) / 2 - h / 2),
+        width: w, height: h, rotation: 0, opacity: 1,
+        naturalWidth: decoded.width, naturalHeight: decoded.height,
+      };
+      commitScene((s) => ({ ...s, objects: [...s.objects, obj] }));
+      setSelectedId(obj.id);
+      setTool("pilih");
+      toast.success("Foto ditambahkan sebagai layer.");
+    } catch (e) {
+      // Scene saat ini tidak pernah diubah pada jalur gagal.
+      const msg = e instanceof ImageLayerError ? e.message : "Foto gagal ditambahkan. Coba lagi.";
+      toast.error(msg);
+    } finally {
+      addingImageRef.current = false;
+      setAddingImage(false);
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
+    }
+  }, [commitScene, releasePicker, scene.width, scene.height]);
+
+  // Lepas suppression app-lock kalau editor ditutup saat picker menggantung.
+  useEffect(() => () => { releasePicker(); }, [releasePicker]);
+
   // Save: rasterize stage into blob + dataUrl + sceneJson.
   const doSave = useCallback(async () => {
     const st = stageRef.current;
     if (!st) return;
+    // Jangan ekspor saat foto tambahan masih di-decode: hasilnya akan
+    // kehilangan layer yang sedang diproses.
+    if (addingImageRef.current) {
+      toast.info("Tunggu sebentar, foto tambahan masih diproses…");
+      return;
+    }
     const prevSel = selectedId;
     setSelectedId(null);
     await new Promise((r) => requestAnimationFrame(r));
@@ -981,6 +1056,16 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     );
   };
 
+  const renderImage = (o: ImageObj) => (
+    <SceneImageLayer
+      key={o.id}
+      o={o}
+      draggable={tool === "pilih" && !o.locked}
+      onSelect={() => setSelectedId(o.id)}
+      onChange={(patch) => updateObject(o.id, patch)}
+    />
+  );
+
   // Transformer for selected non-draw object
   const transformerRef = useRef<Konva.Transformer | null>(null);
   useEffect(() => {
@@ -994,7 +1079,7 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
     // Stiker & teks lebih nyaman kalau proporsional (keepRatio) supaya
     // saat drag sudut ukuran tidak melar. Sisanya bebas.
     const sel = scene.objects.find((o) => o.id === selectedId);
-    const lockRatio = sel?.kind === "sticker" || sel?.kind === "text";
+    const lockRatio = sel?.kind === "sticker" || sel?.kind === "text" || sel?.kind === "image";
     tr.keepRatio(lockRatio);
     tr.enabledAnchors(
       lockRatio
@@ -1045,11 +1130,12 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             rotation={scene.rotation ?? 0}
           >
             {img && <KImage image={img} width={scene.width} height={scene.height} listening={false} />}
-            {scene.objects.map((o) => {
+            {visibleObjectsForExport(scene).map((o) => {
               if (o.kind === "draw") return renderDraw(o);
               if (o.kind === "shape") return renderShape(o);
               if (o.kind === "text") return renderText(o);
               if (o.kind === "sticker") return renderSticker(o);
+              if (o.kind === "image") return renderImage(o);
               return null;
             })}
             <Transformer
@@ -1099,10 +1185,18 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                   aria-label="Menu lainnya"
                   className="grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95"
                 >
-                  <MoreHorizontal className="h-5 w-5" />
+                  {addingImage
+                    ? <Loader2 className="h-5 w-5 animate-spin text-[#f0d78c]" />
+                    : <MoreHorizontal className="h-5 w-5" />}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="z-fullscreen">
+                <DropdownMenuItem disabled={addingImage} onSelect={() => openImagePicker("camera")}>
+                  <Camera className="mr-2 h-4 w-4" /> Tambah Foto — Kamera
+                </DropdownMenuItem>
+                <DropdownMenuItem disabled={addingImage} onSelect={() => openImagePicker("gallery")}>
+                  <Images className="mr-2 h-4 w-4" /> Tambah Foto — Galeri
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => resetAll()}>
                   <RotateCcw className="mr-2 h-4 w-4" /> Reset semua editan
                 </DropdownMenuItem>
@@ -1111,6 +1205,9 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            {/* "Tambah Foto" hidup di menu overflow bernama jelas: menaruhnya
+                sebagai pill terpisah membuat tombol Simpan terpotong di 320px.
+                Indikator decoding tetap terlihat di trigger menu. */}
           </div>
           <div className="pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={doUndo} disabled={!canUndo(history)} label="Undo"><Undo2 className="h-5 w-5" /></IconPill>
@@ -1118,11 +1215,35 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
             <Button
               size="sm"
               onClick={doSave}
+              disabled={addingImage}
+              aria-disabled={addingImage}
               className="ml-ms-1 h-11 shrink-0 rounded-full border border-[#c9a84c]/50 px-ms-3 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
               style={{ background: "linear-gradient(180deg, #f0d78c 0%, #c9a84c 55%, #a3873a 100%)" }}
             >
               Simpan
             </Button>
+            {/* Input picker tersembunyi — dibuka via openFilePickerWithLock. */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              data-testid="photo-editor-add-image-camera"
+              onChange={(e) => { void handlePickedImage(e.target.files?.[0] ?? null); }}
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              data-testid="photo-editor-add-image-gallery"
+              onChange={(e) => { void handlePickedImage(e.target.files?.[0] ?? null); }}
+            />
           </div>
         </header>
 
@@ -1696,6 +1817,49 @@ function IconPill(props: {
   );
 }
 
+/**
+ * Layer foto tambahan. Dipisah jadi komponen supaya tiap objek punya
+ * hook `useImage` sendiri (data URL di-decode sekali, lalu di-cache oleh
+ * browser) tanpa memaksa parent memegang daftar HTMLImageElement.
+ */
+function SceneImageLayer(props: {
+  o: ImageObj;
+  draggable: boolean;
+  onSelect: () => void;
+  onChange: (patch: Partial<ImageObj>) => void;
+}) {
+  const { o, draggable, onSelect, onChange } = props;
+  const [image] = useImage(o.src);
+  if (o.visible === false) return null;
+  return (
+    <KImage
+      id={o.id}
+      image={image}
+      x={o.x}
+      y={o.y}
+      width={o.width}
+      height={o.height}
+      rotation={o.rotation}
+      opacity={o.opacity}
+      draggable={draggable}
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragEnd={(e) => onChange({ x: e.target.x(), y: e.target.y() })}
+      onTransformEnd={(e) => {
+        const n = e.target as unknown as Konva.Node;
+        const sx = n.scaleX(), sy = n.scaleY();
+        onChange({
+          x: n.x(), y: n.y(),
+          width: Math.max(16, o.width * sx),
+          height: Math.max(16, o.height * sy),
+          rotation: n.rotation(),
+        });
+        n.scaleX(1); n.scaleY(1);
+      }}
+    />
+  );
+}
+
 function stickerGlyph(k: string): string {
   switch (k) {
     case "arrow": return "→";
@@ -1738,6 +1902,7 @@ function layerLabel(o: SceneObject): string {
   if (o.kind === "shape") return `Bentuk: ${o.shape}`;
   if (o.kind === "text") return `Teks: ${o.text.slice(0, 20)}`;
   if (o.kind === "sticker") return `Stiker: ${STICKER_PRESETS[o.sticker]?.label ?? o.sticker}`;
+  if (o.kind === "image") return "Foto tambahan";
   return "Objek";
 }
 
