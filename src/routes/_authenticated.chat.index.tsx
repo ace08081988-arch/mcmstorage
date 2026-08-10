@@ -971,6 +971,10 @@ function ConvList({
         getKey={(c) => c.id}
         estimateSize={76}
         gap={0}
+        // Semua state visual eksternal yang dibaca renderItem — tanpa ini,
+        // toggle pilihan tidak mengubah checkbox/highlight karena identitas
+        // item tidak berubah.
+        rowVersion={`${archivedView ? 1 : 0}|${selecting ? 1 : 0}|${Array.from(selectedIds).sort().join(",")}`}
         renderItem={(c) => (
           <ConvListItem
             c={c}
