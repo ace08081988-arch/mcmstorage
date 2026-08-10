@@ -106,7 +106,12 @@ export function validateImageBytes(
         : declared === "image/heif"
           ? "image/heic"
           : declared;
-    if (normalized !== sniffed.mime) return { ok: false, reason: "mime_mismatch" };
+    // Jalur unggah menormalisasi HEIC iPhone ke .jpg. Bila konversi kanvas
+    // tidak tersedia (WebView lama), byte-nya tetap HEIC sementara MIME sudah
+    // image/jpeg. Itu tetap gambar asli, jadi bukan mismatch berbahaya.
+    const heicAsJpeg = sniffed.mime === "image/heic" && normalized === "image/jpeg";
+    if (!heicAsJpeg && normalized !== sniffed.mime)
+      return { ok: false, reason: "mime_mismatch" };
   }
   const { width, height } = sniffed;
   if (width !== null && height !== null) {
