@@ -35,7 +35,8 @@ export function ChatBottomNav() {
   // Hook tetap dipanggil untuk menjalankan engine pengukuran & status keyboard.
   const { keyboardOpen } = useViewportAnchor({ lock: true });
   const navRef = useRef<HTMLElement | null>(null);
-  useBottomNavHeightSync(navRef);
+  // Keyboard terbuka -> bar hilang, spacer harus 0 (tanpa dead-space).
+  useBottomNavHeightSync(navRef, !keyboardOpen);
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
