@@ -84,7 +84,7 @@ export const Route = createFileRoute("/api/public/hooks/prep-task-notify")({
               title: `Tugas baru: ${titleText}`,
               body,
               // H18: /pegawai/tugas/... tidak ada; arahkan ke daftar tugas.
-              url: `/tugas-daftar`,
+              url: `/tugas?mode=staff`,
               tag: `prep-task:${parsed.task_id}`,
               // H19: samakan dgn enabledKinds di SW (chat/tugas/order/system)
               // supaya toggle "Notifikasi Tugas" pengguna benar-benar berlaku.

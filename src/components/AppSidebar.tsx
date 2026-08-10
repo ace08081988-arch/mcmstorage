@@ -319,7 +319,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
       { title: "POS Kasir", url: "/pos-kasir", icon: Calculator },
       { title: "Tugas Pegawai", url: "/tugas", icon: ClipboardList },
-      { title: "Daftar Tugas", url: "/tugas-daftar", icon: ListChecks },
       { title: "Link Pegawai", url: "/link-pegawai", icon: Link2 },
       { title: "Kios", url: "/kios", icon: Store },
       { title: "Riwayat Kios", url: "/kios/riwayat", icon: History },

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminStatus } from "@/hooks/use-is-admin";
@@ -8,6 +8,12 @@ import { ArrowLeft, CalendarClock, ShieldAlert, Copy, ExternalLink, Search, Plus
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/tugas-daftar")({
+  // Batch C1: satu pintu Tugas. Route ini dipertahankan sebagai alias agar
+  // bookmark lama tidak 404, tetapi dialihkan SEBELUM query/subscription
+  // apa pun berjalan (beforeLoad berjalan sebelum komponen dirender).
+  beforeLoad: () => {
+    throw redirect({ to: "/tugas", search: { mode: "staff" }, replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Daftar Tugas Penyiapan · Ace Storage" },
