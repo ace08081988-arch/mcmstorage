@@ -17,6 +17,7 @@ import { fetchAddressBook, normalizePhone, type AddressBookRow } from "@/lib/add
 import { rememberPin, recallPin, forgetPin } from "@/lib/prep-pin-memo";
 import { debounce } from "@/lib/realtime-debounce";
 import { NumericTextField } from "@/components/NumericDraftInput";
+import { useVisualViewportBox, visualViewportDialogStyle } from "@/hooks/use-visual-viewport-inset";
 
 /**
  * Badge kecil di kartu tugas yang menampilkan PIN dari pengingat lokal
@@ -67,7 +68,31 @@ function TaskPinMemo({ shareToken }: { shareToken: string }) {
   );
 }
 
+export type TugasMode = "self" | "staff" | "tokens";
+export type TugasSched = "all" | "scheduled" | "unscheduled";
+
+/**
+ * Batch C1: mode halaman Tugas menjadi URL-driven supaya Back/Forward,
+ * deep-link, dan bookmark konsisten. Default `staff` (Via Pegawai) karena
+ * /tugas-daftar sekarang dialihkan ke sini.
+ */
+export function parseTugasSearch(s: Record<string, unknown>): {
+  // Sengaja opsional pada level TIPE supaya `<Link to="/tugas">` tanpa
+  // search tetap valid; runtime selalu mengisi default.
+  mode?: TugasMode;
+  sched?: TugasSched;
+} {
+  const rawMode = typeof s?.mode === "string" ? s.mode : "";
+  const mode: TugasMode =
+    rawMode === "self" || rawMode === "tokens" || rawMode === "staff" ? rawMode : "staff";
+  const rawSched = typeof s?.sched === "string" ? s.sched : "";
+  const sched: TugasSched =
+    rawSched === "scheduled" || rawSched === "unscheduled" ? rawSched : "all";
+  return { mode, sched };
+}
+
 export const Route = createFileRoute("/_authenticated/tugas")({
+  validateSearch: parseTugasSearch,
   head: () => ({
     meta: [
       { title: "Penyiapan Produk · Ace Storage" },
@@ -83,7 +108,7 @@ type WItem = {
 };
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
-type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string; pin_updated_at?: string | null; completed_at?: string | null; completion_note?: string | null };
+type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string; scheduled_at?: string | null; pin_updated_at?: string | null; completed_at?: string | null; completion_note?: string | null };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
@@ -385,7 +410,24 @@ function TokenStatusPanel({ tasks, loaded }: { tasks: Task[]; loaded: boolean })
 
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
-  const [mode, setMode] = useState<"self" | "staff" | "tokens">("self");
+  // Mode & filter jadwal dibaca dari URL supaya Back/Forward dan deep link
+  // (mis. /tugas?mode=tokens) konsisten dengan yang tampil.
+  const search = Route.useSearch();
+  const mode: TugasMode = search.mode ?? "staff";
+  const sched: TugasSched = search.sched ?? "all";
+  const navigate = Route.useNavigate();
+  const setMode = (m: TugasMode) => {
+    void navigate({
+      search: (prev: { mode?: TugasMode; sched?: TugasSched }) => ({ ...prev, mode: m }),
+      replace: false,
+    });
+  };
+  const setSched = (s: TugasSched) => {
+    void navigate({
+      search: (prev: { mode?: TugasMode; sched?: TugasSched }) => ({ ...prev, sched: s }),
+      replace: true,
+    });
+  };
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -410,6 +452,8 @@ function TugasPage() {
     } catch { /* ignore */ }
   }, [openCreate]);
   const [openTask, setOpenTask] = useState<Task | null>(null);
+  // Draf legacy dari CreateDialog lama: dipakai HANYA untuk recovery.
+  const [hasLegacyDraft, setHasLegacyDraft] = useState<boolean>(() => readCreateDraft() != null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
@@ -710,25 +754,27 @@ function TugasPage() {
           <p className="text-ms-2xs text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
         </div>
       </div>
-      <div role="tablist" aria-label="Mode penyiapan" className="mb-3 inline-flex rounded-lg border bg-card p-ms-1 text-ms-xs shadow-sm">
+      <div className="mb-3 -mx-1 max-w-full overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div role="tablist" aria-label="Mode penyiapan" className="inline-flex w-max rounded-lg border bg-card p-ms-1 text-ms-xs shadow-sm">
         <button
           role="tab"
           aria-selected={mode === "self"}
           onClick={() => setMode("self")}
-          className={`rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "self" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          className={`shrink-0 whitespace-nowrap rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "self" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Siapkan Sendiri</button>
         <button
           role="tab"
           aria-selected={mode === "staff"}
           onClick={() => setMode("staff")}
-          className={`rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          className={`shrink-0 whitespace-nowrap rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Via Pegawai</button>
         <button
           role="tab"
           aria-selected={mode === "tokens"}
           onClick={() => setMode("tokens")}
-          className={`rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "tokens" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+          className={`shrink-0 whitespace-nowrap rounded-md px-ms-3 py-1.5 font-semibold transition ${mode === "tokens" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
         >Status Token & PIN</button>
+      </div>
       </div>
 
       {mode === "self" ? (
@@ -777,12 +823,35 @@ function TugasPage() {
             <button onClick={() => setOpenAudit(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md border bg-background/70 px-ms-3 text-ms-xs font-semibold backdrop-blur hover:bg-accent" aria-label="Revalidasi tugas">
               <ShieldCheck className="h-4 w-4" /> <span className="hidden sm:inline">Revalidasi</span>
             </button>
-            <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90">
+            <Link to="/tugas-baru" className="inline-flex h-9 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90">
               <Plus className="h-4 w-4" /> Buat tugas
-            </button>
+            </Link>
           </div>
         </div>
       </section>
+
+      {/* Recovery draf lama: dialog legacy hanya boleh dibuka dari sini. */}
+      {!openCreate && hasLegacyDraft && (
+        <div className="mt-3 flex flex-wrap items-center gap-ms-2 rounded-md border border-warning/40 bg-warning/5 p-ms-2 text-ms-2xs">
+          <span className="min-w-0 flex-1 text-warning dark:text-warning">
+            Ada draf tugas lama yang belum dikirim dari dialog versi sebelumnya.
+          </span>
+          <button
+            type="button"
+            onClick={() => setOpenCreate(true)}
+            className="inline-flex h-8 shrink-0 items-center rounded-md border bg-background px-ms-2 font-semibold"
+          >
+            Pulihkan draf lama
+          </button>
+          <button
+            type="button"
+            onClick={() => { clearCreateDraft(); setHasLegacyDraft(false); }}
+            className="inline-flex h-8 shrink-0 items-center rounded-md px-ms-2 font-semibold text-muted-foreground hover:bg-accent"
+          >
+            Buang draf
+          </button>
+        </div>
+      )}
 
       {/* Summary cards */}
       <section aria-label="Ringkasan tugas" className="mt-3 grid grid-cols-2 gap-ms-2.5 sm:grid-cols-3 md:grid-cols-5">
@@ -870,7 +939,7 @@ function TugasPage() {
         };
         return (
           <div
-            className="-mx-1 mb-3 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="-mx-1 mb-2 flex max-w-full items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             role="tablist"
             aria-label="Filter status tugas"
           >
@@ -882,6 +951,36 @@ function TugasPage() {
         );
       })()}
 
+      {/* Filter jadwal — dibawa dari /tugas-daftar agar redirect tidak
+          menghilangkan fitur "Terjadwal / Tanpa jadwal". */}
+      <div
+        className="-mx-1 mb-3 flex max-w-full items-center gap-ms-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="tablist"
+        aria-label="Filter jadwal tugas"
+      >
+        {([
+          ["all", "Semua jadwal"],
+          ["scheduled", "Terjadwal"],
+          ["unscheduled", "Tanpa jadwal"],
+        ] as [TugasSched, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={sched === key}
+            onClick={() => setSched(key)}
+            className={
+              "shrink-0 whitespace-nowrap rounded-full border px-ms-2 py-0.5 text-ms-2xs font-medium transition-colors " +
+              (sched === key
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-transparent bg-muted/50 text-muted-foreground hover:text-foreground")
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <div className="space-ms-2">
         {!tasksLoaded && tasks.length === 0 && (
           <div className="space-ms-2" aria-hidden>
@@ -892,6 +991,8 @@ function TugasPage() {
         )}
         {tasks
           .filter((t) => {
+            if (sched === "scheduled" && !t.scheduled_at) return false;
+            if (sched === "unscheduled" && t.scheduled_at) return false;
             if (statusFilter === "all") return true;
             const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
             return (
@@ -1045,12 +1146,14 @@ function TugasPage() {
             </span>
             <div className="text-ms-sm font-medium">Belum ada tugas</div>
             <div className="max-w-sm text-ms-2xs text-muted-foreground">Buat tugas pertama untuk mulai mengirim daftar penyiapan ke pegawai via link + PIN.</div>
-            <button onClick={() => setOpenCreate(true)} className="mt-1 inline-flex h-8 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground">
+            <Link to="/tugas-baru" className="mt-1 inline-flex h-8 items-center gap-ms-1 rounded-md bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground">
               <Plus className="h-3.5 w-3.5" /> Buat tugas
-            </button>
+            </Link>
           </div>
         )}
         {tasks.length > 0 && tasks.filter((t) => {
+          if (sched === "scheduled" && !t.scheduled_at) return false;
+          if (sched === "unscheduled" && t.scheduled_at) return false;
           if (statusFilter === "all") return true;
           const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0, approved: 0 });
           return (
@@ -1076,8 +1179,8 @@ function TugasPage() {
           warehouse={warehouse}
           variants={effectiveVariants}
           onVariantsChanged={load}
-          onClose={() => setOpenCreate(false)}
-          onCreated={(info) => { clearCreateDraft(); setOpenCreate(false); setCreatedInfo(info); void load(); }}
+          onClose={() => { setOpenCreate(false); setHasLegacyDraft(readCreateDraft() != null); }}
+          onCreated={(info) => { clearCreateDraft(); setHasLegacyDraft(false); setOpenCreate(false); setCreatedInfo(info); void load(); }}
         />
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
@@ -2884,16 +2987,40 @@ function SubmissionCard({ sub }: { sub: Submission }) {
 }
 
 function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+  // Pakai pola repo (sama dengan `components/ui/dialog`): kartu dipusatkan ke
+  // area yang BENAR-BENAR terlihat (visual viewport), sehingga saat
+  // soft-keyboard Android terbuka kartu tidak melorot ke balik keyboard.
+  const box = useVisualViewportBox();
+  const vvStyle = visualViewportDialogStyle(box);
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-ms-4">
-      <div className={`max-h-[90vh] w-full ${wide ? "max-w-3xl" : "max-w-lg"} overflow-y-auto rounded-t-2xl bg-card p-ms-4 shadow-xl sm:rounded-2xl`}>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-ms-base font-semibold">{title}</h2>
-          <button aria-label="Tutup" onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-md border"><X className="h-4 w-4" /></button>
+    <>
+      <div className="fixed inset-0 z-50 bg-black/50" aria-hidden onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        style={
+          vvStyle
+            ? { top: vvStyle.top, maxHeight: vvStyle.maxHeight, transform: "translate(-50%, -50%)" }
+            : undefined
+        }
+        className={`fixed left-1/2 z-50 flex w-[calc(100%-1rem)] ${wide ? "max-w-3xl" : "max-w-lg"} -translate-x-1/2 flex-col rounded-2xl bg-card shadow-xl ${
+          vvStyle
+            ? ""
+            : "top-1/2 -translate-y-1/2 [max-height:calc(var(--app-vh-visible,var(--app-vh,100dvh))-2rem)]"
+        }`}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-ms-2 border-b bg-card px-ms-4 py-ms-3 rounded-t-2xl">
+          <h2 className="min-w-0 truncate text-ms-base font-semibold">{title}</h2>
+          <button aria-label="Tutup" onClick={onClose} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border"><X className="h-4 w-4" /></button>
         </div>
-        {children}
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-ms-4 py-ms-3 [padding-bottom:max(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)),0.75rem)]"
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
