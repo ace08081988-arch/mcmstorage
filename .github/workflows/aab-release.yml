@@ -211,9 +211,12 @@ jobs:
       - name: Materialize keystore file
         run: |
           mkdir -p android
-          # Secret bisa mengandung CR/LF/spasi hasil copy-paste dari HP.
-          # Bersihkan whitespace dulu, lalu decode. Tidak ada isi/checksum yang di-log.
-          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > android/mcm.keystore
+          # Secret bisa mengandung CR/LF/spasi atau karakter sisipan lain hasil
+          # copy-paste dari HP. Sisakan hanya alfabet Base64 + padding, lalu decode.
+          # Tidak ada isi/checksum/password yang di-log.
+          printf '%s' "$KEYSTORE_BASE64" \
+            | LC_ALL=C tr -cd 'A-Za-z0-9+/=' \
+            | base64 --decode > android/mcm.keystore
           if ! test -s android/mcm.keystore; then
             echo "::error::Keystore gagal di-decode (hasil kosong). Periksa nilai secret KEYSTORE_BASE64."
             exit 1
