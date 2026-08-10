@@ -1081,21 +1081,40 @@ export function PhotoEditorV2({ src, onCancel, onSave, initialSceneJson, autosav
 
         {/* Header glass — kiri (batal + reset), tengah (title kosong), kanan (undo/redo/layer/simpan). */}
         <header
-          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-2 px-ms-2 py-ms-2"
+          className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-ms-1 px-ms-2 py-ms-2"
           style={{ paddingTop: "calc(var(--app-safe-top,env(safe-area-inset-top,0px)) + 8px)" }}
         >
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <div className="pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={onCancel} label="Batal"><ChevronLeft className="h-5 w-5" /></IconPill>
-            <IconPill onClick={resetAll} label="Reset semua editan"><RotateCcw className="h-5 w-5" /></IconPill>
+            {/* Reset & Layer masuk menu overflow: di 320px header tidak muat
+                menampung semuanya tanpa memotong tombol Simpan. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Menu lainnya"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95"
+                >
+                  <MoreHorizontal className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="z-fullscreen">
+                <DropdownMenuItem onSelect={() => resetAll()}>
+                  <RotateCcw className="mr-2 h-4 w-4" /> Reset semua editan
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setShowLayers((v) => !v)}>
+                  <Layers className="mr-2 h-4 w-4" /> Layer ({scene.objects.length})
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div className="pointer-events-auto flex items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
+          <div className="pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
             <IconPill onClick={doUndo} disabled={!canUndo(history)} label="Undo"><Undo2 className="h-5 w-5" /></IconPill>
             <IconPill onClick={doRedo} disabled={!canRedo(history)} label="Redo"><Redo2 className="h-5 w-5" /></IconPill>
-            <IconPill onClick={() => setShowLayers((v) => !v)} label="Layer" active={showLayers}><Layers className="h-5 w-5" /></IconPill>
             <Button
               size="sm"
               onClick={doSave}
-              className="ml-ms-1 h-9 rounded-full border border-[#c9a84c]/50 px-ms-4 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
+              className="ml-ms-1 h-11 shrink-0 rounded-full border border-[#c9a84c]/50 px-ms-3 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105"
               style={{ background: "linear-gradient(180deg, #f0d78c 0%, #c9a84c 55%, #a3873a 100%)" }}
             >
               Simpan
