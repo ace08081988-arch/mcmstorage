@@ -1180,7 +1180,6 @@ function PublicPrepPage() {
     focusPinInput();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const sessionTimerRef = useRef<ReturnType<typeof createSessionExpiryTimer> | null>(null);
   if (!sessionTimerRef.current) {
     sessionTimerRef.current = createSessionExpiryTimer({
       isBusy: () => activeWorkerOpsRef.current > 0,
