@@ -200,14 +200,20 @@ jobs:
       - name: Materialize keystore file
         run: |
           mkdir -p android
-          echo "$KEYSTORE_BASE64" | base64 -d > android/mcm.keystore
+          # Secret bisa mengandung CR/LF/spasi hasil copy-paste dari HP.
+          # Bersihkan whitespace dulu, lalu decode. Tidak ada isi/checksum yang di-log.
+          printf '%s' "$KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > android/mcm.keystore
+          if ! test -s android/mcm.keystore; then
+            echo "::error::Keystore gagal di-decode (hasil kosong). Periksa nilai secret KEYSTORE_BASE64."
+            exit 1
+          fi
           # keystore.properties: storeFile + alias saja. Password tetap dari env
           # var supaya tidak pernah tersimpan di file yang di-archive.
           cat > android/keystore.properties <<EOF
           storeFile=mcm.keystore
           keyAlias=$KEYSTORE_ALIAS
           EOF
-          ls -la android/mcm.keystore
+          echo "Keystore siap ($(stat -c%s android/mcm.keystore) bytes)."
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
 
