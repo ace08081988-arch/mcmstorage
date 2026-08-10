@@ -1,8 +1,8 @@
 name: Build & Release AAB
 
 # Jalankan manual dari tab Actions → "Build & Release AAB" → Run workflow.
-# Mode default = dry-run: build AAB + verifikasi versionCode vs Play Console,
-# TIDAK upload. Matikan `dry_run` untuk benar-benar upload ke track.
+# Mode default = build-only: build signed AAB + upload artifact saja.
+# TIDAK menyentuh Play Developer API. Matikan `dry_run` untuk upload ke track.
 
 on:
   workflow_dispatch:
@@ -23,11 +23,11 @@ on:
         default: draft
         options: [draft, inProgress, halted, completed]
       dry_run:
-        description: "Dry-run (build + cek versi, TANPA upload)"
+        description: "Build-only: signed AAB + artifact, TANPA akses Play Console"
         type: boolean
         default: true
       skip_version_check:
-        description: "Lewati cek versionCode vs Play (TIDAK direkomendasikan)"
+        description: "Lewati cek versionCode vs Play (hanya berlaku saat dry_run=false)"
         type: boolean
         default: false
       expected_version_code:
@@ -268,7 +268,7 @@ jobs:
             echo "| Varian | \`$variant\` |"
             echo "| Track | \`$track\` |"
             echo "| Release status | \`$status\` |"
-            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 dry-run (build + cek versi, tanpa upload)' || echo '🚀 upload ke Play Console' ) |"
+            echo "| Mode | $( [ "$dry" = "true" ] && echo '🧪 build-only (signed AAB + artifact, tanpa Play API)' || echo '🚀 upload ke Play Console' ) |"
             echo "| Skip version check | $skip |"
             echo "| Actor | @${{ github.actor }} |"
             echo ""
