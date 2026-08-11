@@ -1753,11 +1753,14 @@ function ChatRoomPage() {
         ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Opsi percakapan">
+            <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full" aria-label="Opsi percakapan">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem className="sm:hidden" onSelect={() => setQuickSearchOpen(true)}>
+              <SearchIcon className="mr-2 h-4 w-4" /> Cari cepat di layar
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setSearchOpen(true)}>
               <SearchIcon className="mr-2 h-4 w-4" /> Cari di percakapan
             </DropdownMenuItem>
@@ -1865,6 +1868,20 @@ function ChatRoomPage() {
         </DropdownMenu>
       </header>
       )}
+
+      {/* Kontrol hutang DM pada mobile dipindah keluar dari app bar supaya
+          header tetap ringkas dan profesional di lebar 360–430px. */}
+      {meta.data?.kind === "dm" && myId ? (
+        <div className="chat-bar-solid z-10 flex shrink-0 items-center gap-ms-2 overflow-x-auto border-b border-[var(--wa-border)] px-ms-2 py-1 sm:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ChatHeaderDebtControls
+            myId={myId}
+            peerUserId={dmPeer?.peerUserId ?? null}
+            peerPhone={dmPeer?.peerPhone ?? null}
+            peerName={displayedPeerName}
+            conversationId={conversationId}
+          />
+        </div>
+      ) : null}
 
       {quickSearchOpen ? (
         <div className="chat-bar-solid z-10 shrink-0 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
