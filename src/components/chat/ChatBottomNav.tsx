@@ -47,9 +47,7 @@ export function ChatBottomNav() {
   // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
   // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
   const activeTo = useMemo(() => {
-    const match = items.find(
-      (it) => path === it.to || path.startsWith(`${it.to}/`),
-    );
+    const match = items.find((it) => path === it.to || path.startsWith(`${it.to}/`));
     return match?.to;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
@@ -96,7 +94,9 @@ export function ChatBottomNav() {
               // 360px tanpa memotong; naik ke px-1 mulai 400px.
               "group/tab relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 outline-none transition-colors duration-200 min-[400px]:px-1",
               "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
-              active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
+              active
+                ? "text-[var(--wa-green)]"
+                : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
             )}
           >
             <span

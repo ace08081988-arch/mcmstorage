@@ -33,7 +33,9 @@ function pickMime(): string {
   for (const c of cands) {
     try {
       if (MediaRecorder.isTypeSupported(c)) return c;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
   return "";
 }
@@ -77,11 +79,16 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
     activeCbRef.current?.(state !== "idle");
   }, [state]);
   useEffect(() => {
-    return () => { activeCbRef.current?.(false); };
+    return () => {
+      activeCbRef.current?.(false);
+    };
   }, []);
 
   const cleanupStream = useCallback(() => {
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -90,7 +97,13 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
 
   const resetAll = useCallback(() => {
     cleanupStream();
-    if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch { /* ignore */ } }
+    if (previewUrl) {
+      try {
+        URL.revokeObjectURL(previewUrl);
+      } catch {
+        /* ignore */
+      }
+    }
     setPreviewUrl(null);
     setBlob(null);
     setSeconds(0);
@@ -101,14 +114,24 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
   useEffect(() => {
     return () => {
       cleanupStream();
-      if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch { /* ignore */ } }
+      if (previewUrl) {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch {
+          /* ignore */
+        }
+      }
     };
   }, [cleanupStream, previewUrl]);
 
   const stop = useCallback(() => {
     const rec = recorderRef.current;
     if (!rec) return;
-    try { if (rec.state !== "inactive") rec.stop(); } catch { /* ignore */ }
+    try {
+      if (rec.state !== "inactive") rec.stop();
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   const start = useCallback(async () => {
@@ -125,13 +148,19 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
       const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       recorderRef.current = rec;
       chunksRef.current = [];
-      rec.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+      rec.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
       rec.onstop = () => {
         const type = rec.mimeType || mimeRef.current || "audio/webm";
         const b = new Blob(chunksRef.current, { type });
         chunksRef.current = [];
         cleanupStream();
-        if (b.size === 0) { toast.error("Rekaman kosong."); setState("idle"); return; }
+        if (b.size === 0) {
+          toast.error("Rekaman kosong.");
+          setState("idle");
+          return;
+        }
         setBlob(b);
         setPreviewUrl(URL.createObjectURL(b));
         setState("preview");
@@ -143,7 +172,11 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
         setSeconds((s) => {
           const next = s + 1;
           if (next >= MAX_SECONDS) {
-            try { rec.stop(); } catch { /* ignore */ }
+            try {
+              rec.stop();
+            } catch {
+              /* ignore */
+            }
           }
           return next;
         });
@@ -202,8 +235,13 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
   if (state === "recording") {
     return (
       <div className="flex w-full min-w-0 items-center gap-ms-2 rounded-full border bg-destructive/10 px-ms-2 py-1">
-        <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-destructive" aria-hidden />
-        <span className="flex-1 truncate text-ms-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
+        <span
+          className="inline-block h-2 w-2 animate-pulse rounded-full bg-destructive"
+          aria-hidden
+        />
+        <span className="flex-1 truncate text-ms-xs tabular-nums text-destructive-foreground/80">
+          {formatDurationMMSS(seconds)}
+        </span>
         <Button
           type="button"
           size="icon"
@@ -230,7 +268,9 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
   // preview / sending
   return (
     <div className="flex w-full min-w-0 items-center gap-ms-2 rounded-full border bg-accent/40 px-ms-2 py-1">
-      <span className="shrink-0 text-ms-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
+      <span className="shrink-0 text-ms-xs tabular-nums text-muted-foreground">
+        {formatDurationMMSS(seconds)}
+      </span>
       {previewUrl ? (
         <audio src={previewUrl} controls preload="metadata" className="h-8 w-full min-w-0 flex-1" />
       ) : null}
@@ -253,7 +293,11 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent, onActive
         disabled={state === "sending"}
         aria-label="Kirim voice note"
       >
-        {state === "sending" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {state === "sending" ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Send className="h-4 w-4" />
+        )}
       </Button>
     </div>
   );

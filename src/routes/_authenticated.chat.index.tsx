@@ -1,16 +1,44 @@
-import { createFileRoute, Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router";
 import * as React from "react";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { VirtualizedList } from "@/components/VirtualizedList";
 import {
-  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
-  Trash2, CheckSquare, Square, SlidersHorizontal, ChevronDown,
+  MessageCircle,
+  Loader2,
+  Link2,
+  CheckCheck,
+  Pin,
+  Archive,
+  BellOff,
+  UserPlus,
+  ArrowLeft,
+  Search,
+  MoreVertical,
+  ArchiveRestore,
+  BellRing,
+  X,
+  WifiOff,
+  Check,
+  Trash2,
+  CheckSquare,
+  Square,
+  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 
 import {
-  useConversations, useChatSearch, usePinConversation, useArchiveConversation,
-  useMuteConversation, useChatHeartbeat,
+  useConversations,
+  useChatSearch,
+  usePinConversation,
+  useArchiveConversation,
+  useMuteConversation,
+  useChatHeartbeat,
 } from "@/lib/chat";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,14 +53,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
 import { ChatListIcon } from "@/lib/chat-list-icons";
 import { CHAT_CATEGORY_LABEL_ID, type ChatCategory } from "@/lib/chat-category";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
 import { DebtSyncBadge } from "@/components/chat/DebtSyncBadge";
 import { goBackOr } from "@/lib/back-nav";
@@ -124,7 +163,14 @@ const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
 
 function ChatListPage() {
   useChatHeartbeat();
-  const { data: conversations, isLoading, isError, error, isFetching, refetch } = useConversations();
+  const {
+    data: conversations,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    refetch,
+  } = useConversations();
   const pendingRequests = usePendingIncomingCount();
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
@@ -140,9 +186,7 @@ function ChatListPage() {
   // ringkas di mobile (<=430px) dan deretan tab di layar lebar.
   const [cat, setCat] = useState<string>("all");
   // Filter chip aktif — preset WA + daftar custom (prefix `list:<id>`).
-  const [filter, setFilter] = useState<string>(
-    routeSearch.filter === "unread" ? "unread" : "all",
-  );
+  const [filter, setFilter] = useState<string>(routeSearch.filter === "unread" ? "unread" : "all");
   // Sinkron ulang bila user mengetuk tab Chat lagi dari tab lain dengan
   // unread — TanStack Router hanya mengganti search param tanpa remount.
   useEffect(() => {
@@ -202,8 +246,7 @@ function ChatListPage() {
       mute.mutate(
         { conversationId: c.id, until },
         {
-          onSuccess: () =>
-            toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
+          onSuccess: () => toast.success(until ? "Notifikasi dibisukan" : "Bisukan dibatalkan"),
         },
       ),
     [mute],
@@ -303,14 +346,13 @@ function ChatListPage() {
     const groups = new Map<string, { key: string; label: string; items: typeof active }>();
     const ungrouped: typeof active = [];
     for (const c of byCategory.customer) {
-      const key =
-        c.linked_request_prep_id
-          ? `REQ-${c.linked_request_prep_id}`
-          : c.linked_ecer_prep_id
-            ? `ECER-${c.linked_ecer_prep_id}`
-            : c.linked_customer_id
-              ? `CUST-${c.linked_customer_id}`
-              : "";
+      const key = c.linked_request_prep_id
+        ? `REQ-${c.linked_request_prep_id}`
+        : c.linked_ecer_prep_id
+          ? `ECER-${c.linked_ecer_prep_id}`
+          : c.linked_customer_id
+            ? `CUST-${c.linked_customer_id}`
+            : "";
       if (!key) {
         ungrouped.push(c);
         continue;
@@ -319,7 +361,10 @@ function ChatListPage() {
         .replace(/^REQ-/, "REQ-")
         .replace(/^ECER-/, "ECER-")
         .replace(/^CUST-/, "CUST-")
-        .replace(/-([0-9a-f-]+)$/i, (_, id: string) => `-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`);
+        .replace(
+          /-([0-9a-f-]+)$/i,
+          (_, id: string) => `-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`,
+        );
       const g = groups.get(key) ?? { key, label, items: [] };
       g.items.push(c);
       groups.set(key, g);
@@ -371,8 +416,7 @@ function ChatListPage() {
   }, [active, chatLists, allListMembers]);
 
   const allSelected =
-    currentVisibleIds.length > 0 &&
-    currentVisibleIds.every((id) => selectedIds.has(id));
+    currentVisibleIds.length > 0 && currentVisibleIds.every((id) => selectedIds.has(id));
 
   // Label filter aktif — dipakai untuk aria-label tombol filter dan chip
   // "filter aktif" kecil di bawah kolom pencarian.
@@ -407,11 +451,16 @@ function ChatListPage() {
     let failed = 0;
     for (const convId of ids) {
       try {
-        const { data, error } = await supabase.rpc("chat_clear_conversation_for_me", { _conv: convId });
+        const { data, error } = await supabase.rpc("chat_clear_conversation_for_me", {
+          _conv: convId,
+        });
         if (error) throw error;
         const paths = ((data ?? []) as string[]).filter((p): p is string => !!p);
         if (paths.length > 0) {
-          await supabase.storage.from("chat-attachments").remove(paths).catch(() => undefined);
+          await supabase.storage
+            .from("chat-attachments")
+            .remove(paths)
+            .catch(() => undefined);
         }
       } catch {
         failed += 1;
@@ -465,525 +514,549 @@ function ChatListPage() {
           pencarian, dan filter tidak terpotong maupun naik-turun saat
           daftar digulir. */}
       <div className="app-safe-top sticky top-0 z-20 wa-surface border-b border-[var(--wa-border)]">
-      {selecting ? (
-        <header
-          className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
-          role="toolbar"
-          aria-label="Mode pilih percakapan"
-        >
-          <div className="flex items-center gap-ms-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
-              onClick={exitSelect}
-              aria-label="Batal pilih"
-            >
-              <X className="h-5 w-5" />
-            </Button>
-            <span className="text-ms-base font-semibold">{selectedIds.size} dipilih</span>
-          </div>
-          <div className="flex items-center gap-ms-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
-              onClick={() =>
-                setSelectedIds(
-                  allSelected ? new Set() : new Set(currentVisibleIds),
-                )
-              }
-              aria-label={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
-              title={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
-            >
-              {allSelected ? <Square className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
-              onClick={handleBulkDelete}
-              disabled={deleting || selectedIds.size === 0}
-              aria-label={`Hapus pesan di ${selectedIds.size} percakapan`}
-            >
-              {deleting ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Trash2 className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-        </header>
-      ) : (
-      <header className="wa-header flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
-        <div className="flex min-w-0 items-center gap-ms-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-full sm:h-9 sm:w-9"
-            aria-label="Kembali ke Beranda"
-            title="Beranda"
-            onClick={() => goBackOr(router, { to: "/" })}
+        {selecting ? (
+          <header
+            className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
+            role="toolbar"
+            aria-label="Mode pilih percakapan"
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
-        </div>
-        <div className="flex items-center gap-ms-1">
-          <NewDmDialog />
-          <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-ms-2">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-11 w-11 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground sm:h-9 sm:w-9"
-                aria-label="Menu lainnya"
+                className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+                onClick={exitSelect}
+                aria-label="Batal pilih"
               >
-                <MoreVertical className="h-5 w-5" />
+                <X className="h-5 w-5" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {(() => {
-                type Item =
-                  | { label: string; to: string }
-                  | { label: string; action: () => void };
-                const items: Item[] = [
-                  { label: "Kontak", to: "/kontak" },
-                  { label: "Mapping kontak", to: "/kontak-mapping" },
-                  { label: "Grup baru", action: () => setGrupOpen(true) },
-                  { label: "Daftar", to: "/daftar" },
-                  { label: "Perangkat tertaut", to: "/sesi" },
-                  { label: "Order", to: "/chat-audit" },
-                ];
-                const settings: Item = { label: "Pengaturan", to: "/profil-chat" };
-                const renderItem = (it: Item, key: string) => {
-                  const active = "to" in it && isPathActive(it.to);
-                  const cls = active
-                    ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
-                    : "";
-                  const label = (
-                    <>
-                      <span className="truncate">{it.label}</span>
-                      {active ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
-                    </>
-                  );
-                  if ("to" in it) {
+              <span className="text-ms-base font-semibold">{selectedIds.size} dipilih</span>
+            </div>
+            <div className="flex items-center gap-ms-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+                onClick={() => setSelectedIds(allSelected ? new Set() : new Set(currentVisibleIds))}
+                aria-label={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
+                title={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
+              >
+                {allSelected ? <Square className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+                onClick={handleBulkDelete}
+                disabled={deleting || selectedIds.size === 0}
+                aria-label={`Hapus pesan di ${selectedIds.size} percakapan`}
+              >
+                {deleting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </header>
+        ) : (
+          <header className="wa-header flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
+            <div className="flex min-w-0 items-center gap-ms-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 shrink-0 rounded-full sm:h-9 sm:w-9"
+                aria-label="Kembali ke Beranda"
+                title="Beranda"
+                onClick={() => goBackOr(router, { to: "/" })}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
+            </div>
+            <div className="flex items-center gap-ms-1">
+              <NewDmDialog />
+              <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground sm:h-9 sm:w-9"
+                    aria-label="Menu lainnya"
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {(() => {
+                    type Item =
+                      | { label: string; to: string }
+                      | { label: string; action: () => void };
+                    const items: Item[] = [
+                      { label: "Kontak", to: "/kontak" },
+                      { label: "Mapping kontak", to: "/kontak-mapping" },
+                      { label: "Grup baru", action: () => setGrupOpen(true) },
+                      { label: "Daftar", to: "/daftar" },
+                      { label: "Perangkat tertaut", to: "/sesi" },
+                      { label: "Order", to: "/chat-audit" },
+                    ];
+                    const settings: Item = { label: "Pengaturan", to: "/profil-chat" };
+                    const renderItem = (it: Item, key: string) => {
+                      const active = "to" in it && isPathActive(it.to);
+                      const cls = active
+                        ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
+                        : "";
+                      const label = (
+                        <>
+                          <span className="truncate">{it.label}</span>
+                          {active ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                        </>
+                      );
+                      if ("to" in it) {
+                        return (
+                          <DropdownMenuItem
+                            key={key}
+                            asChild
+                            aria-current={active ? "page" : undefined}
+                            className={cls}
+                          >
+                            <Link to={it.to as "/sesi"}>{label}</Link>
+                          </DropdownMenuItem>
+                        );
+                      }
+                      return (
+                        <DropdownMenuItem key={key} onSelect={it.action} className={cls}>
+                          {it.label}
+                        </DropdownMenuItem>
+                      );
+                    };
                     return (
-                      <DropdownMenuItem
-                        key={key}
-                        asChild
-                        aria-current={active ? "page" : undefined}
-                        className={cls}
-                      >
-                        <Link to={it.to as "/sesi"}>{label}</Link>
-                      </DropdownMenuItem>
+                      <>
+                        {items.map((it, i) => renderItem(it, `it-${i}`))}
+                        <DropdownMenuSeparator />
+                        {renderItem(settings, "settings")}
+                      </>
                     );
-                  }
-                  return (
-                    <DropdownMenuItem key={key} onSelect={it.action} className={cls}>
-                      {it.label}
-                    </DropdownMenuItem>
-                  );
-                };
-                return (
-                  <>
-                    {items.map((it, i) => renderItem(it, `it-${i}`))}
-                    <DropdownMenuSeparator />
-                    {renderItem(settings, "settings")}
-                  </>
-                );
-              })()}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-      )}
-      {/* Satu baris ringkas: pencarian + satu tombol filter.
+                  })()}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
+        )}
+        {/* Satu baris ringkas: pencarian + satu tombol filter.
           Semua opsi filter lanjutan (grup, favorit, daftar khusus) pindah
           ke menu supaya daftar chat tidak terlihat seperti dashboard. */}
-      <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2 pt-ms-1">
-        <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari percakapan…"
-            className="chat-input-contrast h-10 rounded-full border-transparent bg-[var(--wa-surface-2)] pl-9 pr-9 text-ms-sm shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
-          />
-          {q ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0.5 top-1/2 h-9 w-9 -translate-y-1/2 rounded-full text-[var(--wa-text-muted)]"
-              onClick={() => setQ("")}
-              aria-label="Bersihkan"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
-        {q.trim().length < 2 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+        <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2 pt-ms-1">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Cari percakapan…"
+              className="chat-input-contrast h-10 rounded-full border-transparent bg-[var(--wa-surface-2)] pl-9 pr-9 text-ms-sm shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
+            />
+            {q ? (
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-10 w-10 shrink-0 rounded-full"
-                aria-label={`Filter percakapan${activeFilterLabel ? `: ${activeFilterLabel}` : ""}`}
+                className="absolute right-0.5 top-1/2 h-9 w-9 -translate-y-1/2 rounded-full text-[var(--wa-text-muted)]"
+                onClick={() => setQ("")}
+                aria-label="Bersihkan"
               >
-                <SlidersHorizontal className="h-5 w-5" />
-                {filter !== "all" ? (
-                  <span
-                    aria-hidden
-                    className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--wa-green)]"
-                  />
-                ) : null}
+                <X className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {(
-                [
-                  { id: "all", label: "Semua", n: chipCounts.all },
-                  { id: "unread", label: "Belum dibaca", n: chipCounts.unread },
-                  { id: "group", label: "Grup", n: chipCounts.group },
-                  { id: "favorite", label: "Favorit", n: chipCounts.favorite },
-                ] as const
-              ).map((opt) => (
-                <DropdownMenuItem
-                  key={opt.id}
-                  onSelect={() => selectFilter(opt.id)}
-                  className={filter === opt.id ? "font-medium text-primary focus:text-primary" : ""}
-                >
-                  <span className="flex-1 truncate">{opt.label}</span>
-                  <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">{opt.n}</span>
-                </DropdownMenuItem>
-              ))}
-              {(chatLists ?? []).length > 0 ? <DropdownMenuSeparator /> : null}
-              {(chatLists ?? []).map((l) => {
-                const chipId = `list:${l.id}`;
-                return (
-                  <DropdownMenuItem
-                    key={chipId}
-                    onSelect={() => selectFilter(chipId)}
-                    className={filter === chipId ? "font-medium text-primary focus:text-primary" : ""}
-                  >
-                    <ChatListIcon name={l.icon} className="mr-2 h-3.5 w-3.5" style={{ color: l.color }} />
-                    <span className="flex-1 truncate">{l.name}</span>
-                    <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">
-                      {chipCounts.perList[l.id] ?? 0}
-                    </span>
-                  </DropdownMenuItem>
-                );
-              })}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/daftar">Kelola daftar</Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
-      {filter !== "all" && q.trim().length < 2 ? (
-        <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2">
-          <button
-            type="button"
-            onClick={() => selectFilter("all")}
-            className="inline-flex h-7 items-center gap-1 rounded-full bg-[var(--wa-green)]/12 px-ms-2 text-ms-2xs font-medium text-[var(--wa-green)]"
-            aria-label={`Hapus filter ${activeFilterLabel}`}
-          >
-            {activeFilterLabel}
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      ) : null}
-      </div>
-
-      <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
-      {isError && (conversations?.length ?? 0) > 0 ? (
-        <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning dark:text-warning">
-          <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <p className="font-medium">Menampilkan data offline</p>
-            <p className="opacity-80">
-              Tidak bisa menyegarkan daftar chat: {error instanceof Error ? error.message : "jaringan bermasalah"}.
-            </p>
+            ) : null}
           </div>
-          <Button size="sm" variant="outline" className="h-7 px-ms-2 text-ms-2xs" disabled={isFetching} onClick={() => refetch()}>
-            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
-          </Button>
-        </div>
-      ) : null}
-
-      {pendingRequests > 0 ? (
-        <Link
-          to={"/kontak/permintaan" as never}
-          className="flex items-center gap-ms-2 rounded-lg border border-[var(--wa-border)] bg-[var(--wa-surface-2)]/50 px-ms-3 py-ms-2 text-ms-sm hover:bg-[var(--wa-surface-2)]"
-          aria-label="Buka permintaan pertemanan"
-        >
-          <UserPlus className="h-4 w-4 shrink-0 text-[var(--wa-text-muted)]" />
-          <div className="min-w-0 flex-1 truncate">
-            <span className="font-medium">{pendingRequests} permintaan pertemanan</span>
-            <span className="text-[var(--wa-text-muted)]"> — terima supaya bisa chat</span>
-          </div>
-          <span className="text-ms-xs text-[var(--wa-text-muted)]">›</span>
-        </Link>
-      ) : null}
-
-      {q.trim().length >= 2 ? (
-        <div className="rounded-lg border">
-          {search.isLoading ? (
-            <div className="flex items-center justify-center p-ms-6 text-ms-xs text-muted-foreground">
-              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Mencari…
-            </div>
-          ) : (search.data ?? []).length === 0 ? (
-            <div className="p-ms-6 text-center text-ms-xs text-muted-foreground">
-              Tidak ada pesan yang cocok dengan "{q}".
-            </div>
-          ) : (
-            <ul className="divide-y">
-              {search.data!.map((m) => {
-                const conv = (conversations ?? []).find((c) => c.id === m.conversation_id);
-                return (
-                  <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() => navigate({ to: "/chat/$conversationId", params: { conversationId: m.conversation_id } })}
-                      className="flex w-full items-start gap-ms-3 px-ms-3 py-ms-3 text-left hover:bg-accent/50"
-                    >
-                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                        <Search className="h-4 w-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-ms-2">
-                          <span className="truncate text-ms-sm font-medium">{conv?.display_title ?? "Percakapan"}</span>
-                          <span className="shrink-0 text-ms-2xs text-muted-foreground">{timeShort(m.created_at)}</span>
-                        </div>
-                        <p className="line-clamp-2 text-ms-xs text-muted-foreground">{highlight(previewText(m.body) ?? "", q)}</p>
-                      </div>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <Tabs value={cat} onValueChange={selectCategory}>
-          {/* Mobile (<=430px): satu kontrol kategori ringkas berupa dropdown
-              bertuliskan kategori aktif. Deretan 5 tab hanya muncul mulai
-              `sm` supaya layar sempit tidak penuh oleh tab. */}
-          <div className="flex items-center gap-ms-2 border-b border-[var(--wa-border)] py-1.5 min-[431px]:hidden">
+          {q.trim().length < 2 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="h-9 max-w-full gap-ms-1 rounded-full bg-[var(--wa-surface-2)] px-ms-3 text-ms-sm font-medium"
-                  aria-label={`Kategori: ${CATEGORY_LABEL[cat] ?? "Semua"}`}
+                  size="icon"
+                  className="relative h-10 w-10 shrink-0 rounded-full"
+                  aria-label={`Filter percakapan${activeFilterLabel ? `: ${activeFilterLabel}` : ""}`}
                 >
-                  <span className="truncate">{CATEGORY_LABEL[cat] ?? "Semua"}</span>
-                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                  <SlidersHorizontal className="h-5 w-5" />
+                  {filter !== "all" ? (
+                    <span
+                      aria-hidden
+                      className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--wa-green)]"
+                    />
+                  ) : null}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
-                {CATEGORY_ITEMS.map((t) => (
+              <DropdownMenuContent align="end" className="w-56">
+                {(
+                  [
+                    { id: "all", label: "Semua", n: chipCounts.all },
+                    { id: "unread", label: "Belum dibaca", n: chipCounts.unread },
+                    { id: "group", label: "Grup", n: chipCounts.group },
+                    { id: "favorite", label: "Favorit", n: chipCounts.favorite },
+                  ] as const
+                ).map((opt) => (
                   <DropdownMenuItem
-                    key={t.value}
-                    onSelect={() => selectCategory(t.value)}
-                    className={cat === t.value ? "font-medium text-primary focus:text-primary" : ""}
+                    key={opt.id}
+                    onSelect={() => selectFilter(opt.id)}
+                    className={
+                      filter === opt.id ? "font-medium text-primary focus:text-primary" : ""
+                    }
                   >
-                    <span className="flex-1 truncate">{t.label}</span>
-                    {cat === t.value ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                    <span className="flex-1 truncate">{opt.label}</span>
+                    <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">
+                      {opt.n}
+                    </span>
                   </DropdownMenuItem>
                 ))}
+                {(chatLists ?? []).length > 0 ? <DropdownMenuSeparator /> : null}
+                {(chatLists ?? []).map((l) => {
+                  const chipId = `list:${l.id}`;
+                  return (
+                    <DropdownMenuItem
+                      key={chipId}
+                      onSelect={() => selectFilter(chipId)}
+                      className={
+                        filter === chipId ? "font-medium text-primary focus:text-primary" : ""
+                      }
+                    >
+                      <ChatListIcon
+                        name={l.icon}
+                        className="mr-2 h-3.5 w-3.5"
+                        style={{ color: l.color }}
+                      />
+                      <span className="flex-1 truncate">{l.name}</span>
+                      <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">
+                        {chipCounts.perList[l.id] ?? 0}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/daftar">Kelola daftar</Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-          {/* Tab kategori ringkas — garis bawah aktif, tanpa latar/border berat. */}
-          <TabsList
-            className={
-              "-mx-3 hidden h-auto w-auto items-center justify-start gap-ms-4 min-[431px]:flex " +
-              "overflow-x-auto border-b border-[var(--wa-border)] bg-transparent px-3 pb-0 " +
-              "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            }
-          >
-            {CATEGORY_ITEMS.map((t) => (
-              <TabsTrigger
-                key={t.value}
-                value={t.value}
-                className={
-                  "relative shrink-0 whitespace-nowrap rounded-none border-0 bg-transparent px-0 py-2 " +
-                  "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none transition-colors " +
-                  "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full " +
-                  "after:bg-[var(--wa-green)] after:opacity-0 after:transition-opacity " +
-                  "hover:text-[var(--wa-text)] " +
-                  "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none data-[state=active]:after:opacity-100"
-                }
-              >
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          {showOnboarding ? (
-            <div className="mt-3">
-              <ChatOnboarding onNewGroup={() => setGrupOpen(true)} />
-            </div>
           ) : null}
-          <TabsContent value="all">
-            <ConvList
-              list={filteredActive}
-              isLoading={isLoading}
-              selecting={selecting}
-              selectedIds={selectedIds}
-              onLongPressStart={toggleSelect}
-              onRowTap={toggleSelect}
-              empty={
-                showOnboarding ? null : (
-                <div className="space-ms-2 p-8 text-center">
-                  <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
-                  <p className="text-ms-sm font-medium">Belum ada percakapan</p>
-                  <p className="text-ms-xs text-muted-foreground">
-                    Mulai chat dengan kontak yang akunnya sudah tertaut, atau buat grup baru.
-                  </p>
-                  <div className="pt-2">
-                    <Button asChild size="sm" className="gap-ms-1.5">
-                      <Link to="/kontak">
-                        <Link2 className="h-4 w-4" /> Siapkan kontak chat
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-                )
-              }
-              onPin={handlePin}
-              onArchive={handleArchive}
-              onMute={handleMute}
-              onClearChat={handleClearChat}
-            />
-          </TabsContent>
-          <TabsContent value="customer">
-            {customerGroups.groups.length === 0 && customerGroups.ungrouped.length === 0 ? (
-              <div className="rounded-lg border p-ms-6 text-center text-ms-xs text-muted-foreground">
-                Belum ada chat pelanggan.
+        </div>
+        {filter !== "all" && q.trim().length < 2 ? (
+          <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2">
+            <button
+              type="button"
+              onClick={() => selectFilter("all")}
+              className="inline-flex h-7 items-center gap-1 rounded-full bg-[var(--wa-green)]/12 px-ms-2 text-ms-2xs font-medium text-[var(--wa-green)]"
+              aria-label={`Hapus filter ${activeFilterLabel}`}
+            >
+              {activeFilterLabel}
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
+        {isError && (conversations?.length ?? 0) > 0 ? (
+          <div className="flex items-start gap-ms-2 rounded-md border border-warning/40 bg-warning/10 px-ms-3 py-ms-2 text-ms-xs text-warning dark:text-warning">
+            <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Menampilkan data offline</p>
+              <p className="opacity-80">
+                Tidak bisa menyegarkan daftar chat:{" "}
+                {error instanceof Error ? error.message : "jaringan bermasalah"}.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-ms-2 text-ms-2xs"
+              disabled={isFetching}
+              onClick={() => refetch()}
+            >
+              {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
+            </Button>
+          </div>
+        ) : null}
+
+        {pendingRequests > 0 ? (
+          <Link
+            to={"/kontak/permintaan" as never}
+            className="flex items-center gap-ms-2 rounded-lg border border-[var(--wa-border)] bg-[var(--wa-surface-2)]/50 px-ms-3 py-ms-2 text-ms-sm hover:bg-[var(--wa-surface-2)]"
+            aria-label="Buka permintaan pertemanan"
+          >
+            <UserPlus className="h-4 w-4 shrink-0 text-[var(--wa-text-muted)]" />
+            <div className="min-w-0 flex-1 truncate">
+              <span className="font-medium">{pendingRequests} permintaan pertemanan</span>
+              <span className="text-[var(--wa-text-muted)]"> — terima supaya bisa chat</span>
+            </div>
+            <span className="text-ms-xs text-[var(--wa-text-muted)]">›</span>
+          </Link>
+        ) : null}
+
+        {q.trim().length >= 2 ? (
+          <div className="rounded-lg border">
+            {search.isLoading ? (
+              <div className="flex items-center justify-center p-ms-6 text-ms-xs text-muted-foreground">
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Mencari…
+              </div>
+            ) : (search.data ?? []).length === 0 ? (
+              <div className="p-ms-6 text-center text-ms-xs text-muted-foreground">
+                Tidak ada pesan yang cocok dengan "{q}".
               </div>
             ) : (
-              <>
-                {customerGroups.groups.length > 0 ? (
-                  <Accordion type="multiple" className="mb-2">
-                    {customerGroups.groups.map((g) => (
-                      <AccordionItem key={g.key} value={g.key} className="border-b">
-                        <AccordionTrigger className="px-1 py-ms-2 text-ms-xs font-medium">
-                          <span className="truncate">
-                            {g.label}{" "}
-                            <span className="ml-1 text-muted-foreground">
-                              ({g.items.length})
+              <ul className="divide-y">
+                {search.data!.map((m) => {
+                  const conv = (conversations ?? []).find((c) => c.id === m.conversation_id);
+                  return (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate({
+                            to: "/chat/$conversationId",
+                            params: { conversationId: m.conversation_id },
+                          })
+                        }
+                        className="flex w-full items-start gap-ms-3 px-ms-3 py-ms-3 text-left hover:bg-accent/50"
+                      >
+                        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                          <Search className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-ms-2">
+                            <span className="truncate text-ms-sm font-medium">
+                              {conv?.display_title ?? "Percakapan"}
                             </span>
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent className="pb-0">
-                          <ConvList
-                            list={g.items}
-                            isLoading={false}
-                            selecting={selecting}
-                            selectedIds={selectedIds}
-                            onLongPressStart={toggleSelect}
-                            onRowTap={toggleSelect}
-                            empty={null}
-                            onPin={handlePin}
-                            onArchive={handleArchive}
-                            onMute={handleMute}
-                            onClearChat={handleClearChat}
-                          />
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                ) : null}
-                {customerGroups.ungrouped.length > 0 ? (
-                  <div>
-                    <div className="px-1 py-ms-2 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Tanpa Order
-                    </div>
-                    <ConvList
-                      list={customerGroups.ungrouped}
-                      isLoading={false}
-                      selecting={selecting}
-                      selectedIds={selectedIds}
-                      onLongPressStart={toggleSelect}
-                      onRowTap={toggleSelect}
-                      empty={null}
-                      onPin={handlePin}
-                      onArchive={handleArchive}
-                      onMute={handleMute}
-                      onClearChat={handleClearChat}
-                    />
-                  </div>
-                ) : null}
-              </>
+                            <span className="shrink-0 text-ms-2xs text-muted-foreground">
+                              {timeShort(m.created_at)}
+                            </span>
+                          </div>
+                          <p className="line-clamp-2 text-ms-xs text-muted-foreground">
+                            {highlight(previewText(m.body) ?? "", q)}
+                          </p>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-          </TabsContent>
-          <TabsContent value="employee">
-            <ConvList
-              list={byCategory.employee}
-              isLoading={isLoading}
-              selecting={selecting}
-              selectedIds={selectedIds}
-              onLongPressStart={toggleSelect}
-              onRowTap={toggleSelect}
-              empty={
-                <div className="p-8 text-center text-ms-xs text-muted-foreground">
-                  Belum ada chat karyawan.
-                </div>
+          </div>
+        ) : (
+          <Tabs value={cat} onValueChange={selectCategory}>
+            {/* Mobile (<=430px): satu kontrol kategori ringkas berupa dropdown
+              bertuliskan kategori aktif. Deretan 5 tab hanya muncul mulai
+              `sm` supaya layar sempit tidak penuh oleh tab. */}
+            <div className="flex items-center gap-ms-2 border-b border-[var(--wa-border)] py-1.5 min-[431px]:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 max-w-full gap-ms-1 rounded-full bg-[var(--wa-surface-2)] px-ms-3 text-ms-sm font-medium"
+                    aria-label={`Kategori: ${CATEGORY_LABEL[cat] ?? "Semua"}`}
+                  >
+                    <span className="truncate">{CATEGORY_LABEL[cat] ?? "Semua"}</span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  {CATEGORY_ITEMS.map((t) => (
+                    <DropdownMenuItem
+                      key={t.value}
+                      onSelect={() => selectCategory(t.value)}
+                      className={
+                        cat === t.value ? "font-medium text-primary focus:text-primary" : ""
+                      }
+                    >
+                      <span className="flex-1 truncate">{t.label}</span>
+                      {cat === t.value ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {/* Tab kategori ringkas — garis bawah aktif, tanpa latar/border berat. */}
+            <TabsList
+              className={
+                "-mx-3 hidden h-auto w-auto items-center justify-start gap-ms-4 min-[431px]:flex " +
+                "overflow-x-auto border-b border-[var(--wa-border)] bg-transparent px-3 pb-0 " +
+                "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               }
-              onPin={handlePin}
-              onArchive={handleArchive}
-              onMute={handleMute}
-              onClearChat={handleClearChat}
-            />
-          </TabsContent>
-          <TabsContent value="internal">
-            <ConvList
-              list={byCategory.internal}
-              isLoading={isLoading}
-              selecting={selecting}
-              selectedIds={selectedIds}
-              onLongPressStart={toggleSelect}
-              onRowTap={toggleSelect}
-              empty={
-                <div className="p-8 text-center text-ms-xs text-muted-foreground">
-                  Belum ada catatan internal.
+            >
+              {CATEGORY_ITEMS.map((t) => (
+                <TabsTrigger
+                  key={t.value}
+                  value={t.value}
+                  className={
+                    "relative shrink-0 whitespace-nowrap rounded-none border-0 bg-transparent px-0 py-2 " +
+                    "text-ms-xs font-medium text-[var(--wa-text-muted)] shadow-none transition-colors " +
+                    "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full " +
+                    "after:bg-[var(--wa-green)] after:opacity-0 after:transition-opacity " +
+                    "hover:text-[var(--wa-text)] " +
+                    "data-[state=active]:text-[var(--wa-text)] data-[state=active]:shadow-none data-[state=active]:after:opacity-100"
+                  }
+                >
+                  {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {showOnboarding ? (
+              <div className="mt-3">
+                <ChatOnboarding onNewGroup={() => setGrupOpen(true)} />
+              </div>
+            ) : null}
+            <TabsContent value="all">
+              <ConvList
+                list={filteredActive}
+                isLoading={isLoading}
+                selecting={selecting}
+                selectedIds={selectedIds}
+                onLongPressStart={toggleSelect}
+                onRowTap={toggleSelect}
+                empty={
+                  showOnboarding ? null : (
+                    <div className="space-ms-2 p-8 text-center">
+                      <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
+                      <p className="text-ms-sm font-medium">Belum ada percakapan</p>
+                      <p className="text-ms-xs text-muted-foreground">
+                        Mulai chat dengan kontak yang akunnya sudah tertaut, atau buat grup baru.
+                      </p>
+                      <div className="pt-2">
+                        <Button asChild size="sm" className="gap-ms-1.5">
+                          <Link to="/kontak">
+                            <Link2 className="h-4 w-4" /> Siapkan kontak chat
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                }
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onMute={handleMute}
+                onClearChat={handleClearChat}
+              />
+            </TabsContent>
+            <TabsContent value="customer">
+              {customerGroups.groups.length === 0 && customerGroups.ungrouped.length === 0 ? (
+                <div className="rounded-lg border p-ms-6 text-center text-ms-xs text-muted-foreground">
+                  Belum ada chat pelanggan.
                 </div>
-              }
-              onPin={handlePin}
-              onArchive={handleArchive}
-              onMute={handleMute}
-              onClearChat={handleClearChat}
-            />
-          </TabsContent>
-          <TabsContent value="archived">
-            <ConvList
-              list={byCategory.archived}
-              isLoading={isLoading}
-              selecting={selecting}
-              selectedIds={selectedIds}
-              onLongPressStart={toggleSelect}
-              onRowTap={toggleSelect}
-              empty={
-                <div className="p-8 text-center text-ms-xs text-muted-foreground">
-                  Belum ada percakapan yang diarsipkan.
-                </div>
-              }
-              archivedView
-              onPin={() => undefined}
-              onArchive={handleArchive}
-              onMute={() => undefined}
-              onClearChat={handleClearChat}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
+              ) : (
+                <>
+                  {customerGroups.groups.length > 0 ? (
+                    <Accordion type="multiple" className="mb-2">
+                      {customerGroups.groups.map((g) => (
+                        <AccordionItem key={g.key} value={g.key} className="border-b">
+                          <AccordionTrigger className="px-1 py-ms-2 text-ms-xs font-medium">
+                            <span className="truncate">
+                              {g.label}{" "}
+                              <span className="ml-1 text-muted-foreground">({g.items.length})</span>
+                            </span>
+                          </AccordionTrigger>
+                          <AccordionContent className="pb-0">
+                            <ConvList
+                              list={g.items}
+                              isLoading={false}
+                              selecting={selecting}
+                              selectedIds={selectedIds}
+                              onLongPressStart={toggleSelect}
+                              onRowTap={toggleSelect}
+                              empty={null}
+                              onPin={handlePin}
+                              onArchive={handleArchive}
+                              onMute={handleMute}
+                              onClearChat={handleClearChat}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  ) : null}
+                  {customerGroups.ungrouped.length > 0 ? (
+                    <div>
+                      <div className="px-1 py-ms-2 text-ms-2xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Tanpa Order
+                      </div>
+                      <ConvList
+                        list={customerGroups.ungrouped}
+                        isLoading={false}
+                        selecting={selecting}
+                        selectedIds={selectedIds}
+                        onLongPressStart={toggleSelect}
+                        onRowTap={toggleSelect}
+                        empty={null}
+                        onPin={handlePin}
+                        onArchive={handleArchive}
+                        onMute={handleMute}
+                        onClearChat={handleClearChat}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </TabsContent>
+            <TabsContent value="employee">
+              <ConvList
+                list={byCategory.employee}
+                isLoading={isLoading}
+                selecting={selecting}
+                selectedIds={selectedIds}
+                onLongPressStart={toggleSelect}
+                onRowTap={toggleSelect}
+                empty={
+                  <div className="p-8 text-center text-ms-xs text-muted-foreground">
+                    Belum ada chat karyawan.
+                  </div>
+                }
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onMute={handleMute}
+                onClearChat={handleClearChat}
+              />
+            </TabsContent>
+            <TabsContent value="internal">
+              <ConvList
+                list={byCategory.internal}
+                isLoading={isLoading}
+                selecting={selecting}
+                selectedIds={selectedIds}
+                onLongPressStart={toggleSelect}
+                onRowTap={toggleSelect}
+                empty={
+                  <div className="p-8 text-center text-ms-xs text-muted-foreground">
+                    Belum ada catatan internal.
+                  </div>
+                }
+                onPin={handlePin}
+                onArchive={handleArchive}
+                onMute={handleMute}
+                onClearChat={handleClearChat}
+              />
+            </TabsContent>
+            <TabsContent value="archived">
+              <ConvList
+                list={byCategory.archived}
+                isLoading={isLoading}
+                selecting={selecting}
+                selectedIds={selectedIds}
+                onLongPressStart={toggleSelect}
+                onRowTap={toggleSelect}
+                empty={
+                  <div className="p-8 text-center text-ms-xs text-muted-foreground">
+                    Belum ada percakapan yang diarsipkan.
+                  </div>
+                }
+                archivedView
+                onPin={() => undefined}
+                onArchive={handleArchive}
+                onMute={() => undefined}
+                onClearChat={handleClearChat}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
       {selecting ? null : <AddContactFab />}
       <ChatBottomNav />
@@ -998,13 +1071,17 @@ function highlight(text: string, q: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="rounded bg-primary/20 px-0.5 text-foreground">{text.slice(idx, idx + q.length)}</mark>
+      <mark className="rounded bg-primary/20 px-0.5 text-foreground">
+        {text.slice(idx, idx + q.length)}
+      </mark>
       {text.slice(idx + q.length)}
     </>
   );
 }
 
-type ConvItem = ReturnType<typeof useConversations>["data"] extends Array<infer R> | undefined ? R : never;
+type ConvItem = ReturnType<typeof useConversations>["data"] extends Array<infer R> | undefined
+  ? R
+  : never;
 
 function ConvList({
   list,
@@ -1097,132 +1174,153 @@ const ConvListItem = React.memo(function ConvListItem({
   const isMuted = !!(mutedUntil && mutedUntil.getTime() > Date.now());
   return (
     <div className={`relative ${isSelected ? "bg-primary/10" : ""}`}>
-              <ConvRow
-                conv={c}
-                isMuted={!!isMuted}
-                selecting={selecting}
-                isSelected={isSelected}
-                onLongPress={() => onLongPressStart(c.id)}
-                onTapWhileSelecting={() => onRowTap(c.id)}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-semibold tracking-tight text-[var(--wa-text)]">
-                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
-                      <span className="truncate">{c.display_title}</span>
-                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
-                    </span>
-                    <span className={`shrink-0 pl-1 text-ms-2xs tabular-nums ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
-                  </div>
-                  {/* Chip saldo dipindah sebaris dengan preview supaya baris
+      <ConvRow
+        conv={c}
+        isMuted={!!isMuted}
+        selecting={selecting}
+        isSelected={isSelected}
+        onLongPress={() => onLongPressStart(c.id)}
+        onTapWhileSelecting={() => onRowTap(c.id)}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-ms-2">
+            <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-semibold tracking-tight text-[var(--wa-text)]">
+              {c.pinned_at ? (
+                <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" />
+              ) : null}
+              <span className="truncate">{c.display_title}</span>
+              {isMuted ? (
+                <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" />
+              ) : null}
+            </span>
+            <span
+              className={`shrink-0 pl-1 text-ms-2xs tabular-nums ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}
+            >
+              {timeShort(c.last_at)}
+            </span>
+          </div>
+          {/* Chip saldo dipindah sebaris dengan preview supaya baris
                       chat tetap 2 baris (ritme WhatsApp) dan tidak ragged. */}
-                  <div className="mt-0.5 flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 flex-1 items-center gap-ms-1 truncate text-ms-sm text-[var(--wa-text-muted)]">
-                      {c.last_body ? (
-                        <>
-                          {c.last_mine ? (
-                            c.last_read ? (
-                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-check)]" aria-label="Dibaca" />
-                            ) : c.last_delivered ? (
-                              <CheckCheck className="h-3 w-3 shrink-0 text-[var(--wa-text)]" aria-label="Sampai di perangkat lawan" />
-                            ) : (
-                              <Check className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" aria-label="Terkirim" />
-                            )
-                          ) : null}
-                          <span className="truncate">{previewText(c.last_body) ?? ""}</span>
-                        </>
-                      ) : (
-                        <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
-                      )}
-                    </span>
-                    <span className="flex max-w-[45%] shrink-0 items-center gap-ms-1">
-                      <DebtSyncBadge title={c.display_title} />
-                      {c.unread > 0 ? (
-                      <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1.5 text-ms-2xs font-semibold text-[var(--wa-surface)]">
-                        {c.unread > 99 ? "99+" : c.unread}
-                      </span>
-                      ) : null}
-                    </span>
-                  </div>
-                </div>
-              </ConvRow>
-              {selecting ? null : (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
-                      aria-label="Opsi"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
-                    {!archivedView ? (
-                      <>
-                        <DropdownMenuItem onSelect={() => onPin(c)}>
-                          <Pin className="mr-2 h-4 w-4" />
-                          {c.pinned_at ? "Lepas pin" : "Pin ke atas"}
-                        </DropdownMenuItem>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            {isMuted ? (
-                              <BellOff className="mr-2 h-4 w-4" />
-                            ) : (
-                              <BellRing className="mr-2 h-4 w-4" />
-                            )}
-                            {isMuted ? "Berhenti membisukan" : "Bisukan notifikasi"}
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem onSelect={() => onMute(c, addMin(60))}>
-                              1 jam
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => onMute(c, addMin(60 * 8))}>
-                              8 jam
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => onMute(c, addMin(60 * 24 * 7))}>
-                              1 minggu
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => onMute(c, new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10))}>
-                              Selamanya
-                            </DropdownMenuItem>
-                            {isMuted ? (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => onMute(c, null)}>
-                                  Bunyikan lagi
-                                </DropdownMenuItem>
-                              </>
-                            ) : null}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                      </>
-                    ) : null}
-                    <DropdownMenuItem onSelect={() => onArchive(c)}>
-                      {archivedView ? (
-                        <>
-                          <ArchiveRestore className="mr-2 h-4 w-4" /> Kembalikan ke Aktif
-                        </>
-                      ) : (
-                        <>
-                          <Archive className="mr-2 h-4 w-4" /> Arsipkan
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={() => onClearChat(c)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Hapus chat (kontak tetap)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+          <div className="mt-0.5 flex items-center justify-between gap-ms-2">
+            <span className="flex min-w-0 flex-1 items-center gap-ms-1 truncate text-ms-sm text-[var(--wa-text-muted)]">
+              {c.last_body ? (
+                <>
+                  {c.last_mine ? (
+                    c.last_read ? (
+                      <CheckCheck
+                        className="h-3 w-3 shrink-0 text-[var(--wa-check)]"
+                        aria-label="Dibaca"
+                      />
+                    ) : c.last_delivered ? (
+                      <CheckCheck
+                        className="h-3 w-3 shrink-0 text-[var(--wa-text)]"
+                        aria-label="Sampai di perangkat lawan"
+                      />
+                    ) : (
+                      <Check
+                        className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]"
+                        aria-label="Terkirim"
+                      />
+                    )
+                  ) : null}
+                  <span className="truncate">{previewText(c.last_body) ?? ""}</span>
+                </>
+              ) : (
+                <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
               )}
+            </span>
+            <span className="flex max-w-[45%] shrink-0 items-center gap-ms-1">
+              <DebtSyncBadge title={c.display_title} />
+              {c.unread > 0 ? (
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1.5 text-ms-2xs font-semibold text-[var(--wa-surface)]">
+                  {c.unread > 99 ? "99+" : c.unread}
+                </span>
+              ) : null}
+            </span>
+          </div>
+        </div>
+      </ConvRow>
+      {selecting ? null : (
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
+                aria-label="Opsi"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {!archivedView ? (
+                <>
+                  <DropdownMenuItem onSelect={() => onPin(c)}>
+                    <Pin className="mr-2 h-4 w-4" />
+                    {c.pinned_at ? "Lepas pin" : "Pin ke atas"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      {isMuted ? (
+                        <BellOff className="mr-2 h-4 w-4" />
+                      ) : (
+                        <BellRing className="mr-2 h-4 w-4" />
+                      )}
+                      {isMuted ? "Berhenti membisukan" : "Bisukan notifikasi"}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onSelect={() => onMute(c, addMin(60))}>
+                        1 jam
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onMute(c, addMin(60 * 8))}>
+                        8 jam
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => onMute(c, addMin(60 * 24 * 7))}>
+                        1 minggu
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          onMute(c, new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10))
+                        }
+                      >
+                        Selamanya
+                      </DropdownMenuItem>
+                      {isMuted ? (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={() => onMute(c, null)}>
+                            Bunyikan lagi
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
+                </>
+              ) : null}
+              <DropdownMenuItem onSelect={() => onArchive(c)}>
+                {archivedView ? (
+                  <>
+                    <ArchiveRestore className="mr-2 h-4 w-4" /> Kembalikan ke Aktif
+                  </>
+                ) : (
+                  <>
+                    <Archive className="mr-2 h-4 w-4" /> Arsipkan
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => onClearChat(c)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Hapus chat (kontak tetap)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
     </div>
   );
 });
@@ -1266,7 +1364,9 @@ function ConvRow({
       triggered.current = true;
       try {
         (navigator as Navigator & { vibrate?: (p: number) => void }).vibrate?.(35);
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
       onLongPress();
     }, 450);
   };
