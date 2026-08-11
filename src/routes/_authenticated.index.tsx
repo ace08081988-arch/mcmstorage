@@ -1269,7 +1269,6 @@ function Index() {
         <main className="relative mx-auto w-full max-w-md space-y-8 px-ms-4 pt-7 pb-14 sm:max-w-2xl sm:px-ms-6 sm:pt-10">
           {/* Hero: alur kerja aplikasi */}
           <section className="surface-editorial overflow-hidden p-ms-5 sm:p-ms-6">
-            <h2 className="sr-only">Alur Kerja</h2>
             <span className="eyebrow">
               <span className="hairline w-6" />
               Alur Kerja
@@ -1697,9 +1696,9 @@ function Index() {
                 ☰
               </button>
               <div className="min-w-0 flex-1">
-                <h1 className="truncate text-ms-base font-semibold tracking-tight">
+                <h2 className="truncate text-ms-base font-semibold tracking-tight">
                   {activeCat} · Ace Storage
-                </h1>
+                </h2>
                 <p className="text-[0.6875rem] text-muted-foreground">
                   {scopedItems.length} pesanan · {rupiah(total)}
                 </p>
