@@ -356,6 +356,8 @@ function ChatRoomPage() {
   const [muteOpen, setMuteOpen] = useState(false);
   // Overflow alat composer di layar sempit (produk & keranjang).
   const [moreOpen, setMoreOpen] = useState(false);
+  // Saat perekam suara aktif, panel-nya mengambil seluruh baris komposer.
+  const [voiceRecorderActive, setVoiceRecorderActive] = useState(false);
   const [startingCall, setStartingCall] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
