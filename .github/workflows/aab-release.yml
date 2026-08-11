@@ -50,6 +50,9 @@ on:
       - ".github/workflows/aab-release.yml"
       - "scripts/validate-keystore.mjs"
       - "scripts/build-aab.mjs"
+      - "scripts/audit-ci.mjs"
+      - "package.json"
+      - "bun.lock"
     tags:
       - "v*"
 
