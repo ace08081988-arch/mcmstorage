@@ -120,7 +120,7 @@ export function ChatBottomNav() {
                 active ? "bg-[var(--wa-green)]/12" : "bg-transparent",
               )}
             >
-              <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.25 : 1.75} />
+              <Icon className="h-[22px] w-[22px]" />
               {badgeLoading ? (
                 <span
                   aria-hidden="true"
