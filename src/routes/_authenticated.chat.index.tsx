@@ -1235,7 +1235,7 @@ function ConvRow({
   );
 
   const avatar = (
-    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-ms-xs font-semibold uppercase">
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-ms-sm font-semibold uppercase text-[var(--wa-text-muted)]">
       {(conv.display_title ?? "?").trim().charAt(0) || "?"}
     </div>
   );
@@ -1249,7 +1249,7 @@ function ConvRow({
   );
 
   const rowClass =
-    "flex items-center gap-ms-3 px-ms-3 py-ms-2 pr-10 hover:bg-[var(--wa-surface-2)]/50 " +
+    "flex min-h-14 items-center gap-ms-3 py-2 pl-ms-3 pr-9 transition-colors hover:bg-[var(--wa-surface-2)]/50 active:bg-[var(--wa-surface-2)]/70 " +
     (selecting ? "cursor-pointer select-none" : "");
 
   if (selecting) {
