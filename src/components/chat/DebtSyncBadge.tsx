@@ -107,6 +107,7 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
         tone={tone}
         amount={amount}
         compactOnly
+        iconOnlyOnMobile
         interactive={false}
         title={
           tone === "empty"
@@ -153,9 +154,8 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
               <DialogHeader>
                 <DialogTitle>Tautkan “{title}”</DialogTitle>
                 <DialogDescription>
-                  Nama di chat berbeda ejaan dengan buku Hutang &amp; Piutang.
-                  Pilih catatan yang benar agar saldonya tersinkron di semua
-                  halaman.
+                  Nama di chat berbeda ejaan dengan buku Hutang &amp; Piutang. Pilih catatan yang
+                  benar agar saldonya tersinkron di semua halaman.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
