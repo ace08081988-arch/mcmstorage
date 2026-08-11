@@ -1871,7 +1871,7 @@ function ChatRoomPage() {
 
       {/* Kontrol hutang DM pada mobile dipindah keluar dari app bar supaya
           header tetap ringkas dan profesional di lebar 360–430px. */}
-      {meta.data?.kind === "dm" && myId ? (
+      {!selectionMode && meta.data?.kind === "dm" && myId ? (
         <div className="chat-bar-solid z-10 flex shrink-0 items-center gap-ms-2 overflow-x-auto border-b border-[var(--wa-border)] px-ms-2 py-1 sm:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <ChatHeaderDebtControls
             myId={myId}
