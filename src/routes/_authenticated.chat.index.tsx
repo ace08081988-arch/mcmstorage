@@ -146,7 +146,10 @@ function ChatListPage() {
   // Sinkron ulang bila user mengetuk tab Chat lagi dari tab lain dengan
   // unread — TanStack Router hanya mengganti search param tanpa remount.
   useEffect(() => {
-    if (routeSearch.filter === "unread") setFilter("unread");
+    if (routeSearch.filter === "unread") {
+      setFilter("unread");
+      setCat("all");
+    }
   }, [routeSearch.filter]);
   const { data: chatLists } = useChatLists();
   const { data: allListMembers } = useAllChatListMembers();
