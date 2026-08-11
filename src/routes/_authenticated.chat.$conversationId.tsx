@@ -2894,9 +2894,18 @@ function ChatRoomPage() {
               }}
             />
           ) : null}
-          {/* Baris atas: textarea + tombol Kirim, lebar penuh */}
+          {/* Satu unit composer: pill berisi emoji + teks + alat, dengan
+              tombol kirim/voice bulat terpisah di kanan. Tombol kirim baru
+              tampil dominan saat ada isi. */}
           <div className="flex items-end gap-ms-2">
-            <div className="flex-1 min-w-0">
+            <div className="flex min-w-0 flex-1 items-end gap-0.5 rounded-3xl border border-[var(--wa-field-border)] bg-[var(--wa-surface-2)] px-1 py-0.5">
+              <EmojiPickerPopover
+                disabled={chatBlocked}
+                onPick={(ch) => {
+                  setBody((prev) => prev + ch);
+                  emitTyping();
+                }}
+              />
               <Textarea
                 value={body}
                 onChange={(e) => {
@@ -2914,59 +2923,48 @@ function ChatRoomPage() {
                 }}
                 placeholder="Tulis pesan…"
                 rows={1}
-                className="chat-input-contrast max-h-32 min-h-10 w-full resize-none bg-card"
+                className="chat-input-contrast max-h-32 min-h-9 w-full resize-none border-0 bg-transparent px-1 py-2 text-ms-sm shadow-none focus-visible:ring-0"
                 disabled={chatBlocked}
               />
+              <AttachMenu
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                onSent={() => { void othersRead.refetch(); }}
+                onStageFiles={stageAttachments}
+              />
+              <ProductSharePopover
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                peerName={displayedPeerName}
+                onSent={() => { void othersRead.refetch(); }}
+                onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
+              />
+              <CartComposer
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                onSent={() => { void othersRead.refetch(); }}
+              />
             </div>
-            <Button
-              type="submit"
-              size="icon"
-              disabled={(!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0) || chatBlocked || isSending || !!productSendProgress}
-              aria-label="Kirim"
-              aria-busy={isSending || !!productSendProgress}
-              className="h-10 w-10 shrink-0"
-            >
-              {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-          {/* Baris bawah: strip alat sekunder */}
-          <div className="flex items-center gap-ms-1">
-            <AttachMenu
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              onSent={() => { void othersRead.refetch(); }}
-              onStageFiles={stageAttachments}
-            />
-            <EmojiPickerPopover
-              disabled={chatBlocked}
-              onPick={(ch) => {
-                setBody((prev) => prev + ch);
-                emitTyping();
-              }}
-            />
-            <ProductSharePopover
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              peerName={displayedPeerName}
-              onSent={() => { void othersRead.refetch(); }}
-              onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
-            />
-            <CartComposer
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              onSent={() => { void othersRead.refetch(); }}
-            />
-            <div className="ml-auto">
-              {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
+            {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
+              <div className="grid h-11 w-11 shrink-0 place-items-center">
                 <VoiceRecorderButton
                   conversationId={conversationId}
                   disabled={chatBlocked}
                   onSent={() => { void othersRead.refetch(); }}
                 />
-              ) : (
-                <div aria-hidden className="h-9 w-9" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                size="icon"
+                disabled={chatBlocked || isSending || !!productSendProgress}
+                aria-label="Kirim"
+                aria-busy={isSending || !!productSendProgress}
+                className="h-11 w-11 shrink-0 rounded-full shadow-sm"
+              >
+                {isSending || !!productSendProgress ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              </Button>
+            )}
           </div>
         </div>
         <p className="mt-1 hidden px-1 text-ms-2xs text-muted-foreground sm:block">
