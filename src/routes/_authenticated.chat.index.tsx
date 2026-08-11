@@ -347,9 +347,14 @@ function ChatListPage() {
   }, [active, filter, allListMembers]);
 
   const currentVisibleIds = useMemo(() => {
-    // Untuk aksi "Pilih semua" — pilih dari gabungan aktif+arsip yang tampil.
-    return [...active, ...archived].map((c) => c.id);
-  }, [active, archived]);
+    // Untuk aksi "Pilih semua" — hanya baris yang benar-benar terlihat pada
+    // kategori/filter aktif saat ini.
+    const list =
+      cat === "customer" || cat === "employee" || cat === "internal" || cat === "archived"
+        ? byCategory[cat]
+        : filteredActive;
+    return list.map((c) => c.id);
+  }, [cat, byCategory, filteredActive]);
 
   // Hitungan per-chip untuk ditampilkan sebagai badge angka di samping label.
   const chipCounts = useMemo(() => {
