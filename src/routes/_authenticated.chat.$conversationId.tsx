@@ -293,8 +293,20 @@ function fmtTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
+/** Kunci hari lokal (YYYY-M-D) — menyertakan tahun agar 12 Mei 2025 dan
+ *  12 Mei 2026 tidak pernah tergabung dalam satu kelompok. */
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
 function fmtDay(iso: string) {
-  return new Date(iso).toLocaleDateString("id-ID", { weekday: "long", day: "2-digit", month: "long" });
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (dayKey(iso) === dayKey(today.toISOString())) return "Hari ini";
+  if (dayKey(iso) === dayKey(yesterday.toISOString())) return "Kemarin";
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 }
 function fmtRelative(iso: string) {
   const ms = Date.now() - new Date(iso).getTime();
@@ -342,6 +354,8 @@ function ChatRoomPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [muteOpen, setMuteOpen] = useState(false);
+  // Overflow alat composer di layar sempit (produk & keranjang).
+  const [moreOpen, setMoreOpen] = useState(false);
   const [startingCall, setStartingCall] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
@@ -1375,16 +1389,16 @@ function ChatRoomPage() {
 
   // Group messages by day
   const grouped = useMemo(() => {
-    const out: { day: string; items: MessageRow[] }[] = [];
+    const out: { key: string; day: string; items: MessageRow[] }[] = [];
     const list =
       visibleMessages.length > renderCount
         ? visibleMessages.slice(visibleMessages.length - renderCount)
         : visibleMessages;
     for (const m of list) {
-      const day = fmtDay(m.created_at);
+      const key = dayKey(m.created_at);
       const last = out[out.length - 1];
-      if (last && last.day === day) last.items.push(m);
-      else out.push({ day, items: [m] });
+      if (last && last.key === key) last.items.push(m);
+      else out.push({ key, day: fmtDay(m.created_at), items: [m] });
     }
     return out;
   }, [visibleMessages, renderCount]);
@@ -1581,7 +1595,9 @@ function ChatRoomPage() {
         />
       ) : (
       <header
-        className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-0.5 border-b border-[var(--wa-border)] px-1 py-1.5 sm:gap-ms-1 sm:px-ms-2 sm:py-ms-2"
+        // Header sudah berada di luar scroller, jadi `sticky` tidak diperlukan;
+        // cukup z-index token supaya popover/menu tetap di atas konten.
+        className="wa-header z-[var(--z-sticky-header)] flex shrink-0 items-center gap-0.5 border-b border-[var(--wa-border)] px-1 py-1.5 sm:gap-ms-1 sm:px-ms-2 sm:py-ms-2"
         style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.25rem)" }}
       >
         <Button
@@ -2040,9 +2056,9 @@ function ChatRoomPage() {
             </div>
           ) : null}
           {grouped.map((g) => (
-            <div key={g.day} className="chat-day-group flex flex-col gap-1.5">
+            <div key={g.key} className="chat-day-group flex flex-col gap-1.5">
               <div className="my-2.5 flex justify-center">
-                <span className="rounded-full bg-[var(--wa-header)]/95 px-ms-3 py-1 text-ms-2xs font-medium uppercase tracking-wide wa-muted shadow-sm ring-1 ring-[var(--wa-border)]">{g.day}</span>
+                <span className="rounded-full bg-[var(--wa-header)] px-ms-3 py-1 text-ms-2xs font-medium wa-muted">{g.day}</span>
               </div>
               {g.items.map((m) => {
                 const mine = m.sender_id === myId;
@@ -2074,9 +2090,9 @@ function ChatRoomPage() {
                     id={`msg-${m.id}`}
                     className={`flex ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
-                     <div className={`group relative flex min-w-0 max-w-[86%] items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch] ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                     <div className={`group relative flex min-w-0 max-w-[82%] items-start gap-ms-1 sm:max-w-[72%] lg:max-w-[60ch] ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-sm leading-relaxed [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
+                        className={`min-w-0 max-w-full overflow-hidden rounded-2xl px-ms-3 py-ms-2 text-ms-base leading-normal [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-md" : "rounded-bl-md"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
@@ -2245,8 +2261,15 @@ function ChatRoomPage() {
                           </div>
                         ) : null}
                       </div>
-                      {!m.deleted_at ? (
-                        <div className="flex items-center gap-ms-1 self-center opacity-0 transition-opacity group-hover:opacity-100 data-[open=true]:opacity-100">
+                       {!m.deleted_at ? (
+                         // Sidecar aksi dilepas dari alur flex (absolute) supaya
+                         // tombol transparan tidak memakan ±52px lebar bubble di
+                         // layar sempit. Tetap terlihat saat hover/fokus keyboard.
+                         <div
+                           className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center gap-ms-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 data-[open=true]:opacity-100 ${
+                             mine ? "right-full mr-1" : "left-full ml-1"
+                           }`}
+                         >
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button
@@ -2894,6 +2917,27 @@ function ChatRoomPage() {
               }}
             />
           ) : null}
+          {/* Baris alat tambahan — hanya di layar sempit (<=430px). Produk &
+              keranjang dipindah ke sini supaya textarea tidak terjepit,
+              tanpa menghilangkan fungsi apa pun. */}
+          {moreOpen ? (
+            <div className="flex items-center gap-ms-2 rounded-2xl border border-[var(--wa-field-border)] bg-[var(--wa-surface-2)] px-ms-2 py-1.5 min-[431px]:hidden">
+              <ProductSharePopover
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                peerName={displayedPeerName}
+                onSent={() => { void othersRead.refetch(); }}
+                onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
+              />
+              <span className="text-ms-xs text-muted-foreground">Produk</span>
+              <CartComposer
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                onSent={() => { void othersRead.refetch(); }}
+              />
+              <span className="text-ms-xs text-muted-foreground">Keranjang</span>
+            </div>
+          ) : null}
           {/* Satu unit composer: pill berisi emoji + teks + alat, dengan
               tombol kirim/voice bulat terpisah di kanan. Tombol kirim baru
               tampil dominan saat ada isi. */}
@@ -2923,7 +2967,7 @@ function ChatRoomPage() {
                 }}
                 placeholder="Tulis pesan…"
                 rows={1}
-                className="chat-input-contrast max-h-32 min-h-9 w-full resize-none border-0 bg-transparent px-1 py-2 text-ms-sm shadow-none focus-visible:ring-0"
+                className="chat-input-contrast max-h-32 min-h-11 w-full resize-none border-0 bg-transparent px-1 py-2 text-ms-base shadow-none focus-visible:ring-0"
                 disabled={chatBlocked}
               />
               <AttachMenu
@@ -2932,18 +2976,33 @@ function ChatRoomPage() {
                 onSent={() => { void othersRead.refetch(); }}
                 onStageFiles={stageAttachments}
               />
-              <ProductSharePopover
-                conversationId={conversationId}
+              {/* Overflow alat untuk layar sempit. */}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 disabled={chatBlocked}
-                peerName={displayedPeerName}
-                onSent={() => { void othersRead.refetch(); }}
-                onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
-              />
-              <CartComposer
-                conversationId={conversationId}
-                disabled={chatBlocked}
-                onSent={() => { void othersRead.refetch(); }}
-              />
+                aria-label={moreOpen ? "Tutup alat lain" : "Alat lain (produk & keranjang)"}
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((p) => !p)}
+                className="h-9 w-9 shrink-0 rounded-full min-[431px]:hidden"
+              >
+                {moreOpen ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+              </Button>
+              <div className="hidden items-end min-[431px]:flex">
+                <ProductSharePopover
+                  conversationId={conversationId}
+                  disabled={chatBlocked}
+                  peerName={displayedPeerName}
+                  onSent={() => { void othersRead.refetch(); }}
+                  onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
+                />
+                <CartComposer
+                  conversationId={conversationId}
+                  disabled={chatBlocked}
+                  onSent={() => { void othersRead.refetch(); }}
+                />
+              </div>
             </div>
             {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
               <div className="grid h-11 w-11 shrink-0 place-items-center">
