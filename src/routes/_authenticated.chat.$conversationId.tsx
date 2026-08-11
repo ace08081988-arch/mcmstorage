@@ -1581,7 +1581,7 @@ function ChatRoomPage() {
         />
       ) : (
       <header
-        className="wa-header z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_8%,transparent)] sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2"
+        className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-0.5 border-b border-[var(--wa-border)] px-1 py-1.5 sm:gap-ms-1 sm:px-ms-2 sm:py-ms-2"
         style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.25rem)" }}
       >
         <Button
@@ -1589,7 +1589,7 @@ function ChatRoomPage() {
           size="icon"
           onClick={() => goBackOr(router, { to: "/chat" })}
           aria-label="Kembali"
-          className="h-10 w-10 shrink-0"
+          className="h-10 w-10 shrink-0 rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -1607,7 +1607,7 @@ function ChatRoomPage() {
             {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
           </div>
         )}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pl-1">
           <div className="flex items-center gap-ms-1">
             <div className="truncate text-ms-base font-semibold">
               {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
@@ -1646,22 +1646,11 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`
             )}
           </div>
-          {meta.data?.kind === "dm" && myId ? (
-            <div className="mt-0.5 flex min-w-0 max-w-full items-center sm:hidden">
-              <ChatHeaderDebtControls
-                myId={myId}
-                peerUserId={dmPeer?.peerUserId ?? null}
-                peerPhone={dmPeer?.peerPhone ?? null}
-                peerName={displayedPeerName}
-                conversationId={conversationId}
-              />
-            </div>
-          ) : null}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
+          className="hidden h-10 w-10 shrink-0 rounded-full sm:inline-flex"
           aria-label="Cari pesan di percakapan"
           onClick={() => setQuickSearchOpen((v) => !v)}
         >
@@ -1764,11 +1753,14 @@ function ChatRoomPage() {
         ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Opsi percakapan">
+            <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full" aria-label="Opsi percakapan">
               <MoreVertical className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem className="sm:hidden" onSelect={() => setQuickSearchOpen(true)}>
+              <SearchIcon className="mr-2 h-4 w-4" /> Cari cepat di layar
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setSearchOpen(true)}>
               <SearchIcon className="mr-2 h-4 w-4" /> Cari di percakapan
             </DropdownMenuItem>
@@ -1876,6 +1868,20 @@ function ChatRoomPage() {
         </DropdownMenu>
       </header>
       )}
+
+      {/* Kontrol hutang DM pada mobile dipindah keluar dari app bar supaya
+          header tetap ringkas dan profesional di lebar 360–430px. */}
+      {!selectionMode && meta.data?.kind === "dm" && myId ? (
+        <div className="chat-bar-solid z-10 flex shrink-0 items-center gap-ms-2 overflow-x-auto border-b border-[var(--wa-border)] px-ms-2 py-1 sm:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ChatHeaderDebtControls
+            myId={myId}
+            peerUserId={dmPeer?.peerUserId ?? null}
+            peerPhone={dmPeer?.peerPhone ?? null}
+            peerName={displayedPeerName}
+            conversationId={conversationId}
+          />
+        </div>
+      ) : null}
 
       {quickSearchOpen ? (
         <div className="chat-bar-solid z-10 shrink-0 border-b bg-background/95 px-ms-2 py-1.5 backdrop-blur">
@@ -2888,9 +2894,18 @@ function ChatRoomPage() {
               }}
             />
           ) : null}
-          {/* Baris atas: textarea + tombol Kirim, lebar penuh */}
+          {/* Satu unit composer: pill berisi emoji + teks + alat, dengan
+              tombol kirim/voice bulat terpisah di kanan. Tombol kirim baru
+              tampil dominan saat ada isi. */}
           <div className="flex items-end gap-ms-2">
-            <div className="flex-1 min-w-0">
+            <div className="flex min-w-0 flex-1 items-end gap-0.5 rounded-3xl border border-[var(--wa-field-border)] bg-[var(--wa-surface-2)] px-1 py-0.5">
+              <EmojiPickerPopover
+                disabled={chatBlocked}
+                onPick={(ch) => {
+                  setBody((prev) => prev + ch);
+                  emitTyping();
+                }}
+              />
               <Textarea
                 value={body}
                 onChange={(e) => {
@@ -2908,59 +2923,48 @@ function ChatRoomPage() {
                 }}
                 placeholder="Tulis pesan…"
                 rows={1}
-                className="chat-input-contrast max-h-32 min-h-10 w-full resize-none bg-card"
+                className="chat-input-contrast max-h-32 min-h-9 w-full resize-none border-0 bg-transparent px-1 py-2 text-ms-sm shadow-none focus-visible:ring-0"
                 disabled={chatBlocked}
               />
+              <AttachMenu
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                onSent={() => { void othersRead.refetch(); }}
+                onStageFiles={stageAttachments}
+              />
+              <ProductSharePopover
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                peerName={displayedPeerName}
+                onSent={() => { void othersRead.refetch(); }}
+                onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
+              />
+              <CartComposer
+                conversationId={conversationId}
+                disabled={chatBlocked}
+                onSent={() => { void othersRead.refetch(); }}
+              />
             </div>
-            <Button
-              type="submit"
-              size="icon"
-              disabled={(!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0) || chatBlocked || isSending || !!productSendProgress}
-              aria-label="Kirim"
-              aria-busy={isSending || !!productSendProgress}
-              className="h-10 w-10 shrink-0"
-            >
-              {isSending || !!productSendProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </div>
-          {/* Baris bawah: strip alat sekunder */}
-          <div className="flex items-center gap-ms-1">
-            <AttachMenu
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              onSent={() => { void othersRead.refetch(); }}
-              onStageFiles={stageAttachments}
-            />
-            <EmojiPickerPopover
-              disabled={chatBlocked}
-              onPick={(ch) => {
-                setBody((prev) => prev + ch);
-                emitTyping();
-              }}
-            />
-            <ProductSharePopover
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              peerName={displayedPeerName}
-              onSent={() => { void othersRead.refetch(); }}
-              onQueue={(row) => updatePendingProducts((prev) => [...prev, row])}
-            />
-            <CartComposer
-              conversationId={conversationId}
-              disabled={chatBlocked}
-              onSent={() => { void othersRead.refetch(); }}
-            />
-            <div className="ml-auto">
-              {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
+            {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
+              <div className="grid h-11 w-11 shrink-0 place-items-center">
                 <VoiceRecorderButton
                   conversationId={conversationId}
                   disabled={chatBlocked}
                   onSent={() => { void othersRead.refetch(); }}
                 />
-              ) : (
-                <div aria-hidden className="h-9 w-9" />
-              )}
-            </div>
+              </div>
+            ) : (
+              <Button
+                type="submit"
+                size="icon"
+                disabled={chatBlocked || isSending || !!productSendProgress}
+                aria-label="Kirim"
+                aria-busy={isSending || !!productSendProgress}
+                className="h-11 w-11 shrink-0 rounded-full shadow-sm"
+              >
+                {isSending || !!productSendProgress ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              </Button>
+            )}
           </div>
         </div>
         <p className="mt-1 hidden px-1 text-ms-2xs text-muted-foreground sm:block">
