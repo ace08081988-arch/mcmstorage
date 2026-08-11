@@ -54,8 +54,6 @@ export function ChatBottomNav() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
 
-  const activeIndex = activeTo ? items.findIndex((it) => it.to === activeTo) : -1;
-
   return (
     <nav
       ref={navRef}
@@ -67,7 +65,9 @@ export function ChatBottomNav() {
       // route chat). Fallback lokal disediakan bila nav dipakai tanpa
       // container yang menyetel variabel tersebut. Nilai sudah mencakup
       // `var(--app-safe-bottom,env(safe-area-inset-bottom,0px))` untuk notch/home indicator iOS.
-      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
+      // Latar solid (tanpa transparansi/blur) supaya konten yang lewat di
+      // baliknya tidak "menembus" bar dan kontras label tetap konsisten.
+      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t border-[var(--wa-border)] bg-[var(--wa-header)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
       style={{
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
@@ -75,19 +75,8 @@ export function ChatBottomNav() {
         visibility: keyboardOpen ? "hidden" : "visible",
       }}
     >
-      {/* Indikator aktif — garis tipis yang meluncur di atas tab aktif. */}
-      <span
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute top-0 left-0 h-0.5 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          activeIndex >= 0 ? "opacity-100" : "opacity-0",
-        )}
-        style={{
-          width: "25%",
-          transform: `translateX(calc(${Math.max(activeIndex, 0)} * 100%))`,
-          background: "var(--wa-green)",
-        }}
-      />
+      {/* Tanpa indikator meluncur: status aktif cukup ditandai pill + warna
+          ikon/label, sehingga bar terasa tenang dan tidak "berlari". */}
       {items.map(({ to, label, Icon, badge, badgeLoading }) => {
         const active = activeTo === to;
         return (
@@ -139,7 +128,7 @@ export function ChatBottomNav() {
               aria-hidden="true"
               data-nav-label
               className={cn(
-                "w-full min-w-0 truncate text-center text-ms-2xs leading-ms-tight tracking-ms-tight",
+                "w-full min-w-0 truncate text-center text-ms-xs leading-ms-tight tracking-ms-tight",
                 active ? "font-semibold" : "font-normal",
               )}
             >

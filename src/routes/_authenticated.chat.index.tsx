@@ -5,7 +5,7 @@ import { VirtualizedList } from "@/components/VirtualizedList";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
-  Trash2, CheckSquare, Square, SlidersHorizontal,
+  Trash2, CheckSquare, Square, SlidersHorizontal, ChevronDown,
 } from "lucide-react";
 
 import {
@@ -107,6 +107,21 @@ function timeShort(iso: string | null): string {
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
 }
 
+/**
+ * Sumber tunggal label kategori chat — dipakai dropdown ringkas (mobile)
+ * dan deretan tab (desktop) supaya keduanya tidak pernah berbeda.
+ */
+const CATEGORY_ITEMS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "all", label: "Semua" },
+  { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer },
+  { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee },
+  { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal },
+  { value: "archived", label: "Arsip" },
+];
+const CATEGORY_LABEL: Record<string, string> = Object.fromEntries(
+  CATEGORY_ITEMS.map((t) => [t.value, t.label]),
+);
+
 function ChatListPage() {
   useChatHeartbeat();
   const { data: conversations, isLoading, isError, error, isFetching, refetch } = useConversations();
@@ -120,6 +135,10 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
+  // Kategori aktif (Semua/Pelanggan/Karyawan/Internal/Arsip). Dikontrol
+  // dari state supaya satu sumber kebenaran dipakai dua kontrol: dropdown
+  // ringkas di mobile (<=430px) dan deretan tab di layar lebar.
+  const [cat, setCat] = useState<string>("all");
   // Filter chip aktif — preset WA + daftar custom (prefix `list:<id>`).
   const [filter, setFilter] = useState<string>(
     routeSearch.filter === "unread" ? "unread" : "all",
@@ -339,6 +358,10 @@ function ChatListPage() {
 
   // Label filter aktif — dipakai untuk aria-label tombol filter dan chip
   // "filter aktif" kecil di bawah kolom pencarian.
+  // Onboarding hanya muncul saat benar-benar belum ada percakapan; dalam
+  // kondisi itu empty-state ConvList di tab "Semua" dimatikan supaya tidak
+  // ada dua kartu kosong sekaligus.
+  const showOnboarding = !isLoading && active.length === 0 && archived.length === 0;
   const activeFilterLabel = useMemo(() => {
     if (filter === "unread") return "Belum dibaca";
     if (filter === "group") return "Grup";
@@ -729,24 +752,46 @@ function ChatListPage() {
           )}
         </div>
       ) : (
-        <Tabs defaultValue="all">
+        <Tabs value={cat} onValueChange={setCat}>
+          {/* Mobile (<=430px): satu kontrol kategori ringkas berupa dropdown
+              bertuliskan kategori aktif. Deretan 5 tab hanya muncul mulai
+              `sm` supaya layar sempit tidak penuh oleh tab. */}
+          <div className="flex items-center gap-ms-2 border-b border-[var(--wa-border)] py-1.5 min-[431px]:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 max-w-full gap-ms-1 rounded-full bg-[var(--wa-surface-2)] px-ms-3 text-ms-sm font-medium"
+                  aria-label={`Kategori: ${CATEGORY_LABEL[cat] ?? "Semua"}`}
+                >
+                  <span className="truncate">{CATEGORY_LABEL[cat] ?? "Semua"}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                {CATEGORY_ITEMS.map((t) => (
+                  <DropdownMenuItem
+                    key={t.value}
+                    onSelect={() => setCat(t.value)}
+                    className={cat === t.value ? "font-medium text-primary focus:text-primary" : ""}
+                  >
+                    <span className="flex-1 truncate">{t.label}</span>
+                    {cat === t.value ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           {/* Tab kategori ringkas — garis bawah aktif, tanpa latar/border berat. */}
           <TabsList
             className={
-              "-mx-3 flex h-auto w-auto items-center justify-start gap-ms-4 " +
+              "-mx-3 hidden h-auto w-auto items-center justify-start gap-ms-4 min-[431px]:flex " +
               "overflow-x-auto border-b border-[var(--wa-border)] bg-transparent px-3 pb-0 " +
               "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             }
           >
-            {(
-              [
-                { value: "all", label: "Semua" },
-                { value: "customer", label: CHAT_CATEGORY_LABEL_ID.customer },
-                { value: "employee", label: CHAT_CATEGORY_LABEL_ID.employee },
-                { value: "internal", label: CHAT_CATEGORY_LABEL_ID.internal },
-                { value: "archived", label: "Arsip" },
-              ] as const
-            ).map((t) => (
+            {CATEGORY_ITEMS.map((t) => (
               <TabsTrigger
                 key={t.value}
                 value={t.value}
@@ -763,7 +808,7 @@ function ChatListPage() {
               </TabsTrigger>
             ))}
           </TabsList>
-          {!isLoading && active.length === 0 && archived.length === 0 ? (
+          {showOnboarding ? (
             <div className="mt-3">
               <ChatOnboarding onNewGroup={() => setGrupOpen(true)} />
             </div>
@@ -777,6 +822,7 @@ function ChatListPage() {
               onLongPressStart={toggleSelect}
               onRowTap={toggleSelect}
               empty={
+                showOnboarding ? null : (
                 <div className="space-ms-2 p-8 text-center">
                   <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="text-ms-sm font-medium">Belum ada percakapan</p>
@@ -791,6 +837,7 @@ function ChatListPage() {
                     </Button>
                   </div>
                 </div>
+                )
               }
               onPin={handlePin}
               onArchive={handleArchive}
@@ -1042,17 +1089,17 @@ const ConvListItem = React.memo(function ConvListItem({
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-sm font-semibold tracking-tight text-[var(--wa-text)]">
+                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-base font-semibold tracking-tight text-[var(--wa-text)]">
                       {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                       <span className="truncate">{c.display_title}</span>
                       {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-[var(--wa-text-muted)]" /> : null}
                     </span>
-                    <span className={`shrink-0 text-ms-2xs ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 pl-1 text-ms-2xs tabular-nums ${c.unread > 0 ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)]"}`}>{timeShort(c.last_at)}</span>
                   </div>
                   {/* Chip saldo dipindah sebaris dengan preview supaya baris
                       chat tetap 2 baris (ritme WhatsApp) dan tidak ragged. */}
                   <div className="mt-0.5 flex items-center justify-between gap-ms-2">
-                    <span className="flex min-w-0 items-center gap-ms-1 truncate text-ms-xs text-[var(--wa-text-muted)]">
+                    <span className="flex min-w-0 flex-1 items-center gap-ms-1 truncate text-ms-sm text-[var(--wa-text-muted)]">
                       {c.last_body ? (
                         <>
                           {c.last_mine ? (
@@ -1070,10 +1117,10 @@ const ConvListItem = React.memo(function ConvListItem({
                         <em className="text-[var(--wa-text-muted)]/70">Belum ada pesan</em>
                       )}
                     </span>
-                    <span className="flex shrink-0 items-center gap-ms-1">
+                    <span className="flex max-w-[45%] shrink-0 items-center gap-ms-1">
                       <DebtSyncBadge title={c.display_title} />
                       {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1 text-ms-2xs font-semibold text-[var(--wa-surface)]">
+                      <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--wa-green)] px-1.5 text-ms-2xs font-semibold text-[var(--wa-surface)]">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                       ) : null}
