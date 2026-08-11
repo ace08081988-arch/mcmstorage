@@ -3007,12 +3007,20 @@ function ChatRoomPage() {
                 />
               </div>
             </div>
+            )}
             {!body.trim() && pendingProducts.length === 0 && pendingAttachments.length === 0 ? (
-              <div className="grid h-11 w-11 shrink-0 place-items-center">
+              <div
+                className={
+                  voiceRecorderActive
+                    ? "flex min-w-0 flex-1 items-center"
+                    : "grid h-11 w-11 shrink-0 place-items-center"
+                }
+              >
                 <VoiceRecorderButton
                   conversationId={conversationId}
                   disabled={chatBlocked}
                   onSent={() => { void othersRead.refetch(); }}
+                  onActiveChange={setVoiceRecorderActive}
                 />
               </div>
             ) : (
