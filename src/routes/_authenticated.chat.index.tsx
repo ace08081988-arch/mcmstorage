@@ -546,106 +546,104 @@ function ChatListPage() {
         </div>
       </header>
       )}
-      <div className="space-ms-2 px-ms-3 pb-ms-2 pt-ms-2">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
-        <Input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari percakapan…"
-          className="chat-input-contrast h-9 rounded-full border border-[var(--wa-field-border)] bg-transparent pl-9 pr-8 text-ms-sm shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
-        />
-        {q ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-0.5 top-1/2 h-8 w-8 -translate-y-1/2 text-[var(--wa-text-muted)]"
-            onClick={() => setQ("")}
-            aria-label="Bersihkan"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+      {/* Satu baris ringkas: pencarian + satu tombol filter.
+          Semua opsi filter lanjutan (grup, favorit, daftar khusus) pindah
+          ke menu supaya daftar chat tidak terlihat seperti dashboard. */}
+      <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2 pt-ms-1">
+        <div className="relative min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--wa-text-muted)]" />
+          <Input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cari percakapan…"
+            className="chat-input-contrast h-10 rounded-full border-transparent bg-[var(--wa-surface-2)] pl-9 pr-9 text-ms-sm shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/40"
+          />
+          {q ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0.5 top-1/2 h-9 w-9 -translate-y-1/2 rounded-full text-[var(--wa-text-muted)]"
+              onClick={() => setQ("")}
+              aria-label="Bersihkan"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
+        {q.trim().length < 2 ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-10 w-10 shrink-0 rounded-full"
+                aria-label={`Filter percakapan${activeFilterLabel ? `: ${activeFilterLabel}` : ""}`}
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+                {filter !== "all" ? (
+                  <span
+                    aria-hidden
+                    className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--wa-green)]"
+                  />
+                ) : null}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {(
+                [
+                  { id: "all", label: "Semua", n: chipCounts.all },
+                  { id: "unread", label: "Belum dibaca", n: chipCounts.unread },
+                  { id: "group", label: "Grup", n: chipCounts.group },
+                  { id: "favorite", label: "Favorit", n: chipCounts.favorite },
+                ] as const
+              ).map((opt) => (
+                <DropdownMenuItem
+                  key={opt.id}
+                  onSelect={() => setFilter(opt.id)}
+                  className={filter === opt.id ? "font-medium text-primary focus:text-primary" : ""}
+                >
+                  <span className="flex-1 truncate">{opt.label}</span>
+                  <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">{opt.n}</span>
+                </DropdownMenuItem>
+              ))}
+              {(chatLists ?? []).length > 0 ? <DropdownMenuSeparator /> : null}
+              {(chatLists ?? []).map((l) => {
+                const chipId = `list:${l.id}`;
+                return (
+                  <DropdownMenuItem
+                    key={chipId}
+                    onSelect={() => setFilter(chipId)}
+                    className={filter === chipId ? "font-medium text-primary focus:text-primary" : ""}
+                  >
+                    <ChatListIcon name={l.icon} className="mr-2 h-3.5 w-3.5" style={{ color: l.color }} />
+                    <span className="flex-1 truncate">{l.name}</span>
+                    <span className="ml-2 tabular-nums text-ms-2xs text-muted-foreground">
+                      {chipCounts.perList[l.id] ?? 0}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/daftar">Kelola daftar</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : null}
       </div>
-
-      {q.trim().length < 2 ? (
-        <div
-          role="tablist"
-          aria-label="Filter cepat"
-          className="-mx-1 flex items-center gap-ms-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {([
-            { id: "all" as const, label: "Semua", n: chipCounts.all },
-            { id: "unread" as const, label: "Belum dibaca", n: chipCounts.unread },
-            { id: "group" as const, label: "Grup", n: chipCounts.group },
-            { id: "favorite" as const, label: "Favorit", n: chipCounts.favorite },
-          ]).map((chip) => {
-            const isActive = filter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setFilter(chip.id)}
-                className={
-                  "relative whitespace-nowrap text-ms-xs transition-colors " +
-                  (isActive
-                    ? "font-medium text-[var(--wa-text)]"
-                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
-                }
-              >
-                {chip.label} <span className="opacity-60 tabular-nums">({chip.n})</span>
-                {isActive ? (
-                  <span
-                    aria-hidden
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
-                  />
-                ) : null}
-              </button>
-            );
-          })}
-          {(chatLists ?? []).map((l) => {
-            const chipId = `list:${l.id}`;
-            const isActive = filter === chipId;
-            const n = chipCounts.perList[l.id] ?? 0;
-            return (
-              <button
-                key={chipId}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => setFilter(chipId)}
-                className={
-                  "relative inline-flex items-center gap-ms-1 whitespace-nowrap text-ms-xs transition-colors " +
-                  (isActive
-                    ? "font-medium text-[var(--wa-text)]"
-                    : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]")
-                }
-                title={l.name}
-              >
-                <ChatListIcon name={l.icon} className="h-3 w-3" style={{ color: l.color }} />
-                {l.name} <span className="opacity-60 tabular-nums">({n})</span>
-                {isActive ? (
-                  <span
-                    aria-hidden
-                    className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[var(--wa-green)]"
-                  />
-                ) : null}
-              </button>
-            );
-          })}
-          <Link
-            to="/daftar"
-            className="text-ms-xs text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]"
-            aria-label="Kelola daftar"
-            title="Kelola daftar"
+      {filter !== "all" && q.trim().length < 2 ? (
+        <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2">
+          <button
+            type="button"
+            onClick={() => setFilter("all")}
+            className="inline-flex h-7 items-center gap-1 rounded-full bg-[var(--wa-green)]/12 px-ms-2 text-ms-2xs font-medium text-[var(--wa-green)]"
+            aria-label={`Hapus filter ${activeFilterLabel}`}
           >
-            + Daftar
-          </Link>
+            {activeFilterLabel}
+            <X className="h-3 w-3" />
+          </button>
         </div>
       ) : null}
-      </div>
       </div>
 
       <div className="flex-1 space-ms-3 px-ms-3 py-ms-3">
