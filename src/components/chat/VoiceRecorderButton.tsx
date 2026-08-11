@@ -53,9 +53,11 @@ type Props = {
   conversationId: string;
   disabled?: boolean;
   onSent?: () => void;
+  /** Dipanggil saat recorder aktif (recording/preview/sending) atau kembali idle. */
+  onActiveChange?: (active: boolean) => void;
 };
 
-export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props) {
+export function VoiceRecorderButton({ conversationId, disabled, onSent, onActiveChange }: Props) {
   const [state, setState] = useState<"idle" | "recording" | "preview" | "sending">("idle");
   const [seconds, setSeconds] = useState(0);
   const [blob, setBlob] = useState<Blob | null>(null);
@@ -66,6 +68,17 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
   const streamRef = useRef<MediaStream | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mimeRef = useRef<string>("");
+
+  // Beritahu parent setiap kali recorder aktif/idle supaya layout komposer
+  // bisa memberi seluruh baris ke panel recorder (bukan kotak 44x44).
+  const activeCbRef = useRef(onActiveChange);
+  activeCbRef.current = onActiveChange;
+  useEffect(() => {
+    activeCbRef.current?.(state !== "idle");
+  }, [state]);
+  useEffect(() => {
+    return () => { activeCbRef.current?.(false); };
+  }, []);
 
   const cleanupStream = useCallback(() => {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
@@ -188,14 +201,14 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
 
   if (state === "recording") {
     return (
-      <div className="flex items-center gap-ms-2 rounded-full border bg-destructive/10 px-ms-2 py-1">
+      <div className="flex w-full min-w-0 items-center gap-ms-2 rounded-full border bg-destructive/10 px-ms-2 py-1">
         <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-destructive" aria-hidden />
-        <span className="text-ms-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
+        <span className="flex-1 truncate text-ms-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
         <Button
           type="button"
           size="icon"
           variant="ghost"
-          className="h-7 w-7"
+          className="h-9 w-9 shrink-0"
           onClick={resetAll}
           aria-label="Batalkan rekaman"
         >
@@ -204,7 +217,7 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
         <Button
           type="button"
           size="icon"
-          className="h-7 w-7"
+          className="h-9 w-9 shrink-0"
           onClick={stop}
           aria-label="Hentikan rekaman"
         >
@@ -216,16 +229,16 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
 
   // preview / sending
   return (
-    <div className="flex items-center gap-ms-2 rounded-full border bg-accent/40 px-ms-2 py-1">
-      <span className="text-ms-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
+    <div className="flex w-full min-w-0 items-center gap-ms-2 rounded-full border bg-accent/40 px-ms-2 py-1">
+      <span className="shrink-0 text-ms-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
       {previewUrl ? (
-        <audio src={previewUrl} controls preload="metadata" className="h-8 max-w-[10rem]" />
+        <audio src={previewUrl} controls preload="metadata" className="h-8 w-full min-w-0 flex-1" />
       ) : null}
       <Button
         type="button"
         size="icon"
         variant="ghost"
-        className="h-7 w-7"
+        className="h-9 w-9 shrink-0"
         onClick={resetAll}
         disabled={state === "sending"}
         aria-label="Buang rekaman"
@@ -235,7 +248,7 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
       <Button
         type="button"
         size="icon"
-        className="h-7 w-7"
+        className="h-9 w-9 shrink-0"
         onClick={() => void send()}
         disabled={state === "sending"}
         aria-label="Kirim voice note"
