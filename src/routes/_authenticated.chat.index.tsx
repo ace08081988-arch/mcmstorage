@@ -5,7 +5,7 @@ import { VirtualizedList } from "@/components/VirtualizedList";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus, ArrowLeft,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
-  Trash2, CheckSquare, Square,
+  Trash2, CheckSquare, Square, SlidersHorizontal,
 } from "lucide-react";
 
 import {
@@ -474,7 +474,7 @@ function ChatListPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
+          <h1 className="truncate text-ms-lg font-semibold tracking-tight">Chat</h1>
         </div>
         <div className="flex items-center gap-ms-1">
           <NewDmDialog />
