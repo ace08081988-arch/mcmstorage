@@ -510,7 +510,7 @@ function ChatListPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="truncate text-ms-lg font-semibold tracking-tight">Chat</h1>
+          <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
         </div>
         <div className="flex items-center gap-ms-1">
           <NewDmDialog />
