@@ -2922,7 +2922,7 @@ function ChatRoomPage() {
           {/* Baris alat tambahan — hanya di layar sempit (<=430px). Produk &
               keranjang dipindah ke sini supaya textarea tidak terjepit,
               tanpa menghilangkan fungsi apa pun. */}
-          {moreOpen ? (
+          {moreOpen && !voiceRecorderActive ? (
             <div className="flex items-center gap-ms-2 rounded-2xl border border-[var(--wa-field-border)] bg-[var(--wa-surface-2)] px-ms-2 py-1.5 min-[431px]:hidden">
               <ProductSharePopover
                 conversationId={conversationId}
@@ -2944,6 +2944,7 @@ function ChatRoomPage() {
               tombol kirim/voice bulat terpisah di kanan. Tombol kirim baru
               tampil dominan saat ada isi. */}
           <div className="flex items-end gap-ms-2">
+            {voiceRecorderActive ? null : (
             <div className="flex min-w-0 flex-1 items-end gap-0.5 rounded-3xl border border-[var(--wa-field-border)] bg-[var(--wa-surface-2)] px-1 py-0.5">
               <EmojiPickerPopover
                 disabled={chatBlocked}
