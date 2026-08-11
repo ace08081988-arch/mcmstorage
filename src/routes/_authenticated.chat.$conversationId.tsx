@@ -1581,7 +1581,7 @@ function ChatRoomPage() {
         />
       ) : (
       <header
-        className="wa-header z-20 flex shrink-0 items-center gap-ms-1 border-b px-1.5 py-1 shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_8%,transparent)] sm:gap-ms-2 sm:px-ms-2 sm:py-ms-2"
+        className="wa-header sticky top-0 z-20 flex shrink-0 items-center gap-0.5 border-b border-[var(--wa-border)] px-1 py-1.5 sm:gap-ms-1 sm:px-ms-2 sm:py-ms-2"
         style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.25rem)" }}
       >
         <Button
@@ -1589,7 +1589,7 @@ function ChatRoomPage() {
           size="icon"
           onClick={() => goBackOr(router, { to: "/chat" })}
           aria-label="Kembali"
-          className="h-10 w-10 shrink-0"
+          className="h-10 w-10 shrink-0 rounded-full"
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -1607,7 +1607,7 @@ function ChatRoomPage() {
             {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
           </div>
         )}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pl-1">
           <div className="flex items-center gap-ms-1">
             <div className="truncate text-ms-base font-semibold">
               {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
@@ -1646,22 +1646,11 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`
             )}
           </div>
-          {meta.data?.kind === "dm" && myId ? (
-            <div className="mt-0.5 flex min-w-0 max-w-full items-center sm:hidden">
-              <ChatHeaderDebtControls
-                myId={myId}
-                peerUserId={dmPeer?.peerUserId ?? null}
-                peerPhone={dmPeer?.peerPhone ?? null}
-                peerName={displayedPeerName}
-                conversationId={conversationId}
-              />
-            </div>
-          ) : null}
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
+          className="hidden h-10 w-10 shrink-0 rounded-full sm:inline-flex"
           aria-label="Cari pesan di percakapan"
           onClick={() => setQuickSearchOpen((v) => !v)}
         >
