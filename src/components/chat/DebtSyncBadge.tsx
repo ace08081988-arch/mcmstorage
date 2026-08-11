@@ -107,6 +107,7 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
         tone={tone}
         amount={amount}
         compactOnly
+        iconOnlyOnMobile
         interactive={false}
         title={
           tone === "empty"
