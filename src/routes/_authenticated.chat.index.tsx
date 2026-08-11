@@ -975,12 +975,12 @@ function ConvList({
     return <div className="rounded-lg border border-[var(--wa-border)] p-6">{empty}</div>;
   }
   return (
-    <div className="-mx-3 divide-y divide-[var(--wa-border)]/60">
+    <div className="-mx-3">
       <VirtualizedList
         cacheKey="chat-list"
         items={list}
         getKey={(c) => c.id}
-        estimateSize={76}
+        estimateSize={72}
         gap={0}
         // Semua state visual eksternal yang dibaca renderItem — tanpa ini,
         // toggle pilihan tidak mengubah checkbox/highlight karena identitas
