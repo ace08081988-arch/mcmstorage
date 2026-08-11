@@ -6,12 +6,12 @@
  *   node scripts/build-aab.mjs                       # varian full, release AAB
  *   node scripts/build-aab.mjs --variant chat        # varian Ace Chat
  *   node scripts/build-aab.mjs --debug               # bundleDebug (tanpa signing)
- *   node scripts/build-aab.mjs --skip-typecheck      # skip tsgo
+ *   node scripts/build-aab.mjs --skip-typecheck      # skip typecheck
  *   node scripts/build-aab.mjs --bump                # naikkan versi dulu (eksplisit)
  *
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
- *   2. Typecheck (tsgo --noEmit).
+ *   2. Typecheck (tsc --noEmit).
  *   3. Build web + cap sync (`apk:full` / `apk:chat` — sama scriptnya).
  *   4. Jalankan `./gradlew :app:bundleRelease` (atau bundleDebug).
  *   5. Cetak path .aab hasilnya.
@@ -136,8 +136,8 @@ if (!debugBundle) {
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
-  step("2/4  Typecheck (tsgo --noEmit)");
-  run("bunx", ["tsgo", "--noEmit"]);
+  step("2/4  Typecheck (tsc --noEmit)");
+  run("bunx", ["tsc", "--noEmit"]);
   console.log("  ✓ typecheck bersih");
 } else {
   step("2/4  Typecheck DILEWATI (--skip-typecheck)");

@@ -49,6 +49,7 @@ on:
     paths:
       - ".github/workflows/aab-release.yml"
       - "scripts/validate-keystore.mjs"
+      - "scripts/build-aab.mjs"
     tags:
       - "v*"
 
