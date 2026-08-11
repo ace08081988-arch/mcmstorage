@@ -54,6 +54,9 @@ const CAPACITOR_BUILD =
   process.env.CAPACITOR_BUILD === "1" || process.env.CAPACITOR_BUILD === "true";
 
 export default defineConfig({
+  // Build mobile tidak butuh bundle SSR Cloudflare/Nitro — TanStack Start
+  // memancarkan output statis ke `.output/public` yang dipakai Capacitor.
+  ...(CAPACITOR_BUILD ? ({ nitro: false } as const) : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
