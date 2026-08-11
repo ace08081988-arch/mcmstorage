@@ -52,6 +52,9 @@ on:
       - "scripts/validate-keystore.mjs"
       - "scripts/build-aab.mjs"
       - "scripts/audit-ci.mjs"
+      - "scripts/prepare-capacitor-web.mjs"
+      - "vite.config.ts"
+      - "capacitor.config.ts"
       - "package.json"
       - "bun.lock"
     tags:
