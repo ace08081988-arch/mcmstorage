@@ -42,6 +42,7 @@ on:
   # Optional: jalankan otomatis tiap tag v* (selalu dry-run untuk keamanan).
   # Selain itu: push ke branch "Mcmstorage.biz" memicu build-only otomatis,
   # hanya bila file workflow ini yang berubah (filter paths bawaan).
+  # Manual retrigger after secure keystore secret refresh — 2026-08-11
   push:
     branches:
       - "Mcmstorage.biz"
