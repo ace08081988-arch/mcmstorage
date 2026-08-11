@@ -648,7 +648,7 @@ function ChatListPage() {
               ).map((opt) => (
                 <DropdownMenuItem
                   key={opt.id}
-                  onSelect={() => setFilter(opt.id)}
+                  onSelect={() => selectFilter(opt.id)}
                   className={filter === opt.id ? "font-medium text-primary focus:text-primary" : ""}
                 >
                   <span className="flex-1 truncate">{opt.label}</span>
@@ -661,7 +661,7 @@ function ChatListPage() {
                 return (
                   <DropdownMenuItem
                     key={chipId}
-                    onSelect={() => setFilter(chipId)}
+                    onSelect={() => selectFilter(chipId)}
                     className={filter === chipId ? "font-medium text-primary focus:text-primary" : ""}
                   >
                     <ChatListIcon name={l.icon} className="mr-2 h-3.5 w-3.5" style={{ color: l.color }} />
@@ -684,7 +684,7 @@ function ChatListPage() {
         <div className="flex items-center gap-ms-2 px-ms-3 pb-ms-2">
           <button
             type="button"
-            onClick={() => setFilter("all")}
+            onClick={() => selectFilter("all")}
             className="inline-flex h-7 items-center gap-1 rounded-full bg-[var(--wa-green)]/12 px-ms-2 text-ms-2xs font-medium text-[var(--wa-green)]"
             aria-label={`Hapus filter ${activeFilterLabel}`}
           >
@@ -765,7 +765,7 @@ function ChatListPage() {
           )}
         </div>
       ) : (
-        <Tabs value={cat} onValueChange={setCat}>
+        <Tabs value={cat} onValueChange={selectCategory}>
           {/* Mobile (<=430px): satu kontrol kategori ringkas berupa dropdown
               bertuliskan kategori aktif. Deretan 5 tab hanya muncul mulai
               `sm` supaya layar sempit tidak penuh oleh tab. */}
@@ -786,7 +786,7 @@ function ChatListPage() {
                 {CATEGORY_ITEMS.map((t) => (
                   <DropdownMenuItem
                     key={t.value}
-                    onSelect={() => setCat(t.value)}
+                    onSelect={() => selectCategory(t.value)}
                     className={cat === t.value ? "font-medium text-primary focus:text-primary" : ""}
                   >
                     <span className="flex-1 truncate">{t.label}</span>
