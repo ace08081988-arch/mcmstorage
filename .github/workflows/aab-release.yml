@@ -57,6 +57,10 @@ on:
       - "capacitor.config.ts"
       - "package.json"
       - "bun.lock"
+      - "android/version.properties"
+      - "src/routes/_authenticated.chat.index.tsx"
+      - "src/routes/_authenticated.chat.$conversationId.tsx"
+      - "src/components/chat/**"
     tags:
       - "v*"
 
