@@ -75,18 +75,17 @@ export function ChatBottomNav() {
         visibility: keyboardOpen ? "hidden" : "visible",
       }}
     >
-      {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
+      {/* Indikator aktif — garis tipis yang meluncur di atas tab aktif. */}
       <span
         aria-hidden
         className={cn(
-          "pointer-events-none absolute bottom-1 left-0 h-1 rounded-full transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "pointer-events-none absolute top-0 left-0 h-0.5 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
           activeIndex >= 0 ? "opacity-100" : "opacity-0",
         )}
         style={{
           width: "25%",
           transform: `translateX(calc(${Math.max(activeIndex, 0)} * 100%))`,
-          background:
-            "linear-gradient(90deg, color-mix(in oklab, var(--wa-green) 70%, transparent), color-mix(in oklab, var(--wa-green) 40%, transparent))",
+          background: "var(--wa-green)",
         }}
       />
       {items.map(({ to, label, Icon, badge, badgeLoading }) => {
@@ -106,7 +105,7 @@ export function ChatBottomNav() {
             className={cn(
               // px-0.5 di base → cukup ruang untuk label "Pembaruan" pada
               // 360px tanpa memotong; naik ke px-1 mulai 400px.
-              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-ms-1 px-0.5 py-1 outline-none transition-colors duration-200 min-[400px]:px-1",
+              "group/tab relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 outline-none transition-colors duration-200 min-[400px]:px-1",
               "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
               active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
             )}
@@ -115,13 +114,13 @@ export function ChatBottomNav() {
               aria-hidden="true"
               data-nav-icon
               className={cn(
-                // Lebar pill ikon menyempit di 360px supaya keempat kolom
-                // tidak berdesakan; melebar lagi mulai 400px.
-                "relative grid h-7 w-10 place-items-center rounded-full transition-[background-color,transform] duration-200 min-[400px]:w-12",
-                active ? "bg-[var(--wa-green)]/15 scale-100" : "bg-transparent scale-95 group-hover/tab:scale-100",
+                // Pill ikon ringan; tanpa animasi skala supaya bar terasa
+                // tenang dan tidak "berdenyut" saat berpindah tab.
+                "relative grid h-6 w-10 place-items-center rounded-full transition-colors duration-200 min-[400px]:w-12",
+                active ? "bg-[var(--wa-green)]/12" : "bg-transparent",
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[22px] w-[22px]" strokeWidth={active ? 2.25 : 1.75} />
               {badgeLoading ? (
                 <span
                   aria-hidden="true"
