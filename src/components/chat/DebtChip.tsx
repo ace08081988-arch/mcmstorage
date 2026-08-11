@@ -55,13 +55,15 @@ export const DebtChip = forwardRef<
     amount?: number;
     /** Selalu tampilkan nominal penuh (tanpa versi ringkas). */
     compactOnly?: boolean;
+    /** Di layar sempit (<=430px) tampilkan ikon saja agar baris chat lega. */
+    iconOnlyOnMobile?: boolean;
     interactive?: boolean;
     title?: string;
     "aria-label"?: string;
     className?: string;
   } & React.ButtonHTMLAttributes<HTMLButtonElement>
 >(function DebtChip(
-  { tone, amount = 0, compactOnly = false, interactive = true, className = "", ...rest },
+  { tone, amount = 0, compactOnly = false, iconOnlyOnMobile = false, interactive = true, className = "", ...rest },
   ref,
 ) {
   const value = tone === "empty" || tone === "settled" ? 0 : amount;
@@ -99,8 +101,11 @@ export const DebtChip = forwardRef<
       {...rest}
     >
       <Wallet className="h-3 w-3 shrink-0" />
-      <span className="shrink-0">{TONE_LABEL[tone]}</span>
-      <span ref={amountRef} className="min-w-0 truncate font-mono font-normal">
+      <span className={`shrink-0 ${iconOnlyOnMobile ? "hidden min-[431px]:inline" : ""}`}>{TONE_LABEL[tone]}</span>
+      <span
+        ref={amountRef}
+        className={`min-w-0 truncate font-mono font-normal ${iconOnlyOnMobile ? "hidden min-[431px]:inline" : ""}`}
+      >
         {compactOnly ? (
           rupiahCompact(value)
         ) : (
