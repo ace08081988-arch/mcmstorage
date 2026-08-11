@@ -30,6 +30,10 @@ import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { createInterface } from "node:readline";
 
+// Dideklarasikan di atas: dipakai oleh rl() dan cleanup `__rl?.close()`
+// yang berjalan sebelum blok helper di bawah (hindari temporal dead zone).
+let __rl;
+
 const argv = process.argv.slice(2);
 function flag(name) {
   const i = argv.indexOf(name);
@@ -323,7 +327,6 @@ function truncate(s, n) {
 }
 
 // ─── Interactive prompt helpers ──────────────────────────────────────
-let __rl;
 function rl() {
   if (!__rl) __rl = createInterface({ input: process.stdin, output: process.stdout });
   return __rl;

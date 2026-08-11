@@ -48,6 +48,7 @@ on:
       - "Mcmstorage.biz"
     paths:
       - ".github/workflows/aab-release.yml"
+      - "scripts/validate-keystore.mjs"
     tags:
       - "v*"
 
