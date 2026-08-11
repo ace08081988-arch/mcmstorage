@@ -1045,7 +1045,7 @@ function ConvList({
         cacheKey="chat-list"
         items={list}
         getKey={(c) => c.id}
-        estimateSize={72}
+        estimateSize={64}
         gap={0}
         // Semua state visual eksternal yang dibaca renderItem — tanpa ini,
         // toggle pilihan tidak mengubah checkbox/highlight karena identitas
@@ -1300,7 +1300,7 @@ function ConvRow({
   );
 
   const avatar = (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-ms-sm font-semibold uppercase text-[var(--wa-text-muted)]">
+    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-ms-sm font-semibold uppercase text-[var(--wa-text-muted)]">
       {(conv.display_title ?? "?").trim().charAt(0) || "?"}
     </div>
   );
