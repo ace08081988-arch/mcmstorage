@@ -152,6 +152,16 @@ function ChatListPage() {
     }
   }, [routeSearch.filter]);
   const { data: chatLists } = useChatLists();
+  // Filter chip dan kategori tab saling eksklusif supaya badge filter aktif
+  // selalu mencerminkan isi daftar yang benar-benar tampil.
+  const selectFilter = useCallback((next: string) => {
+    setFilter(next);
+    setCat("all");
+  }, []);
+  const selectCategory = useCallback((next: string) => {
+    setCat(next);
+    setFilter("all");
+  }, []);
   const { data: allListMembers } = useAllChatListMembers();
   // Mode seleksi multi-percakapan (tekan lama untuk aktif).
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
