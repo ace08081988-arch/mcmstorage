@@ -220,7 +220,7 @@ jobs:
           # keystore.properties: storeFile + alias saja. Password tetap dari env
           # var supaya tidak pernah tersimpan di file yang di-archive.
           cat > android/keystore.properties <<EOF
-          storeFile=mcm.keystore
+          storeFile=$GITHUB_WORKSPACE/android/mcm.keystore
           keyAlias=$KEYSTORE_ALIAS
           EOF
           echo "Keystore siap ($(stat -c%s android/mcm.keystore) bytes)."
