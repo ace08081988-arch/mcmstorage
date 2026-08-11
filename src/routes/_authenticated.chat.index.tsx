@@ -337,6 +337,19 @@ function ChatListPage() {
     currentVisibleIds.length > 0 &&
     currentVisibleIds.every((id) => selectedIds.has(id));
 
+  // Label filter aktif — dipakai untuk aria-label tombol filter dan chip
+  // "filter aktif" kecil di bawah kolom pencarian.
+  const activeFilterLabel = useMemo(() => {
+    if (filter === "unread") return "Belum dibaca";
+    if (filter === "group") return "Grup";
+    if (filter === "favorite") return "Favorit";
+    if (filter.startsWith("list:")) {
+      const id = filter.slice("list:".length);
+      return (chatLists ?? []).find((l) => l.id === id)?.name ?? "Daftar";
+    }
+    return "";
+  }, [filter, chatLists]);
+
   const handleBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
