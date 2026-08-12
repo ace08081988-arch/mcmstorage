@@ -4306,6 +4306,7 @@ export type Database = {
         Args: { _grant: boolean; _target: string }
         Returns: boolean
       }
+      apk_object_is_published: { Args: { _name: string }; Returns: boolean }
       are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
       cancel_friend_request: {
