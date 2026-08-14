@@ -140,3 +140,8 @@ Template yang diwajibkan:
 
 Jangan mengedit komentar secara manual — jalankan ulang generatornya, lalu cek
 lokal dengan `bun run check:dep-changelog dep-changelog.md`.
+
+## Catatan CI (14 Agu 2026)
+
+Override `nanoid` dikunci di `3.3.18` (GHSA-2v37-7h3g-55p8). Step *Audit dependensi*
+di workflow `ci-typecheck-build.yml` harus tetap hijau setelah perubahan ini.
