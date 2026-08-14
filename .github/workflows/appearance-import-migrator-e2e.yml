@@ -53,10 +53,10 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Build app
-        run: bun run build
+        run: bun run build:e2e
 
       - name: Start preview server
-        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+        run: bun run serve:e2e -- 4173 &
 
       - name: Wait for server
         run: |
