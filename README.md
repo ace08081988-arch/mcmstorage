@@ -1,320 +1,285 @@
-# Ace Storage
+# Helpers E2E — APK Availability Stub
 
-Aplikasi gudang / retail internal untuk BAROKAH RIZKI / Toko Kifa. Ace Storage menggantikan koordinasi manual WhatsApp dengan satu alat yang membuat Ace tetap menguasai angka stok, hutang, dan produktivitas pegawai.
+Dokumen ini merangkum penggunaan helper `assertNoAdditionalRequests`, `assertQuiescent`, dan `assertCounterStable` dari `tests/e2e/_apk-availability-stub.ts`. Helper-helper ini dipakai untuk menangkap kebocoran request (leak) secara konsisten di test-test yang memicu APK refresh atau copy chat.
+
+> **Konsep utama**: semua helper bekerja **event-based** — tanpa polling `expect.poll` atau `waitForTimeout` sebagai sinkronisasi. `windowMs` hanyalah bounded upper-bound untuk membuktikan *absence* (tidak ada request tambahan), bukan untuk menunggu state UI.
 
 ---
 
-## E2E / APK
+## Pasang stub terlebih dulu
 
-Bagian ini menjelaskan cara membaca blok project `apk-*` di `playwright.config.ts` dan memilih mode guard yang tepat untuk setiap skenario APK.
+```ts
+import { installApkStub } from "./_apk-availability-stub";
 
-### Dua mode guard APK
-
-Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada dua tingkat perlindungan:
-
-| Mode | Pasang | Cakupan | Kapan dipakai |
-|---|---|---|---|
-| **terminalGuard-only** | `installApkStub(page)` | Hanya `getApkVariantDetail` (chat + storage) | Flow APK murni: hanya mount, refresh, quiescent, atau refetch varian |
-| **full guards** | `installApkStub(page)` + `installServerFnPassthroughGuard(page)` | Semua server function (`**/_serverFn/**`) | Flow APK yang juga memicu server function lain, misalnya copy/export link chat |
-
-`terminalGuard()` tidak pernah digantikan oleh passthrough guard. Keduanya saling melengkapi: terminal guard menangkap leak jangka panjang pada `getApkVariantDetail`, sementara passthrough guard menangkap kebocoran round-trip server function lain selama aksi user.
-
-### Beda per skenario APK
-
-| Skenario | Mode | Alasan |
-|---|---|---|
-| Mount halaman tile APK tanpa aksi user | `terminal` | Hanya fetch awal dua varian; tidak ada server function lain |
-| Tap refresh satu varian | `terminal` | Aksi memicu `getApkVariantDetail` lewat `trackedClick` — masih cakupan APK |
-| Tap refresh semua varian + cross-variant guard | `terminal` | Semua request masuk ke `getApkVariantDetail`; `terminalGuard()` cukup untuk membuktikan zero-leak |
-| Copy / salin link APK Chat yang memanggil server function selain `getApkVariantDetail` | `full` | Perlu `installServerFnPassthroughGuard` agar round-trip copy/export tidak bocor |
-| Form validasi `minSupported` | *form-only* | Bukan flow APK, tidak memakai `installApkStub`, tidak memakai `terminalGuard` |
-
-### Ringkasan keputusan mode dan cakupan request
-
-Gunakan pohon keputusan ini saat menulis spec baru:
-
-```text
-Apakah spec menguji tile APK / getApkVariantDetail?
-├── TIDAK  → form-only (tidak memakai installApkStub)
-└── YA     → Apakah flow user juga memicu server function LAIN
-             (copy/export/toggle/link/chat/...)?
-             ├── YA  → full (installApkStub + installServerFnPassthroughGuard)
-             └── TIDAK → terminal (installApkStub saja)
-```
-
-Dampak mode terhadap request yang diverifikasi:
-
-| Mode | Request yang dijaga | Guard akhir | Dampak bila salah pilih |
-|---|---|---|---|
-| `terminal` | Hanya `getApkVariantDetail` (varian `chat` + `storage`) | `stub.terminalGuard()` | Kebocoran server function non-APK (copy/export/dll) lolos tanpa terdeteksi. |
-| `full` | Semua server function (`**/_serverFn/**`) + `getApkVariantDetail` | `stub.terminalGuard()` + `passthrough.assertNoAdditionalRequests` | Lebih berat (passthrough guard memantau semua RPC), tapi menangkap leak di seluruh server function. |
-| `form-only` | Tidak ada stub APK; fokus assertion UI / validasi form | (tidak memakai apk-stub / terminalGuard) | Memasang `installApkStub` di spec form hanya memperlambat dan membuat tag `Guards` tidak valid. |
-
-**Aturan penting:** `terminalGuard()` TIDAK pernah digantikan passthrough guard. Di mode `full`, kedua guard wajib ada — terminal guard untuk leak APK jangka panjang, passthrough guard untuk leak server function di luar APK. Mode default adalah `terminal`; naikkan ke `full` hanya ketika flow benar-benar menyentuh server function lain.
-
-### Tabel pemetaan skenario APK aktual
-
-<!-- APK_TABLE:START (generated — jangan edit manual) -->
-
-> Dihasilkan otomatis oleh `bun run e2e:apk:table` dari header project block APK di `playwright.config.ts` + deteksi mode di setiap spec (aturan sama dengan `bun run e2e:apk:validate`). Jangan edit blok ini secara manual — jalankan generator ulang.
-
-| Spec | Skenario | Mode | Guards checklist (aktual) |
-|---|---|---|---|
-| <a id="apk-scenario-availability-refresh-storage"></a>`apk-availability-refresh-storage.spec.ts` | Tombol <DownloadStorageApkShortcut> — idle "Belum tersedia" → tap ikon refresh Storage → aktif "Unduh APK Storage". Hanya flag Storage di-flip; flag Chat sengaja dibiarkan kosong. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.storage=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
-| <a id="apk-scenario-availability-refresh"></a>`apk-availability-refresh.spec.ts` | Tombol pintas Pengaturan — alur idle "Belum tersedia" → tap ikon refresh varian Chat → state aktif "Unduh APK Chat". | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.chat=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
-| <a id="apk-scenario-example-terminal-only"></a>`apk-example-terminal-only.spec.ts` | Mount kedua varian kosong → refetch Chat via trackedClick → state aktif "Unduh APK Chat". | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.chat=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
-| <a id="apk-scenario-min-validate-form"></a>`apk-min-validate-form.spec.ts` | Form validasi `minSupported` di Pengaturan APK. | *form-only* | (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard). |
-| <a id="apk-scenario-mount-quiescent"></a>`apk-mount-quiescent.spec.ts` | Mount murni — buka /lovable/visual/apk-availability-shortcuts dengan kedua varian merespons kosong; tidak ada aksi user. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed (tidak ada trackedClick — mount-only) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
-| <a id="apk-scenario-refresh-single-refetch"></a>`apk-refresh-single-refetch.spec.ts` | Tap refresh Storage sekali → observasi servedCount & request count untuk kedua varian. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.storage=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
-
-<!-- APK_TABLE:END -->
-
-**Cara membaca tabel:** kolom `Mode` menampilkan mode aktual hasil deteksi validator (`installApkStub` / `installServerFnPassthroughGuard`) di setiap spec. Kolom `Guards checklist (aktual)` disalin apa adanya dari header project block APK di `playwright.config.ts` — sumber yang sama dengan `bun run e2e:apk:validate`. Untuk memperbarui tabel setelah menambah / mengubah spec, jalankan `bun run e2e:apk:table` (atau `bun run e2e:apk:table:check` di CI untuk mendeteksi drift).
-
-### Arti setiap item checklist Guards
-
-Setiap project block `apk-*` di `playwright.config.ts` wajib memuat kolom `Guards` dengan checklist yang sesuai mode. Validator (`bun run e2e:apk:validate`) memastikan checklist tidak boleh kontradiksi dengan isi spec.
-
-| Item | Mode | Arti | Contoh singkat |
-|---|---|---|---|
-| `primeInitial + assertPrimed` | terminal / full | Respons untuk fetch awal di-enqueue SEBELUM `page.goto()`, dan setup sudah benar-benar lengkap sebelum navigasi. Tanpa ini test bisa hang karena waiter tidak pernah di-fulfill. | ```ts
-stub.primeInitial();
+const stub = await installApkStub(page);
+stub.primeInitial([], []);  // chat & storage, masing-masing tanpa release
 stub.assertPrimed();
-await page.goto(URL);
-``` |
-| `waitForServed` | terminal / full | Sinkronisasi deterministik: tunggu handler memberi respons untuk fetch awal sebelum assertion UI. Menghindari race antara render React dan data stub. | ```ts
-await stub.waitForServed("chat", 1);
-await stub.waitForServed("storage", 1);
-// baru assert label idle
-await expect(chatDl.getByText("Belum tersedia")).toBeVisible();
-``` |
-| `trackedClick(expected.<variant>=N)` | terminal / full | Setiap tap yang memicu refetch dibungkus guard per-aksi. `expected` sekaligus jadi regression check: kalau tap tiba-tiba tidak memicu request, test gagal. | ```ts
-stub.enqueue("chat", [makeRelease("chat")]);
-await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
-``` |
-| `trackedAction(...)` | terminal / full | Sama seperti `trackedClick`, tetapi untuk aksi non-klik: keyboard, drag, focus, dsb. | ```ts
-await stub.trackedAction(
-  async () => { await page.keyboard.press("Enter"); },
-  { expected: { storage: 1 } },
+await page.goto("/lovable/visual/apk-availability-shortcuts");
+```
+
+Setiap test yang berinteraksi dengan APK tile wajib memasang stub ini dan mengisi respons awal (`primeInitial`) sebelum `page.goto`, agar initial fetch tidak race dengan variabel flag yang di-flip manual.
+
+---
+
+## `assertNoAdditionalRequests` — dua mode pemakaian
+
+### 1. Standalone — guard di akhir aksi
+
+Snapshot counter diambil saat helper dipanggil, lalu diverifikasi bahwa tidak ada request masuk ke stub dalam trailing window.
+
+```ts
+await refreshButton.click();
+await stub.waitForServed("storage", 2);
+await stub.assertNoAdditionalRequests({ variant: "storage", windowMs: 500 });
+```
+
+Bila `variant` diabaikan, helper memeriksa **chat + storage** sekaligus — cocok sebagai guard akhir test.
+
+```ts
+import { APK_STUB_TERMINAL_WINDOW_MS } from "./_helpers/apk-stub-timing";
+
+await stub.assertNoAdditionalRequests({ windowMs: APK_STUB_TERMINAL_WINDOW_MS });
+```
+
+### 2. Pembungkus aksi — cek kebocoran selama aksi
+
+Wrap aksi UI dengan helper; counter di-snapshot **sebelum** aksi dijalankan, lalu diverifikasi selama aksi + trailing window.
+
+```ts
+import { APK_STUB_PER_ACTION_WINDOW_MS } from "./_helpers/apk-stub-timing";
+
+await stub.assertNoAdditionalRequests(
+  async () => { await refreshButton.click(); },
+  { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
 );
-``` |
-| `assertQuiescent` | terminal / full | Setelah state aktif tercapai, verifikasi handler benar-benar idle selama window waktu tertentu. Menangkap polling / interval / refetch-on-focus. | ```ts
-await stub.assertQuiescent("chat", { windowMs: 1000, stableTicks: 5 });
-await stub.assertQuiescent("storage", { windowMs: 500, stableTicks: 5 });
-``` |
-| `terminalGuard()` | terminal / full | Guard akhir di penghujung spec dengan window default `APK_STUB_TERMINAL_WINDOW_MS`. Membuktikan kedua varian bebas leak jangka panjang. | ```ts
-await stub.terminalGuard();
-``` |
-| `passthrough.assertNoAdditionalRequests` | full | Tambahan dari `installServerFnPassthroughGuard`. Memastikan tidak ada server function tak terduga yang terpanggil di luar whitelist selama aksi copy/export. | ```ts
-const passthrough = await installServerFnPassthroughGuard(page, {
-  whitelist: ["getApkVariantDetail", "getChatCopyLink"],
+```
+
+Pola ini sangat berguna untuk membuktikan bahwa aksi pada varian A tidak men-trigger request untuk varian B:
+
+```ts
+// Aksi storage tap tidak boleh mengirim request chat.
+await stub.assertNoAdditionalRequests(
+  async () => { await storageTile.getByRole("button", { name: "Periksa" }).click(); },
+  { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+```
+
+---
+
+## Opsi
+
+| Opsi | Tipe | Default | Keterangan |
+|------|------|---------|------------|
+| `variant` | `"chat" \| "storage"` | keduanya | Batasi asersi ke satu varian. |
+| `windowMs` | `number` | `500` | Trailing window (ms) setelah aksi/sejak snapshot. |
+| `expected` | `{ chat?: number; storage?: number }` | `{ chat: 0, storage: 0 }` | Jumlah request per varian yang memang diharapkan masuk. |
+| `ignore` | `(info: ApkStubIgnoreInfo) => boolean` | — | Predikat kustom untuk mengabaikan request tertentu. |
+
+### `expected` — whitelist kuantitatif
+
+Cocok kalau test memang tahu berapa request boleh masuk:
+
+```ts
+// Tap ini boleh memicu tepat 1 refetch storage; chat harus tetap 0.
+await stub.assertNoAdditionalRequests(
+  async () => { await refreshButton.click(); },
+  { expected: { storage: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+```
+
+Perilaku:
+- Request ke-N sampai `expected[variant]` diabaikan.
+- Request lebih dari kuota = **leak** → test gagal.
+- Request kurang dari kuota = juga gagal (regresi diam-diam).
+
+### `ignore` — whitelist kualitatif
+
+Dievaluasi setelah `expected`. Return `true` berarti request ini diizinkan.
+
+```ts
+await stub.assertNoAdditionalRequests({
+  ignore: (info) => info.variant === "chat" && info.nthSinceSnapshot <= 2,
+  windowMs: 750,
 });
-// ... skenario APK + copy/export ...
-await passthrough.assertNoAdditionalRequests();
-``` |
-| `tidak memakai apk-stub / terminalGuard` | form-only | Penanda eksplisit bahwa spec ini bukan flow `getApkVariantDetail` dan tidak memasang stub APK. | `// Guards : spec form murni — tidak memakai apk-stub / terminalGuard` |
-| `(mode: terminal)` | terminal | Penanda bahwa spec hanya memakai `installApkStub` tanpa `installServerFnPassthroughGuard`. | `// Guards : ... (mode: terminal)` |
-| `(mode: full)` | full | Penanda bahwa spec memasang `installServerFnPassthroughGuard` selain `installApkStub`. | `// Guards : ... (mode: full)` |
-### Catatan tentang mode dan konsekuensi jika guard tidak terpenuhi
-
-Mode yang tertera di kolom `Guards` bukan sekadar label; dia merefleksikan setup stub yang benar-benar dipasang di spec. Jika isi spec tidak sesuai tag-nya, validator (`bun run e2e:apk:validate`) akan langsung gagal di CI.
-
-**Mode `terminal`** berarti spec hanya memasang `installApkStub`. Semua request yang muncul di test — baik fetch awal, refetch, maupun kebocoran polling — ditangani dan dihitung oleh stub APK. Konsekuensi jika guard wajib tidak terpenuhi:
-
-- Tanpa `primeInitial + assertPrimed` sebelum `page.goto()`: waiter fetch awal tidak punya respons, test hang atau gagal dengan timeout tanpa jejak yang jelas.
-- Tanpa `waitForServed`: assertion UI bisa jalan sebelum React render state kosong, menghasilkan flake yang sulit didebug.
-- Tanpa `trackedClick` / `trackedAction` untuk aksi refetch: tap yang tidak memicu request tidak terdeteksi; regresi "tombol refresh mati" lolos.
-- Tanpa `assertQuiescent`: polling background, refetch-on-focus, atau interval kecil bisa lolos dan membuat test green padahal aplikasi masih ngomong ke server.
-- Tanpa `terminalGuard()` di akhir: leak jangka panjang pada `getApkVariantDetail` (satu atau kedua varian) tidak tertangkap.
-
-**Mode `full`** berarti spec memasang `installApkStub` DAN `installServerFnPassthroughGuard`. Mode ini wajib kalau aksi user juga memicu server function di luar `getApkVariantDetail`, misalnya copy/export link chat. Konsekuensi jika guard wajib tidak terpenuhi:
-
-- Tanpa `installServerFnPassthroughGuard` atau tanpa `passthrough.assertNoAdditionalRequests`: round-trip server function non-APK (copy, export, toggle) bisa bocor tanpa terdeteksi.
-- Tanpa `passthrough.dispose()` di akhir (atau setelah assert): guard tetap menangkap request di spec berikutnya dan menyebabkan kegagalan yang sebenarnya bukan regresi target.
-- Mode `full` TIDAK menghapus kewajiban `terminalGuard()`. Kedua guard harus ada: terminal guard untuk leak APK, passthrough guard untuk leak server function lain.
-
-**Mode `form-only`** berarti spec tidak memakai `installApkStub` sama sekali. Jika kolom `Guards` tidak menyebut eksplisit "tidak memakai apk-stub / terminalGuard", validator akan menolak karena bisa terjadi spec form yang secara tidak sengaja diberi tag mode stub.
-
-Singkatnya: tag mode harus jujur terhadap kode, dan setiap checklist item memiliki satu kegagalan spesifik yang akan lolos kalau item itu dihapus. Itulah sebabnya validator memeriksa checklist secara ketat di CI.
-
-### Contoh log kegagalan guard (hipotetis)
-
-Berikut dua contoh output log bila spec APK gagal di guard. Log ini tidak nyata — dibuat untuk memperjelas *guard mana* yang menolak dan *mengapa*.
-
-#### 1. `terminalGuard()` menangkap leak jangka panjang
-
-```text
-[apk-refresh-single-refetch] trackedClick(storageRefresh): ok (expected.storage=1, actual=1)
-[apk-refresh-single-refetch] assertQuiescent(storage): ok
-[terminalGuard] FAIL: getApkVariantDetail("storage") fired 1 request during terminal window (expected 0)
-[terminalGuard] Request: POST **/_serverFn/getApkVariantDetail  { variant: "storage" }
-[terminalGuard] Hint: disable polling, refetch-on-focus, or interval in the component.
 ```
 
-**Guard yang gagal:** `stub.terminalGuard()` di akhir spec.
+Field `info`:
+- `variant`: varian request yang baru masuk.
+- `nthSinceSnapshot`: nomor request untuk varian tersebut sejak snapshot (1-based).
+- `totalRequested`: total `requestedCount` untuk varian setelah request ini masuk.
 
-**Alasannya:** Setelah semua aksi user selesai dan state aktif sudah tercapai, masih ada request `getApkVariantDetail(storage)` yang firing di window terminal guard. Penyebab umum: polling background, `refetchOnWindowFocus`, atau timer yang belum di-cleanup. Tanpa `terminalGuard()`, leak ini akan lolos karena test sudah dianggap sukses setelah assertQuiescent.
+---
 
-#### 2. `passthrough.assertNoAdditionalRequests()` menangkap RPC non-APK tak terduga
+## Output saat gagal
 
-```text
-[copy-chat-apk-aria-label] terminalGuard: ok
-[passthrough] FAIL: unexpected server function call during action window
-[passthrough] Request: POST **/_serverFn/toggleUserPreference  (not in whitelist)
-[passthrough] Whitelist: ["getApkVariantDetail", "getChatCopyLink"]
-[passthrough] Hint: add expected calls to whitelist or remove the side effect.
+Helper selalu menampilkan:
+1. Fase kegagalan (`selama aksi` atau `trailing Nms`).
+2. Daftar request bocor dengan varian, nomor, dan waktu relatif (ms).
+3. Daftar request yang diizinkan beserta alasannya (`expected` atau `ignore`).
+4. Counter sebelum vs sesudah untuk tiap varian.
+5. 20 event log terakhir dari stub.
+
+Contoh pesan error:
+
+```
+[apk-stub] assertNoAdditionalRequests GAGAL (trailing 500ms): 1 request bocor [chat#1@+120ms]; 1 diizinkan [storage#1(expected)]. chat: req 0→1 (expected=0), served=0 | storage: req 1→1 (expected=1), served=1
+  Event log terakhir:
+  [+  12ms] chat    request  req=0 served=0 queue=0 hold=0 · getApkVariantDetail
+  ...
 ```
 
-**Guard yang gagal:** `passthrough.assertNoAdditionalRequests()` di mode `full`.
+---
 
-**Alasannya:** Saat aksi user (mis. menyalin link APK Chat) berlangsung, aplikasi memicu server function `toggleUserPreference` yang tidak masuk whitelist. Ini berarti ada side effect non-APK yang ikut terpanggil — bisa jadi karena komponen share/toggle men-trigger state global, atau karena ada panggilan RPC tersembunyi. Mode `full` menangkapnya; mode `terminal` tidak akan melihatnya karena cakupannya hanya `getApkVariantDetail`.
+## Menggunakan `assertQuiescent` dan `assertCounterStable` bersama `assertNoAdditionalRequests`
 
-### Perintah yang sering dipakai
+Semua tiga helper dibuat **di atas satu sumber kebenaran yang sama** di `tests/e2e/_apk-availability-stub.ts`:
 
-```bash
-# Jalankan semua spec APK sekaligus
-bun run test:e2e:apk
+- `assertNoAdditionalRequests` langsung memanggil `runNoAdditionalGuard`.
+- `assertQuiescent` memanggil `runNoAdditionalGuard` untuk fase jendela `windowMs`, lalu memanggil `verifyCounterStable` untuk beberapa event-loop ticks.
+- `assertCounterStable` langsung memanggil `verifyCounterStable`.
 
-# Mode terminal (hanya APK stub)
-bun run test:e2e:apk:terminal
+Jadi **tidak perlu menulis ulang logika trailing-window / counter-stable di spec**. Cukup pilih helper yang semantiknya paling pas, dan biarkan implementasi bersama yang menangani listener, timeout, serta format error.
 
-# Mode full (APK stub + passthrough server function)
-bun run test:e2e:apk:full
+### Kapan pakai yang mana?
 
-# Regenerasi scaffold (dry-run)
-bun run e2e:apk:regen
+| Helper | Gunakan saat | Jangan pakai untuk |
+|--------|--------------|--------------------|
+| `assertNoAdditionalRequests(action, opts)` | Membungkus aksi UI — cek tidak ada request bocor **selama** aksi + trailing window. | Menggantikan `waitForServed` / `waitForIdle`. |
+| `assertNoAdditionalRequests(opts)` | Guard standalone di akhir fase / akhir spec — snapshot sekarang, cek trailing window. | Menunggu request selesai (tunggu dulu dengan `waitForServed`). |
+| `assertQuiescent(variant)` | Setelah state aktif / idle tercapai — cek handler kosong + tidak ada request tambahan + counter stabil. | Menggantikan guard per-aksi (lebih lambat, tidak perlu di setiap tap). |
+| `assertCounterStable(variant)` | Verifikasi cepat bahwa counter tidak bergerak setelah semua assertion — tangkap task tertunda. | Menggantikan `assertNoAdditionalRequests` jika butuh jendela wall-clock. |
 
-# Regenerasi mode terminal/full
-bun run e2e:apk:regen:terminal
-bun run e2e:apk:regen:full
+### Pola kombinasi yang direkomendasikan
 
-# Regenerasi dan langsung tulis (apply)
-bun run e2e:apk:regen:apply
+#### A. Per aksi + quiescent + terminal guard
 
-# Validasi header & checklist Guards
-bun run e2e:apk:validate
-
-# Scaffold satu spec baru
-node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
-node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
-```
-
-### Perintah npm
-
-Jika proyek ini dijalankan tanpa `bun`, pakai perintah `npm` di bawah. Semua script di atas tetap memanggil runner Playwright melalui `node`, sehingga hasilnya identik:
-
-```bash
-# Jalankan semua spec APK sekaligus
-npm run test:e2e:apk
-
-# Jalankan hanya spec APK mode terminal
-npm run test:e2e:apk:terminal
-
-# Jalankan hanya spec APK mode full
-npm run test:e2e:apk:full
-
-# Jalankan satu spec langsung via Playwright (contoh: mode terminal)
-npx playwright test --project=apk-mount-quiescent-e2e
-
-# Jalankan satu spec langsung via Playwright (contoh: mode full)
-npx playwright test --project=copy-chat-apk-aria-label-e2e
-
-# Regenerasi, validasi, dan scaffold via npm
-npm run e2e:apk:regen
-npm run e2e:apk:regen:terminal
-npm run e2e:apk:regen:full
-npm run e2e:apk:regen:apply
-npm run e2e:apk:validate
-
-# Scaffold satu spec baru
-node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
-node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
-```
-
-### Menjalankan E2E per mode
-
-Pilih perintah sesuai mode spec yang ingin diuji. Mode `form-only` tidak punya script khusus karena spec tersebut tidak memakai stub APK; jalankan lewat nama project Playwright.
-
-| Mode | Ciri spec | Jalankan semua spec mode ini | Jalankan satu spec contoh |
-|---|---|---|---|
-| `terminal` | Hanya memanggil `installApkStub`, tanpa `installServerFnPassthroughGuard` | `bun run test:e2e:apk:terminal` | `npx playwright test --project=apk-mount-quiescent-e2e` |
-| `full` | Memasang `installApkStub` + `installServerFnPassthroughGuard` | `bun run test:e2e:apk:full` | `npx playwright test --project=copy-chat-apk-aria-label-e2e` |
-| `form-only` | Tidak memakai `installApkStub` sama sekali | `npx playwright test --project=apk-min-validate-form-e2e` | `npx playwright test --project=apk-min-validate-form-e2e` |
-
-**Tips praktis:**
-
-- Untuk melihat daftar project dan modenya, buka `playwright.config.ts` atau jalankan `npx playwright test --list`.
-- Untuk debug satu spec dengan browser terlihat, tambahkan flag `--headed` atau `--debug`:
-  ```bash
-  npx playwright test --project=apk-mount-quiescent-e2e --headed
-  ```
-- Mode `full` sering lebih lambat karena memasang guard pada semua server function; jalankan hanya saat mengubah flow copy/export/link.
-
-### Troubleshooting validasi (`bun run e2e:apk:validate`)
-
-Validator gagal umumnya karena project block di `playwright.config.ts` tidak cocak dengan isi spec. Berikut penyebab paling sering dan cara memperbaikinya.
-
-| Pesan error / gejala | Penyebab | Cara perbaiki |
-|---|---|---|
-| `project "...-e2e" tidak ditemukan di playwright.config.ts` | Spec ada tapi project block belum ditambahkan, atau nama project tidak cocak (harus `<flow>-e2e`). | Tambahkan project block di `playwright.config.ts`, atau jalankan `bun run e2e:apk:regen:apply` untuk sinkron ulang. |
-| `kolom "// Skenario :" hilang` / `kolom "// Guards :" kosong` | Header project block tidak memuat keempat kolom wajib: `Skenario`, `Harness`, `Tujuan`, `Guards`. | Lengkapi komentar header di atas `name:` project block; contoh format ada di template. |
-| `kolom "// Guards :" masih memuat placeholder TODO` | Header baru dibuat scaffold dan belum diisi. | Ganti teks `TODO — ...` / `TODO(scaffold)` dengan deskripsi riil. |
-| `spec form-only ... Guards harus eksplisit menyebut "tidak memakai apk-stub / terminalGuard"` | Spec tidak memanggil `installApkStub`, tapi kolom `Guards` tidak mencantumkan penanda `form-only`. | Tambahkan kalimat seperti `// spec form murni — tidak memakai apk-stub / terminalGuard` di kolom `Guards`. |
-| `spec form-only tidak boleh memuat "(mode: terminal)"` | Spec form diberi tag mode terminal/full padahal tidak memakai stub. | Hapus `(mode: terminal)` / `(mode: full)` dari kolom `Guards` form-only. |
-| `Guards tidak memuat penanda "(mode: terminal)" / "(mode: full)"` | Spec memakai `installApkStub` tapi `Guards` tidak mencantumkan tag mode. | Tambahkan `(mode: terminal)` bila hanya `installApkStub`, atau `(mode: full)` bila juga ada `installServerFnPassthroughGuard`. |
-| `Guards menandai "(mode: terminal)" tapi spec sebenarnya "full"` | Tag mode di `Guards` tidak sesuai dengan setup stub di spec. | Perbaiki tag mode, atau ubah spec: tambah/hapus `installServerFnPassthroughGuard` sesuai flow. |
-| `Guards tidak memuat penanda primeInitial/assertPrimed/waitForServed/assertQuiescent/terminalGuard()` | Checklist dasar stub belum lengkap. | Tambahkan item yang hilang ke kolom `Guards` (hanya penanda teks, tidak harus kode runnable). |
-| `mode full: Guards WAJIB memuat "✓ passthrough.assertNoAdditionalRequests"` | Spec `full` memakai `installServerFnPassthroughGuard` tapi `Guards` tidak mencantumkan assert tersebut. | Tambahkan `✓ passthrough.assertNoAdditionalRequests` di kolom `Guards`. |
-| `mode terminal: Guards TIDAK boleh memuat "passthrough.assertNoAdditionalRequests"` | Spec terminal tidak memakai passthrough guard, tapi kolom `Guards` mencantumkannya. | Hapus `passthrough.assertNoAdditionalRequests` dari `Guards`. |
-| `README.md drift: tabel pemetaan APK sudah tidak sinkron` (dari `e2e:apk:table:check`) | Tabel di README beda dengan hasil generator. | Jalankan `bun run e2e:apk:table` untuk regenerate tabel. |
-
-**Cara debug cepat:**
-
-1. Lihat mode aktual spec: `grep -E "installApkStub|installServerFnPassthroughGuard" tests/e2e/apk-<flow>.spec.ts`.
-2. Lihat header project block: `grep -n -A8 "name: \"apk-<flow>-e2e\"" playwright.config.ts`.
-3. Setelah mengubah spec atau header, jalankan `bun run e2e:apk:validate` lagi, lalu `bun run e2e:apk:table` bila README perlu diperbarui.
-
-### Template copy-paste header spec
-
-Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas setiap `tests/e2e/apk-<flow>.spec.ts`. Ganti `<flow>` dengan nama file tanpa awalan `apk-` dan tanpa `.spec.ts` (mis. `availability-refresh-storage`), ganti `<URL>` dan teks TODO dengan nilai riil. Penanda `Guards` menggunakan format yang sama dengan validator / tabel README.
-
-#### Mode `terminal` (hanya `installApkStub`)
+Pola paling umum: setiap tap dibungkus leak-guard, lalu setelah semua state aktif diverifikasi, pastikan tidak ada request tambahan sama sekali.
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow>
-// Skenario : <aksi user yang diuji, mis. tap refresh Chat dari idle>
-// Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
-// Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak getApkVariantDetail>
-// Guards   : ✓ primeInitial + assertPrimed
-//            ✓ waitForServed
-//            ✓ trackedClick(expected: { chat: 1 })
-//            ✓ assertQuiescent
-//            ✓ terminalGuard() (mode: terminal)
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
+
+// (1) Bungkus tiap aksi — pastikan tap hanya memicu refetch varian yang diharapkan.
+await stub.assertNoAdditionalRequests(
+  async () => { await chatRefresh.click(); },
+  { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+await stub.assertNoAdditionalRequests(
+  async () => { await storageRefresh.click(); },
+  { expected: { storage: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+
+// (2) Tunggu request benar-benar selesai sebelum assert UI.
+await stub.waitForIdle();
+
+// (3) Pastikan state aktif tidak memicu polling / refetch background.
+await stub.assertQuiescent("chat", { windowMs: 1000 });
+await stub.assertQuiescent("storage", { windowMs: 1000 });
+
+// (4) Terminal guard: kedua varian sekaligus, tanpa polling.
+await stub.assertNoAdditionalRequests({ windowMs: APK_STUB_TERMINAL_WINDOW_MS });
 ```
 
-#### Mode `full` (`installApkStub` + `installServerFnPassthroughGuard`)
+#### B. Cross-variant leak guard per aksi
+
+Kalau aksi pada varian A tidak boleh menyentuh varian B:
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow>
-// Skenario : <aksi user yang diuji, mis. copy link APK Chat lalu refresh>
-// Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
-// Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak server function APK & non-APK>
-// Guards   : ✓ primeInitial + assertPrimed
-//            ✓ waitForServed
-//            ✓ trackedClick / trackedAction
-//            ✓ assertQuiescent
-//            ✓ terminalGuard()
-//            ✓ passthrough.assertNoAdditionalRequests (mode: full)
+await stub.assertNoAdditionalRequests(
+  async () => { await storageRefresh.click(); },
+  { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+await stub.waitForServed("storage", 2);
+// Storage refetch sudah selesai; chat tetap 1.
+expect(stub.servedCount("chat")).toBe(1);
 ```
 
-#### Mode `form-only` (tidak memakai stub APK)
+#### C. Hold → release + counter stabil
+
+Pola untuk menguji state UI sementara (checking / busy) dengan `waitForHold`, lalu melepaskan request. Setelah selesai, verifikasi tidak ada request tersembunyi.
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow>
-// Skenario : <form / validasi yang diuji, mis. form minSupported>
-// Harness  : <route/harness>
-// Tujuan   : <invariant UI / validasi>
-// Guards   : spec form murni — tidak memakai apk-stub / terminalGuard
+// Tahan request: jangan enqueue, lalu tap.
+await stub.assertNoAdditionalRequests(
+  async () => { await mainButton.click(); },
+  { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+await stub.waitForHold("chat");
+await expect(mainButton).toHaveAttribute("aria-label", "Memeriksa…");
+
+// Lepaskan request.
+stub.enqueue("chat", [makeRelease("chat")]);
+await stub.waitForServed("chat", 2);
+await expect(mainButton).toHaveAttribute("aria-label", "Salin semua link APK Chat");
+
+// Pastikan tidak ada polling setelah state aktif.
+await stub.assertQuiescent("chat", { windowMs: 1000 });
+await stub.assertQuiescent("storage", { windowMs: 500 });
+await stub.assertNoAdditionalRequests({ windowMs: APK_STUB_TERMINAL_WINDOW_MS });
 ```
 
-Rincian teknis helper stub dan pola anti-pattern ada di `tests/e2e/_helpers/README.md` dan di header `tests/e2e/_helpers/apk-spec.template.ts`.
+#### D. Extra stabilization setelah quiescent
+
+Kalau runner CI sering memicu task tertunda (microtask / timer 0 ms) yang memicu refetch setelah semua assertion "selesai", tambahkan `assertCounterStable` setelah `assertQuiescent`:
+
+```ts
+await stub.assertQuiescent("storage", { windowMs: 1500, stableTicks: 8 });
+await stub.assertQuiescent("chat", { windowMs: 500, stableTicks: 8 });
+// Verifikasi tambahan: counter benar-benar tidak bergerak beberapa ticks.
+await stub.assertCounterStable("storage", { ticks: 5 });
+await stub.assertCounterStable("chat", { ticks: 5 });
+// Terminal guard tanpa duplikasi logika trailing-window.
+await stub.assertNoAdditionalRequests({ windowMs: APK_STUB_TERMINAL_WINDOW_MS });
+```
+
+---
+
+## Anti-pola: jangan duplikasi logika
+
+❌ **Jangan menulis `expect.poll(() => stub.requestedCount(...))` sendiri** — sudah ada helper yang event-based dan memberikan pesan error rapi.
+
+❌ **Jangan membungkus aksi yang sama dengan `assertNoAdditionalRequests` lalu langsung `assertQuiescent` tanpa alasan** — keduanya memeriksa request tambahan. Gunakan `assertNoAdditionalRequests` untuk per-aksi, `assertQuiescent` untuk post-active.
+
+❌ **Jangan mengganti `waitForServed` / `waitForIdle` dengan `assertNoAdditionalRequests({ expected: ... })`** — `expected` memang menunggu request, tapi semantiknya "boleh masuk N"; kalau butuh "request ke-N sudah selesai di-fulfill", gunakan `waitForServed`.
+
+---
+
+## Pola pemakaian di test yang sudah ada
+
+### Guard akhir test (semua varian)
+
+```ts
+await stub.assertQuiescent("chat");
+await stub.assertQuiescent("storage");
+await stub.assertNoAdditionalRequests({ windowMs: APK_STUB_TERMINAL_WINDOW_MS });
+```
+
+### Membuktikan aksi varian A tidak mengganggu varian B
+
+```ts
+await stub.assertNoAdditionalRequests(
+  async () => { await chatRefresh.click(); },
+  { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+```
+
+### Membuktikan refetch tunggal per tap
+
+```ts
+await stub.assertNoAdditionalRequests(
+  async () => { await tileRefresh.click(); },
+  { expected: { storage: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+);
+```
+
+---
+
+## Tips
+
+- Gunakan konstanta dari `tests/e2e/_helpers/apk-stub-timing.ts` untuk semua nilai `windowMs` — jangan tulis angka literal. Ini membuat threshold CI seragam dan mudah di-tune.
+- Jangan gunakan `assertNoAdditionalRequests` sebagai pengganti `waitForServed` — tetap tunggu request selesai di-fulfill sebelum memanggil guard akhir.
+- Pilih `windowMs` sesuai kebutuhan: `APK_STUB_PER_ACTION_WINDOW_MS` (500 ms) cukup untuk sebagian besar case, `APK_STUB_TERMINAL_WINDOW_MS` (750 ms) untuk guard akhir, dan override langsung (mis. 1000–1500 ms) untuk `assertQuiescent` kalau memang perlu lebih ketat.
+- Kalau test memang mengharapkan request tertentu, gunakan `expected` agar leak tetap terdeteksi dengan jelas.
+- Hindari `ignore` yang terlalu longgar; predikat harus spesifik supaya kebocoran nyata tidak terlewat.
