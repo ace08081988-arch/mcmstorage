@@ -81,7 +81,16 @@ export type PushPayload = {
   image?: string;
   // "order"/"tugas" cocok dgn enabledKinds di public/sw-push.js supaya
   // toggle kategori notifikasi di pengaturan benar-benar berlaku.
-  kind?: "chat" | "generic" | "security" | "system" | "order" | "tugas";
+  kind?: "chat" | "generic" | "security" | "system" | "order" | "tugas" | "call";
+  /** Panggilan masuk: id row `chat_calls`, jenis, dan nama pemanggil. */
+  callId?: string;
+  callKind?: "audio" | "video";
+  callerName?: string;
+  /** Nama pengirim untuk MessagingStyle di Android. */
+  senderName?: string;
+  senderId?: string;
+  /** Sertakan token aksi (Balas / Tandai dibaca / Tolak) per penerima. */
+  withActionTokens?: boolean;
   requireInteraction?: boolean;
   silent?: boolean;
   vibrate?: number[];

@@ -118,6 +118,7 @@ import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
+import { Route as ApiPublicChatActionRouteImport } from './routes/api/public/chat-action'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicPushResubscribeRouteImport } from './routes/api/public/push-resubscribe'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
@@ -777,6 +778,11 @@ const ApiPublicApkDownloadTrackRoute =
     path: '/api/public/apk-download-track',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicChatActionRoute = ApiPublicChatActionRouteImport.update({
+  id: '/api/public/chat-action',
+  path: '/api/public/chat-action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -1257,6 +1263,7 @@ export interface FileRoutesByFullPath {
   '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
+  '/api/public/chat-action': typeof ApiPublicChatActionRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -1428,6 +1435,7 @@ export interface FileRoutesByTo {
   '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
+  '/api/public/chat-action': typeof ApiPublicChatActionRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -1604,6 +1612,7 @@ export interface FileRoutesById {
   '/_authenticated/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
+  '/api/public/chat-action': typeof ApiPublicChatActionRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/api/public/push-resubscribe': typeof ApiPublicPushResubscribeRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -1780,6 +1789,7 @@ export interface FileRouteTypes {
     | '/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
+    | '/api/public/chat-action'
     | '/api/public/prep-realtime-token'
     | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
@@ -1951,6 +1961,7 @@ export interface FileRouteTypes {
     | '/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
+    | '/api/public/chat-action'
     | '/api/public/prep-realtime-token'
     | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
@@ -2126,6 +2137,7 @@ export interface FileRouteTypes {
     | '/_authenticated/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
+    | '/api/public/chat-action'
     | '/api/public/prep-realtime-token'
     | '/api/public/push-resubscribe'
     | '/api/public/web-vitals'
@@ -2223,6 +2235,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
+  ApiPublicChatActionRoute: typeof ApiPublicChatActionRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   ApiPublicPushResubscribeRoute: typeof ApiPublicPushResubscribeRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
@@ -3051,6 +3064,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicApkDownloadTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/chat-action': {
+      id: '/api/public/chat-action'
+      path: '/api/public/chat-action'
+      fullPath: '/api/public/chat-action'
+      preLoaderRoute: typeof ApiPublicChatActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -3788,6 +3808,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
+  ApiPublicChatActionRoute: ApiPublicChatActionRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   ApiPublicPushResubscribeRoute: ApiPublicPushResubscribeRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,

@@ -143,7 +143,12 @@ import { PeerProfileDialog } from "@/components/chat/PeerProfileDialog";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
 import { Phone, Video as VideoIcon } from "lucide-react";
-import { createCallRow } from "@/lib/calls";
+import {
+  capabilityQueryKey,
+  describeCapability,
+} from "@/lib/chat-capabilities";
+import { getConversationCapabilities, unblockChatPeer } from "@/lib/chat-capabilities.functions";
+import { createAndRingCall } from "@/lib/calls-ring.functions";
 import { ringUser } from "@/lib/webrtc";
 import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
@@ -570,7 +575,53 @@ function ChatRoomPage() {
       longPressTimer.current = null;
     }
   }, []);
-  const chatBlocked = false;
+  // ── Capability SSOT ────────────────────────────────────────────────
+  // Sumber tunggal apakah percakapan ini boleh dibalas/ditelepon. Sama
+  // persis dengan predicate yang dipakai `sendMessage` di server, jadi UI
+  // tidak pernah "terbuka tapi ditolak server" atau sebaliknya.
+  // Menghapus kontak dari buku alamat TIDAK menonaktifkan composer.
+  const capabilities = useQuery({
+    queryKey: capabilityQueryKey(conversationId),
+    queryFn: () => getConversationCapabilities({ data: { conversationId } }),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+  const cap = capabilities.data;
+  // Optimistis saat masih memuat: jangan menyembunyikan composer hanya
+  // karena capability belum tiba.
+  const chatBlocked = cap ? !cap.canSend : false;
+  const capInfo = cap && !cap.canSend ? describeCapability(cap.reasonCode) : null;
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`cap:${conversationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "chat_blocks" },
+        () => void capabilities.refetch(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "conversation_members",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => void capabilities.refetch(),
+      )
+      .subscribe();
+    const onResume = () => {
+      if (document.visibilityState === "visible") void capabilities.refetch();
+    };
+    document.addEventListener("visibilitychange", onResume);
+    return () => {
+      document.removeEventListener("visibilitychange", onResume);
+      void supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
@@ -1811,17 +1862,27 @@ function ChatRoomPage() {
                     className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
                     aria-label="Panggilan suara"
                     aria-busy={startingCall}
-                    disabled={!online || startingCall}
+                    disabled={!online || startingCall || (cap ? !cap.canCall : false)}
                     onClick={async () => {
                       if (!dmPeer?.peerUserId || !myId) return;
                       setStartingCall(true);
                       try {
-                        const row = await createCallRow({
-                          conversationId,
-                          callerId: myId,
-                          calleeId: dmPeer.peerUserId,
-                          kind: "audio",
+                        // Server yang membuat row + mengirim FCM dering
+                        // (agar penerima tetap berdering saat app tertutup).
+                        const res = await createAndRingCall({
+                          data: {
+                            conversationId,
+                            calleeId: dmPeer.peerUserId,
+                            kind: "audio",
+                          },
                         });
+                        const row = res.call;
+                        if (!res.pushConfigured) {
+                          toast.warning("Dering latar belakang belum aktif", {
+                            description:
+                              "FCM_SERVICE_ACCOUNT_JSON belum dikonfigurasi — penerima hanya berdering bila aplikasinya sedang terbuka.",
+                          });
+                        }
                         dispatchStartCall({
                           callId: row.id,
                           kind: "audio",
@@ -1858,17 +1919,25 @@ function ChatRoomPage() {
                     className="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
                     aria-label="Panggilan video"
                     aria-busy={startingCall}
-                    disabled={!online || startingCall}
+                    disabled={!online || startingCall || (cap ? !cap.canCall : false)}
                     onClick={async () => {
                       if (!dmPeer?.peerUserId || !myId) return;
                       setStartingCall(true);
                       try {
-                        const row = await createCallRow({
-                          conversationId,
-                          callerId: myId,
-                          calleeId: dmPeer.peerUserId,
-                          kind: "video",
+                        const res = await createAndRingCall({
+                          data: {
+                            conversationId,
+                            calleeId: dmPeer.peerUserId,
+                            kind: "video",
+                          },
                         });
+                        const row = res.call;
+                        if (!res.pushConfigured) {
+                          toast.warning("Dering latar belakang belum aktif", {
+                            description:
+                              "FCM_SERVICE_ACCOUNT_JSON belum dikonfigurasi — penerima hanya berdering bila aplikasinya sedang terbuka.",
+                          });
+                        }
                         dispatchStartCall({
                           callId: row.id,
                           kind: "video",
@@ -3161,6 +3230,34 @@ function ChatRoomPage() {
                     }}
                   />
                 </div>
+              </div>
+            ) : null}
+            {capInfo ? (
+              <div className="mb-2 flex flex-wrap items-center gap-ms-2 rounded-xl border border-destructive/30 bg-destructive/5 px-ms-3 py-2 text-ms-xs">
+                <span className="flex-1 min-w-0 text-destructive">
+                  <strong className="font-semibold">{capInfo.label}</strong>{" "}
+                  <span className="text-muted-foreground">{capInfo.hint}</span>
+                </span>
+                {cap?.reasonCode === "blocked_by_me" ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    onClick={async () => {
+                      try {
+                        await unblockChatPeer({ data: { conversationId } });
+                        await capabilities.refetch();
+                        toast.success("Blokir dibuka");
+                      } catch (e) {
+                        toast.error("Gagal membuka blokir", {
+                          description: (e as Error).message,
+                        });
+                      }
+                    }}
+                  >
+                    Buka blokir
+                  </Button>
+                ) : null}
               </div>
             ) : null}
             <div className="relative flex flex-col gap-ms-1.5">
