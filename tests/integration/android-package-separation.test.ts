@@ -1,7 +1,50 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 
 const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
+
+/**
+ * Parser struktural minimal (tanpa dependency YAML) untuk workflow GitHub:
+ * mengembalikan key top-level dan anak langsung dari sebuah blok top-level.
+ */
+const topLevelKeys = (yml: string) => [...yml.matchAll(/^([A-Za-z_][\w-]*):/gm)].map((m) => m[1]);
+
+const childKeysOf = (yml: string, key: string) => {
+  const lines = yml.split("\n");
+  const start = lines.findIndex((l) => l.startsWith(`${key}:`));
+  if (start === -1) return [];
+  const out: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^[A-Za-z_][\w-]*:/.test(line)) break; // blok top-level berikutnya
+    const m = /^ {2}([A-Za-z_][\w-]*):/.exec(line);
+    if (m) out.push(m[1]);
+  }
+  return out;
+};
+
+/** rg wrapper: exit 0 = ada match, 1 = tidak ada, lainnya = error (harus gagal). */
+const rgFiles = (pattern: string, exclude: string[]) => {
+  const r = spawnSync(
+    "rg",
+    [
+      "-l",
+      "--glob",
+      "!node_modules",
+      "--glob",
+      "!dist",
+      ...exclude.flatMap((e) => ["--glob", `!${e}`]),
+      pattern,
+      ".",
+    ],
+    { encoding: "utf8" },
+  );
+  if (r.error) throw new Error(`rg tidak dapat dijalankan: ${r.error.message}`);
+  if (r.status !== 0 && r.status !== 1) {
+    throw new Error(`rg gagal (exit ${r.status}): ${r.stderr}`);
+  }
+  return r.status === 1 ? [] : r.stdout.trim().split("\n").filter(Boolean);
+};
 
 const workflow = read(".github/workflows/mcm-storage-play-release.yml");
 const debugWorkflow = read(".github/workflows/android-debug-apk.yml");
@@ -24,7 +67,9 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
 
   it("workflow Play tidak menerima atau meneruskan varian", () => {
     expect(workflow).toContain("name: MCM Storage Play Release");
-    expect(workflow).not.toMatch(/\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i);
+    expect(workflow).not.toMatch(
+      /\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i,
+    );
     expect(workflow).toContain("node scripts/build-aab.mjs");
     expect(workflow).toContain("mcm-storage-aab-${{ github.run_number }}");
     expect(workflow).toContain("GOOGLE_SERVICES_JSON_B64");
@@ -33,7 +78,9 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
   });
 
   it("workflow debug juga hanya menghasilkan MCM Storage", () => {
-    expect(debugWorkflow).not.toMatch(/\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i);
+    expect(debugWorkflow).not.toMatch(
+      /\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i,
+    );
     expect(debugWorkflow).toContain("mcm-storage-debug-apk-${{ github.run_number }}");
     expect(debugWorkflow).toContain("bunx tsc --noEmit");
   });
@@ -89,13 +136,28 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
 
   it("workflow rilis Play manual-only dan terkunci ke Internal testing", () => {
     expect(workflow).toContain("workflow_dispatch:");
-    // tidak ada trigger otomatis yang bisa memakai kredensial signing/Play
-    expect(workflow).not.toMatch(/^\s{2}push:/m);
-    expect(workflow).not.toMatch(/^\s{2}pull_request:/m);
+    // struktural: satu-satunya trigger adalah workflow_dispatch
+    expect(childKeysOf(workflow, "on")).toEqual(["workflow_dispatch"]);
+    expect(topLevelKeys(workflow)).not.toContain("push");
+    expect(topLevelKeys(workflow)).not.toContain("pull_request");
     expect(workflow).toMatch(/options:\s*\[internal\]/);
-    expect(workflow).not.toMatch(/production/);
     // upload hanya lewat langkah terpisah setelah verifikasi artefak
     expect(workflow).toContain("node scripts/upload-play.mjs");
+  });
+
+  it("tidak ada track/option/status production secara struktural (komentar boleh)", () => {
+    const code = workflow
+      .split("\n")
+      .filter((l) => !/^\s*#/.test(l))
+      .map((l) => l.replace(/\s#.*$/, ""))
+      .join("\n");
+    expect(code).not.toMatch(/options:\s*\[[^\]]*production/);
+    expect(code).not.toMatch(/^\s*-\s*production\s*$/m);
+    expect(code).not.toMatch(/--track\s+production|track:\s*production/);
+    // upload di-hardcode ke internal
+    expect(code).toContain("--track internal");
+    // manual-only: tidak ada percabangan berbasis event push
+    expect(code).not.toContain("github.event_name");
   });
 
   it("kontrak nama secrets seragam di workflow rilis", () => {
@@ -119,6 +181,41 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
       expect(read(".github/workflows/android-apk.yml"), legacy).not.toContain(legacy);
       expect(read("RELEASE_CHECKLIST.md"), legacy).not.toContain(legacy);
     }
+  });
+
+  it("nama secret final dipakai seragam di seluruh repo (source, workflow, docs)", () => {
+    const self = "tests/integration/android-package-separation.test.ts";
+    const legacy = [
+      "KEYSTORE_STORE_" + "PASS",
+      "KEYSTORE_KEY_" + "PASS",
+      "MCM_STORAGE_" + "KEYSTORE_FILE",
+      "MCM_STORAGE_" + "STORE_PASS",
+      "ANDROID_" + "KEYSTORE_BASE64",
+      "ANDROID_" + "KEY_PASSWORD",
+    ];
+    for (const name of legacy) {
+      const hits = rgFiles(`${name}\\b`, [self]);
+      expect(hits, `${name} masih dipakai di: ${hits.join(", ")}`).toEqual([]);
+    }
+  });
+
+  it("tidak ada sisa package chat / private connect di repo", () => {
+    const self = "tests/integration/android-package-separation.test.ts";
+    const hits = rgFiles("biz\\.mcmstorage\\.chat|com\\.mcm\\.privateconnect", [self, "*.md"]);
+    // Referensi yang boleh tersisa hanya: komentar penjelas, atau daftar
+    // package TERLARANG di preflight (justru penjaga pemisahan).
+    const offending: string[] = [];
+    for (const file of hits) {
+      const lines = read(file.replace(/^\.\//, "")).split("\n");
+      lines.forEach((line, i) => {
+        if (!/biz\.mcmstorage\.chat|com\.mcm\.privateconnect/.test(line)) return;
+        const isComment = /^\s*(\/\/|\/\*|\*|#)/.test(line);
+        const isForbiddenListEntry =
+          /^\s*"(biz\.mcmstorage\.chat|com\.mcm\.privateconnect)",?\s*$/.test(line);
+        if (!isComment && !isForbiddenListEntry) offending.push(`${file}:${i + 1}: ${line.trim()}`);
+      });
+    }
+    expect(offending, `referensi aktif: ${offending.join(" | ")}`).toEqual([]);
   });
 
   it("upload-play hanya mengizinkan track internal", () => {
