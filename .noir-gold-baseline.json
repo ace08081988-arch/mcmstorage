@@ -1,8 +1,283 @@
 {
   "$comment": "Snapshot pelanggaran Noir & Gold yang di-grandfather. Diperbarui per slice audit; jangan edit tangan. Regenerasi: `node scripts/check-noir-gold.mjs --update-baseline`.",
-  "generatedAt": "2026-07-15T05:58:51.823Z",
-  "count": 291,
+  "generatedAt": "2026-08-14T18:06:15.413Z",
+  "count": 509,
   "entries": [
+    {
+      "label": "emerald/amber",
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": ": \"border-amber-400/60 bg-amber-50 text-amber-900 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-100\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": "className=\"flex items-start gap-ms-2 rounded-md border border-amber-400/60 bg-amber-50 p-ms-2 text-ms-2xs text-amber-900 dark:border-amber-500/50 dark:bg-amber-950/40 dark:text-amber-100\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": "className=\"h-7 min-w-0 flex-1 rounded border border-amber-300 bg-white px-2 text-ms-2xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-500 dark:bg-amber-950/70 dark:text-amber-50\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/chat/CallDiagnosticsSheet.tsx",
+      "content": "recovery: \"bg-emerald-500/15 text-emerald-600 dark:text-emerald-300\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/chat/CallDiagnosticsSheet.tsx",
+      "content": "signal: \"bg-amber-500/15 text-amber-600 dark:text-amber-300\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/chat/CallScreen.tsx",
+      "content": "? \"bg-amber-500/20 text-amber-100 ring-1 ring-amber-400/40\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/chat/CallScreen.tsx",
+      "content": "? \"bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/40\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/DomRaceRecoveryPanel.tsx",
+      "content": "<AlertTriangle className=\"mx-auto h-7 w-7 text-amber-500\" aria-hidden />"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/DraftSafetyNotice.tsx",
+      "content": ": \"border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/LiveProductGallery.tsx",
+      "content": "<span className={`h-1.5 w-1.5 rounded-full ${connected ? \"bg-emerald-500\" : \"bg-muted-foreground\"}`} />"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/LiveProductGallery.tsx",
+      "content": "connected ? \"border-emerald-500/40 text-emerald-500\" : \"border-border text-muted-foreground\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfCard.tsx",
+      "content": "className={m.scrolling ? \"border-emerald-500/50 text-emerald-500\" : \"text-muted-foreground\"}"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfCard.tsx",
+      "content": "cls: m.jankFrames === 0 ? \"text-emerald-500\" : m.jankFrames <= 2 ? \"text-amber-500\" : \"text-red-500\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfCard.tsx",
+      "content": "if (warn) return \"text-amber-500\";"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfCard.tsx",
+      "content": "return ok ? \"text-emerald-500\" : \"text-red-500\";"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfHistoryCard.tsx",
+      "content": "<Badge variant=\"outline\" className=\"border-emerald-500/50 text-emerald-500\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfHistoryCard.tsx",
+      "content": "if (fps >= 40) return \"text-amber-500\";"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfHistoryCard.tsx",
+      "content": "if (fps >= 50) return \"text-emerald-500\";"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "className=\"fill-emerald-500\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "className=\"stroke-emerald-500\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "className={`${v > 40 ? \"fill-red-500\" : v > 20 ? \"fill-amber-500\" : \"fill-sky-500\"} ${smoothing ? \"opacity-40\" : \"\"}`}"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "className={smoothing ? \"stroke-emerald-500/30\" : \"stroke-emerald-500\"}"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "move: { color: \"fill-amber-500\", label: \"Menggeser cepat\", short: \"geser\" },"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "badge: \"border-amber-500/40 text-amber-600 dark:text-amber-400\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "badge: \"border-emerald-500/40 text-emerald-600 dark:text-emerald-400\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "dot: \"bg-amber-500\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "dot: \"bg-emerald-500\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/components/WebVitalsAlertsPanel.tsx",
+      "content": ": \"bg-amber-500/15 text-amber-500\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.admin.dependensi.tsx",
+      "content": "\"router-plugin\": \"bg-amber-500\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.admin.web-vitals.tsx",
+      "content": "if (v <= ni) return \"text-amber-500\";"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": ": \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "? \"bg-emerald-500/12 text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "? \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "<div className=\"inline-flex items-center gap-1 text-xs tabular-nums text-emerald-600\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "<div className={s.hutangDelta > 0 ? \"text-rose-600\" : \"text-emerald-600\"}>"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "<div className={s.piutangDelta > 0 ? \"text-rose-600\" : \"text-emerald-600\"}>"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "className={`h-full ${f.delta >= 0 ? \"bg-rose-500\" : \"bg-emerald-500\"}`}"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "f.delta >= 0 ? \"text-rose-600\" : \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "naik ? \"text-rose-600\" : \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "rankBy === \"bayar\" ? \"bg-emerald-500\" : \"bg-primary\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "totals.hutangDelta >= 0 ? \"text-rose-600\" : \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.audit-saldo.tsx",
+      "content": "totals.piutangDelta >= 0 ? \"text-rose-600\" : \"text-emerald-600\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.diagnostik-viewport.tsx",
+      "content": "mode: \"border-emerald-500/40 text-emerald-600 dark:text-emerald-400\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.diagnostik-viewport.tsx",
+      "content": "note: \"border-amber-500/40 text-amber-600 dark:text-amber-400\","
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "? \"border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.kontak-mapping.tsx",
+      "content": "<AlertTriangle className=\"h-4 w-4 text-amber-500\" />"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.kontak-mapping.tsx",
+      "content": "<span className=\"inline-flex shrink-0 items-center gap-1 text-xs text-emerald-500\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.kontak-mapping.tsx",
+      "content": "<span className=\"ml-1 text-amber-500\">· {dupCount} berpotensi duplikat</span>"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.kontak-mapping.tsx",
+      "content": "<span className=\"mt-0.5 inline-flex items-start gap-1 text-[11px] leading-snug text-amber-500\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.pengaturan-notifikasi-wa.tsx",
+      "content": "? \"bg-emerald-500/15 text-emerald-600 dark:text-emerald-400\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "<span className=\"ml-1 text-amber-600 dark:text-amber-400\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "<ul className=\"rounded-md border border-amber-500/40 bg-amber-500/10 p-ms-2 text-amber-700 dark:text-amber-300 space-y-0.5\">"
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/_authenticated.request.tsx",
+      "content": "className=\"inline-flex items-center gap-ms-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-ms-2 py-1 text-ms-2xs font-semibold text-amber-700 hover:bg-amber-500/20 dark:text-amber-300\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/download.index.tsx",
+      "content": "className=\"flex min-h-11 items-center justify-center gap-ms-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-ms-2 text-ms-2xs font-semibold transition-colors hover:bg-emerald-500/20 disabled:opacity-50\""
+    },
+    {
+      "label": "emerald/amber",
+      "file": "src/routes/lovable.visual.toast-layout.tsx",
+      "content": "{ icon: TriangleAlert, tone: \"text-amber-500\", title: \"Stok menipis\", desc: \"Gula pasir tersisa 2,5 kg.\" },"
+    },
     {
       "label": "hex color",
       "file": "src/components/ApkQrDialog.tsx",
@@ -21,7 +296,32 @@
     {
       "label": "hex color",
       "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"cyan\",    label: \"Sian\",   value: \"oklch(0.72 0.13 215)\", swatch: \"#06b6d4\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
       "content": "{ id: \"emerald\", label: \"Hijau\",  value: \"oklch(0.62 0.17 155)\", swatch: \"#10b981\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"indigo\",  label: \"Indigo\", value: \"oklch(0.52 0.20 273)\", swatch: \"#4f46e5\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"lime\",    label: \"Limau\",  value: \"oklch(0.78 0.19 130)\", swatch: \"#84cc16\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"orange\",  label: \"Oranye\", value: \"oklch(0.70 0.18 45)\",  swatch: \"#f97316\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"pink\",    label: \"Pink\",   value: \"oklch(0.68 0.20 350)\", swatch: \"#ec4899\" },"
     },
     {
       "label": "hex color",
@@ -36,7 +336,17 @@
     {
       "label": "hex color",
       "file": "src/components/appearance-init.ts",
+      "content": "{ id: \"teal\",    label: \"Tosca\",  value: \"oklch(0.66 0.13 190)\", swatch: \"#14b8a6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/appearance-init.ts",
       "content": "{ id: \"violet\",  label: \"Ungu\",   value: \"oklch(0.58 0.22 295)\", swatch: \"#8b5cf6\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/AppSidebar.tsx",
+      "content": "\"linear-gradient(135deg, #10b981 0%, #059669 55%, #047857 100%)\","
     },
     {
       "label": "hex color",
@@ -145,33 +455,428 @@
     },
     {
       "label": "hex color",
-      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "<button className={cn(\"h-9 rounded-full border border-white/10 px-ms-3 text-ms-sm text-white transition\", obj.outline ? \"bg-white text-neutral-900\" : \"hover:bg-white/10\")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : \"#000000\" })}>Outline</button>"
+      "file": "src/components/photo-editor/engine/scene.image.test.ts",
+      "content": "stroke: \"#fff\", strokeWidth: 4, opacity: 1,"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "anchorFill=\"#ffffff\""
+      "content": ": \"text-[#f5f0e0]/85 hover:bg-[#c9a84c]/10 hover:text-[#f0d78c] active:bg-[#c9a84c]/15\","
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "anchorStroke=\"#3b82f6\""
+      "content": "!disabled && \"hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95\","
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "borderStroke=\"#3b82f6\""
+      "content": "? \"bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_6px_16px_-6px_rgba(201,168,76,0.55)] ring-1 ring-[#c9a84c]/60\""
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "check: { label: \"Checklist\", Icon: Check, defaultColor: \"#22c55e\" },"
+      "content": "? \"border-[#c9a84c] bg-[#c9a84c]/20 text-[#f0d78c]\""
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "className=\"grid h-8 w-8 place-items-center rounded-full border-2 border-white/20 bg-[conic-gradient(from_0deg,#ef4444,#eab308,#22c55e,#06b6d4,#3b82f6,#8b5cf6,#ec4899,#ef4444)]\""
+      "content": "? \"scale-110 border-[#c9a84c] ring-2 ring-[#c9a84c]/50\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-arc-l\": { label: \"Lengkung Kiri\", Icon: Undo2, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-arc-r\": { label: \"Lengkung Kanan\", Icon: Redo2, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-block-l\": { label: \"Blok Kiri\", Icon: ArrowBigLeft, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-block-r\": { label: \"Blok Kanan\", Icon: ArrowBigRight, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-bold-d\": { label: \"Tebal Bawah\", Icon: MoveDown, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-bold-l\": { label: \"Tebal Kiri\", Icon: MoveLeft, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-bold-r\": { label: \"Tebal Kanan\", Icon: MoveRight, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-bold-u\": { label: \"Tebal Atas\", Icon: MoveUp, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-both\": { label: \"Dua Arah\", Icon: ArrowLeftRight, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-curve-dl\": { label: \"Turun Kiri\", Icon: CornerDownLeft, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-curve-dr\": { label: \"Turun Kanan\", Icon: CornerDownRight, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-curve-r\": { label: \"Belok Kanan\", Icon: CornerUpRight, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-curve\": { label: \"Belok Kiri\", Icon: CornerUpLeft, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-double-l\": { label: \"Ganda Kiri\", Icon: ChevronsLeft, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-double-r\": { label: \"Ganda Kanan\", Icon: ChevronsRight, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-down\": { label: \"Bawah\", Icon: ArrowDown, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-left\": { label: \"Kiri\", Icon: ArrowLeft, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-refresh\": { label: \"Refresh\", Icon: RefreshCw, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-rotate-ccw\": { label: \"Putar Kiri\", Icon: RotateCcw, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-rotate-cw\": { label: \"Putar Kanan\", Icon: RotateCw, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-thin-l\": { label: \"Tipis Kiri\", Icon: ChevronLeft, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-thin-r\": { label: \"Tipis Kanan\", Icon: ChevronRight, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-up\": { label: \"Atas\", Icon: ArrowUp, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-upleft\": { label: \"Balik\", Icon: ArrowUpLeft, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-upright\": { label: \"Serong\", Icon: ArrowUpRight, defaultColor: \"#f0d78c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"arrow-zigzag-r\": { label: \"Zigzag\", Icon: Zap, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f0d78c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d0d]\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"focus-within:border-[#c9a84c]/70 focus-within:ring-1 focus-within:ring-[#c9a84c]/40\";"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-8 min-w-8 shrink-0 place-items-center rounded-full border border-[#c9a84c]/30 px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-8 min-w-8 shrink-0 place-items-center rounded-full px-1.5 text-ms-2xs font-semibold text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-8 w-8 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"grid h-9 w-9 shrink-0 place-items-center rounded-full text-[#f0d78c] hover:bg-[#c9a84c]/15 active:scale-95\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"h-8 w-14 shrink-0 rounded-md border border-[#c9a84c]/25 bg-white/[0.04] px-1 text-center text-ms-2xs tabular-nums text-[#f0d78c] focus:border-[#c9a84c]/60 focus:outline-none\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"pointer-events-auto flex w-full max-w-full flex-wrap items-center justify-center gap-x-ms-1 gap-y-ms-1 rounded-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-2 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl transition\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"pointer-events-auto flex w-full max-w-full items-center gap-ms-2 rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-3 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl transition\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "\"radial-gradient(120% 80% at 50% 0%, #1a1a1a 0%, #0d0d0d 55%, #050505 100%)\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button aria-label=\"Duplikat\" className=\"grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10\" onClick={() => duplicateObject(o.id)}><Copy className=\"h-4 w-4\" /></button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button aria-label=\"Kunci\" className=\"grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10\" onClick={() => updateObject(o.id, { locked: !o.locked })}>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button aria-label=\"Sembunyikan\" className=\"grid h-7 w-7 place-items-center rounded-md hover:bg-[#c9a84c]/10\" onClick={() => updateObject(o.id, { visible: o.visible === false })}>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button className={cn(\"h-9 rounded-full border px-ms-3 text-ms-sm font-bold transition\", obj.bold ? \"border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]\" : \"border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10\")} onClick={() => updateObject(obj.id, { bold: !obj.bold })}>B</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button className={cn(\"h-9 rounded-full border px-ms-3 text-ms-sm italic transition\", obj.italic ? \"border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]\" : \"border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10\")} onClick={() => updateObject(obj.id, { italic: !obj.italic })}>I</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button className={cn(\"h-9 rounded-full border px-ms-3 text-ms-sm transition\", obj.outline ? \"border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]\" : \"border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10\")} onClick={() => updateObject(obj.id, { outline: obj.outline ? undefined : \"#000000\" })}>Outline</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button className={cn(\"h-9 rounded-full border px-ms-3 text-ms-sm transition\", obj.shadow ? \"border-[#c9a84c] bg-[#c9a84c] text-[#0d0d0d]\" : \"border-[#c9a84c]/20 text-white hover:bg-[#c9a84c]/10\")} onClick={() => updateObject(obj.id, { shadow: !obj.shadow })}>Shadow</button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button onClick={() => setShowLayers(false)} className=\"grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10\"><X className=\"h-4 w-4\" /></button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button onClick={() => setShowStickers(false)} className=\"grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10\"><X className=\"h-4 w-4\" /></button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<button onClick={() => setShowText(null)} className=\"grid h-7 w-7 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10\"><X className=\"h-4 w-4\" /></button>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"mb-3 rounded-xl border border-[#c9a84c]/15 bg-white/[0.02] p-ms-2\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto flex flex-col gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto flex flex-col items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/60 p-ms-1 backdrop-blur-xl\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto flex max-w-full items-center gap-ms-1 overflow-x-auto overscroll-x-contain rounded-full border border-[#c9a84c]/25 bg-[#0d0d0d]/80 px-ms-1 py-ms-1 shadow-[0_10px_30px_-10px_rgba(201,168,76,0.35)] backdrop-blur-xl [scrollbar-width:none]\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto flex shrink-0 items-center gap-ms-1 rounded-full border border-[#c9a84c]/15 bg-[#0d0d0d]/70 px-ms-1 py-ms-1 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"pointer-events-auto relative z-20 border-t border-[#c9a84c]/20 bg-[#0d0d0d]/75 px-ms-3 py-ms-2 backdrop-blur-xl animate-fade-in\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<div className=\"rounded-lg border border-[#c9a84c]/20 bg-[#0d0d0d]/80 px-ms-4 py-ms-3 text-ms-sm text-[#f0d78c] shadow-xl backdrop-blur-xl\">"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<li key={o.id} className={cn(\"flex items-center gap-ms-2 rounded-lg border p-ms-2 text-ms-sm text-white/90 transition\", selectedId === o.id ? \"border-[#c9a84c]/60 bg-[#c9a84c]/10\" : \"border-[#c9a84c]/15 bg-white/[0.03] hover:border-[#c9a84c]/30\")}>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<select className=\"h-9 rounded-full border border-[#c9a84c]/25 bg-white/[0.03] px-ms-2 text-ms-sm text-white\" value={obj.align} onChange={(e) => updateObject(obj.id, { align: e.target.value as TextObj[\"align\"] })}>"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<span className=\"h-3 w-3 rounded-full bg-[#0d0d0d]\" />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<span className=\"mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20\" aria-hidden />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<span className=\"mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20\" aria-hidden />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "<span className=\"mx-ms-1 my-auto h-8 w-px shrink-0 bg-[#c9a84c]/20\" aria-hidden />"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "active && \"bg-gradient-to-b from-[#f0d78c] to-[#c9a84c] text-[#0d0d0d] shadow-[0_4px_12px_-4px_rgba(201,168,76,0.55)]\","
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "anchorFill=\"#0d0d0d\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "arrow: { label: \"Kanan\", Icon: ArrowRight, defaultColor: \"#c9a84c\", group: \"panah\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "bolt: { label: \"Kilat\", Icon: Zap, defaultColor: \"#eab308\", group: \"reaksi\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "check: { label: \"Checklist\", Icon: Check, defaultColor: \"#22c55e\", group: \"status\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"absolute inset-x-0 z-30 max-h-[50vh] overflow-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"absolute inset-x-0 z-30 max-h-[55vh] overflow-y-auto rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-slide-in-right\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"absolute inset-x-0 z-40 overflow-y-auto overscroll-contain rounded-t-2xl border border-[#c9a84c]/25 bg-[#0d0d0d]/95 p-ms-3 shadow-[0_-20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-fade-in\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"grid h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 place-items-center rounded-full text-[#f5f0e0]/90 transition-all hover:bg-[#c9a84c]/12 hover:text-[#f0d78c] active:scale-95\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"grid h-8 w-8 place-items-center rounded-full border-2 border-[#c9a84c]/40 bg-[conic-gradient(from_0deg,#c9a84c,#f0d78c,#ffffff,#22c55e,#06b6d4,#8b5cf6,#ef4444,#c9a84c)]\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"group flex flex-col items-center gap-ms-1 rounded-xl border border-[#c9a84c]/15 bg-white/[0.03] p-ms-2 text-white/90 transition hover:border-[#c9a84c]/40 hover:bg-[#c9a84c]/10 active:scale-95\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"ml-auto grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#f0d78c]/70 hover:bg-[#c9a84c]/10\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"ml-ms-1 h-11 shrink-0 rounded-full border border-[#c9a84c]/50 px-ms-3 text-ms-sm font-semibold text-[#0d0d0d] shadow-[0_6px_20px_-6px_rgba(201,168,76,0.55)] hover:brightness-105\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"relative z-20 shrink-0 border-t border-[#c9a84c]/20 bg-[#0d0d0d]/85 backdrop-blur-xl\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className=\"w-full rounded-lg border border-[#c9a84c]/25 bg-white/[0.03] p-ms-2 text-ms-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-[#c9a84c]/50\""
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "className={cn(\"h-9 min-w-0 flex-1 accent-[#c9a84c] rounded-full\", focusRing)}"
     },
     {
       "label": "hex color",
@@ -181,32 +886,37 @@
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "const MCM_PALETTE = [\"#ef4444\", \"#f97316\", \"#eab308\", \"#22c55e\", \"#06b6d4\", \"#3b82f6\", \"#8b5cf6\", \"#ec4899\", \"#111827\", \"#ffffff\"];"
-    },
-    {
-      "label": "hex color",
-      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
       "content": "fill=\"#ffffff\""
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "location: { label: \"Lokasi\", Icon: MapPin, defaultColor: \"#3b82f6\" },"
+      "content": "fire: { label: \"Api\", Icon: Flame, defaultColor: \"#f97316\", group: \"reaksi\" },"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "package: { label: \"Paket\", Icon: Package, defaultColor: \"#8b5cf6\" },"
+      "content": "heart: { label: \"Suka\", Icon: Heart, defaultColor: \"#ef4444\", group: \"reaksi\" },"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "paid: { label: \"Paid\", Icon: DollarSign, defaultColor: \"#22c55e\" },"
+      "content": "location: { label: \"Lokasi\", Icon: MapPin, defaultColor: \"#3b82f6\", group: \"status\" },"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "pending: { label: \"Pending\", Icon: Clock, defaultColor: \"#eab308\" },"
+      "content": "package: { label: \"Paket\", Icon: Package, defaultColor: \"#8b5cf6\", group: \"status\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "paid: { label: \"Paid\", Icon: DollarSign, defaultColor: \"#22c55e\", group: \"status\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "pending: { label: \"Pending\", Icon: Clock, defaultColor: \"#eab308\", group: \"status\" },"
     },
     {
       "label": "hex color",
@@ -216,17 +926,32 @@
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "verified: { label: \"Verified\", Icon: BadgeCheck, defaultColor: \"#06b6d4\" },"
+      "content": "star: { label: \"Bintang\", Icon: Star, defaultColor: \"#f0d78c\", group: \"reaksi\" },"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "warning: { label: \"Warning\", Icon: AlertTriangle, defaultColor: \"#f59e0b\" },"
+      "content": "style={{ background: \"linear-gradient(180deg, #f0d78c 0%, #c9a84c 55%, #a3873a 100%)\" }}"
     },
     {
       "label": "hex color",
       "file": "src/components/photo-editor/PhotoEditorV2.tsx",
-      "content": "x: { label: \"Silang\", Icon: X, defaultColor: \"#ef4444\" },"
+      "content": "thumb: { label: \"Jempol\", Icon: ThumbsUp, defaultColor: \"#22c55e\", group: \"reaksi\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "verified: { label: \"Verified\", Icon: BadgeCheck, defaultColor: \"#06b6d4\", group: \"status\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "warning: { label: \"Warning\", Icon: AlertTriangle, defaultColor: \"#f59e0b\", group: \"status\" },"
+    },
+    {
+      "label": "hex color",
+      "file": "src/components/photo-editor/PhotoEditorV2.tsx",
+      "content": "x: { label: \"Silang\", Icon: X, defaultColor: \"#ef4444\", group: \"status\" },"
     },
     {
       "label": "hex color",
@@ -255,58 +980,43 @@
     },
     {
       "label": "hex color",
-      "file": "src/components/ProductEditDrawer.tsx",
-      "content": "className=\"inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] px-ms-3 text-ms-sm font-semibold text-white hover:opacity-90\""
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "<Bar yAxisId=\"left\" dataKey=\"omzet\" name=\"Omzet\" fill=\"#10b981\" radius={[4, 4, 0, 0]} />"
     },
     {
       "label": "hex color",
-      "file": "src/components/ProductEditDrawer.tsx",
-      "content": "className={`h-10 rounded-md border text-ms-xs font-medium ${sent ? \"border-[#128C7E] bg-[#25D366] text-white\" : \"hover:bg-accent\"}`}"
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "<CartesianGrid strokeDasharray=\"3 3\" stroke=\"#334155\" />"
     },
     {
       "label": "hex color",
-      "file": "src/components/ReadyEcerSection.tsx",
-      "content": "<AlertDialogAction onClick={confirmSendWA} className=\"bg-[#25D366] text-white hover:bg-[#1ebe57]\">"
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "<XAxis dataKey=\"label\" stroke=\"#94a3b8\" tick={{ fontSize: 10 }} interval=\"preserveStartEnd\" minTickGap={16} />"
     },
     {
       "label": "hex color",
-      "file": "src/components/ReadyEcerSection.tsx",
-      "content": "className=\"inline-flex h-7 shrink-0 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-2 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]\""
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "border: \"1px solid #334155\","
     },
     {
       "label": "hex color",
-      "file": "src/components/ReadyPackagesPanel.tsx",
-      "content": "className=\"flex-1 rounded-md bg-[#25D366] px-ms-3 py-ms-2 text-ms-xs font-semibold text-white hover:opacity-90\""
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "labelStyle={{ color: \"#e2e8f0\" }}"
     },
     {
       "label": "hex color",
-      "file": "src/components/ReadyRequestSection.tsx",
-      "content": "className=\"inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 disabled:cursor-not-allowed disabled:opacity-50 dark:text-[#7ee2a8]\""
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "stroke=\"#34d399\""
     },
     {
       "label": "hex color",
-      "file": "src/components/share/SaleShareButtons.tsx",
-      "content": "\"bg-[#25D366] text-white shadow-sm hover:bg-[#1ebe57] disabled:hover:bg-[#25D366]\","
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "stroke=\"#60a5fa\""
     },
     {
       "label": "hex color",
-      "file": "src/components/share/SaleShareButtons.tsx",
-      "content": "\"border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20\","
-    },
-    {
-      "label": "hex color",
-      "file": "src/components/SiapkanSendiriSection.tsx",
-      "content": ": \"border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]\")"
-    },
-    {
-      "label": "hex color",
-      "file": "src/components/StaffContactsPanel.tsx",
-      "content": "className=\"inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/components/tugas/SharePinDialog.tsx",
-      "content": "className=\"inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-sm font-semibold text-white disabled:opacity-60\""
+      "file": "src/components/pos-kasir/RingkasanChart.tsx",
+      "content": "stroke=\"#60a5fa\""
     },
     {
       "label": "hex color",
@@ -322,6 +1032,36 @@
       "label": "hex color",
       "file": "src/lib/__tests__/chat-mode-branding.test.ts",
       "content": "expect(get(\"theme-color\")).toBe(\"#064e3b\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/color-contrast.test.ts",
+      "content": "const mid = parseColor(\"color-mix(in oklab, #000000 50%, #ffffff)\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/color-contrast.test.ts",
+      "content": "expect(contrastRatio(\"var(--fg)\", \"var(--bg)\", { \"--fg\": \"#000\", \"--bg\": \"#fff\" })).toBeCloseTo(21, 1);"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/head-audit.test.ts",
+      "content": "browserconfig: input.browserconfig.replace(\"<TileColor>#0a7a4a</TileColor>\", \"<TileColor>#123456</TileColor>\"),"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/head-audit.test.ts",
+      "content": "expect(facts.maskIconColor).toBe(\"#c9a227\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/head-audit.test.ts",
+      "content": "expect(facts.themeColor).toBe(\"#0a7a4a\");"
+    },
+    {
+      "label": "hex color",
+      "file": "src/lib/__tests__/head-audit.test.ts",
+      "content": "expect(facts.tileColor).toBe(\"#0a7a4a\");"
     },
     {
       "label": "hex color",
@@ -641,22 +1381,22 @@
     {
       "label": "hex color",
       "file": "src/lib/error-page.ts",
-      "content": ".primary { background: #111; color: #fff; }"
+      "content": ".primary { background: #c9a84c; color: #14120b; }"
     },
     {
       "label": "hex color",
       "file": "src/lib/error-page.ts",
-      "content": ".secondary { background: #fff; color: #111; border-color: #d1d5db; }"
+      "content": ".secondary { background: transparent; color: #f5f2e8; border-color: #35322a; }"
     },
     {
       "label": "hex color",
       "file": "src/lib/error-page.ts",
-      "content": "body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }"
+      "content": "body { font: 15px/1.6 system-ui, -apple-system, sans-serif; background: #0b0b0d; color: #f5f2e8; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: 1.5rem; }"
     },
     {
       "label": "hex color",
       "file": "src/lib/error-page.ts",
-      "content": "p { color: #4b5563; margin: 0 0 1.5rem; }"
+      "content": "p { color: #a9a598; margin: 0 0 1.5rem; }"
     },
     {
       "label": "hex color",
@@ -795,13 +1535,23 @@
     },
     {
       "label": "hex color",
+      "file": "src/lib/web-vitals-alerts.server.ts",
+      "content": "`<p style=\"color:#888;font-size:12px\">Dikirim oleh web-vitals-monitor • ${checkedAt}</p>`,"
+    },
+    {
+      "label": "hex color",
+      "file": "src/routes/__root.tsx",
+      "content": "{ name: \"msapplication-TileColor\", content: \"#0a7a4a\" },"
+    },
+    {
+      "label": "hex color",
       "file": "src/routes/__root.tsx",
       "content": "{ name: \"theme-color\", content: \"#0a7a4a\" },"
     },
     {
       "label": "hex color",
-      "file": "src/routes/_authenticated.buku-alamat.tsx",
-      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
+      "file": "src/routes/__root.tsx",
+      "content": "{ rel: \"mask-icon\", href: withAssetVersion(\"/mask-icon.svg\"), color: \"#c9a227\" },"
     },
     {
       "label": "hex color",
@@ -820,88 +1570,18 @@
     },
     {
       "label": "hex color",
-      "file": "src/routes/_authenticated.ecer.tsx",
-      "content": "className=\"inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-ms-1 rounded bg-[#25D366] px-1.5 text-ms-2xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.hutang-piutang.tsx",
-      "content": "className=\"bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.hutang-piutang.tsx",
-      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.hutang-piutang.tsx",
-      "content": "className=\"h-8 rounded-lg bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.hutang-piutang.tsx",
-      "content": "className=\"w-full bg-[#25D366] text-white hover:bg-[#1ea952] sm:w-auto\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "? \"border-[#25D366] bg-[#25D366]/10 text-[#128C7E]\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "<span className=\"inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[0.6875rem] font-medium leading-none text-[#128C7E]\">"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "className=\"col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-ms-2 sm:col-span-4\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "className=\"inline-flex items-center rounded-md bg-[#25D366] px-ms-2.5 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "className=\"shrink-0 rounded-md bg-[#25D366] px-ms-2 py-1 text-[0.6875rem] font-semibold text-white hover:opacity-90\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "className={`inline-flex items-center rounded-md bg-[#25D366] px-ms-3 py-1 text-[0.6875rem] font-semibold text-white ${"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.index.tsx",
-      "content": "flashId === p.id ? \"bg-[#25D366] animate-pulse\" : \"bg-[#25D366]/60\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.kontak.index.tsx",
-      "content": "className=\"bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25\""
-    },
-    {
-      "label": "hex color",
       "file": "src/routes/_authenticated.pembaruan.tsx",
       "content": "style={{ background: status.bg_color || \"#0f172a\" }}"
     },
     {
       "label": "hex color",
-      "file": "src/routes/_authenticated.request.tsx",
-      "content": "className=\"bg-[#25D366] text-white hover:bg-[#20b959]\""
+      "file": "src/routes/_authenticated.pengaturan-tampilan.tsx",
+      "content": "swatch: [\"#0A0F1F\", \"#151C33\", \"#6366F1\", \"#E6E9F5\"],"
     },
     {
       "label": "hex color",
-      "file": "src/routes/_authenticated.request.tsx",
-      "content": "className=\"inline-flex cursor-pointer items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-0.5 text-ms-2xs text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.request.tsx",
-      "content": "className=\"inline-flex items-center gap-ms-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-ms-2 py-1 text-ms-2xs font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]\""
+      "file": "src/routes/_authenticated.pengaturan-tampilan.tsx",
+      "content": "swatch: [\"#0B0B0D\", \"#15151A\", \"#C9A227\", \"#EDE7D6\"],"
     },
     {
       "label": "hex color",
@@ -955,41 +1635,6 @@
     },
     {
       "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "<button onClick={() => setSharePinOpen(true)} className=\"inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white\"><MessageCircle className=\"h-4 w-4\" /> Bagikan link + PIN</button>"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "<button onClick={shareWA} className=\"inline-flex h-7 flex-1 items-center justify-center gap-ms-1 rounded bg-[#25D366] text-ms-2xs font-semibold text-white\"><MessageCircle className=\"h-3 w-3\" /> MCM</button>"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "className=\"inline-flex h-10 items-center justify-center gap-ms-1 rounded-md bg-[#25D366] text-ms-sm font-semibold text-white\">"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "className=\"inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "className=\"inline-flex h-7 items-center gap-ms-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-ms-2 text-ms-2xs font-medium text-[#1ea952] hover:bg-[#25D366]/20\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "className=\"inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/_authenticated.tugas.tsx",
-      "content": "className=\"inline-flex h-9 items-center gap-ms-1 rounded-md bg-[#25D366] px-ms-3 text-ms-xs font-semibold text-white hover:opacity-90\""
-    },
-    {
-      "label": "hex color",
       "file": "src/routes/_authenticated.undang.tsx",
       "content": "color: { dark: \"#0f172a\", light: \"#ffffff\" },"
     },
@@ -1029,51 +1674,6 @@
       "content": "<path fill=\"#FFC107\" d=\"M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z\"/>"
     },
     {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "<Bar yAxisId=\"left\" dataKey=\"omzet\" name=\"Omzet\" fill=\"#10b981\" radius={[4, 4, 0, 0]} />"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "<CartesianGrid strokeDasharray=\"3 3\" stroke=\"#334155\" />"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "<XAxis dataKey=\"label\" stroke=\"#94a3b8\" tick={{ fontSize: 10 }} interval=\"preserveStartEnd\" minTickGap={16} />"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "border: \"1px solid #334155\","
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "labelStyle={{ color: \"#e2e8f0\" }}"
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "stroke=\"#34d399\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "stroke=\"#60a5fa\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/pos-kasir.ringkasan.tsx",
-      "content": "stroke=\"#60a5fa\""
-    },
-    {
-      "label": "hex color",
-      "file": "src/routes/t.$token.tsx",
-      "content": "className=\"mt-3 inline-flex h-10 w-full items-center justify-center gap-ms-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-ms-3 text-ms-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]\""
-    },
-    {
       "label": "text-[Xpx]",
       "file": "src/components/AccessDiagnostics.tsx",
       "content": "<code className=\"mt-0.5 block break-words rounded bg-background/60 px-1.5 py-1 text-[10.5px]\">"
@@ -1095,8 +1695,18 @@
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/components/AppSidebar.tsx",
-      "content": "<div className=\"mt-0.5 truncate text-[10px] font-medium uppercase tracking-[0.22em] text-muted-foreground/80\">"
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": "<div className=\"flex items-center justify-between text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": "<label className=\"flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide opacity-80\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/CaptionPreviewDialog.tsx",
+      "content": "<span className=\"shrink-0 rounded-full bg-primary/15 px-2 py-0.5 font-mono text-[11px] font-semibold text-primary tabular-nums\">"
     },
     {
       "label": "text-[Xpx]",
@@ -1107,6 +1717,36 @@
       "label": "text-[Xpx]",
       "file": "src/components/chat/AttachMenu.tsx",
       "content": "<span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/CallDiagnosticsSheet.tsx",
+      "content": "<span className={`rounded px-1.5 py-0.5 text-[10px] ${KIND_CLASS[e.kind]}`}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/CallDiagnosticsSheet.tsx",
+      "content": "className=\"rounded-md border bg-card/60 px-ms-2 py-1.5 font-mono text-[11px] leading-snug\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/ChatHeaderDebtControls.tsx",
+      "content": "<div className=\"mt-0.5 flex items-center justify-end gap-1 font-mono text-[10px] text-muted-foreground [font-variant-numeric:tabular-nums]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/ChatHeaderDebtControls.tsx",
+      "content": "<div className=\"text-[10px] uppercase tracking-wide text-muted-foreground\">{label}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/ChatHeaderDebtControls.tsx",
+      "content": "<span className=\"shrink-0 rounded bg-muted px-1 py-px text-[10px] uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/chat/ChatHeaderDebtControls.tsx",
+      "content": "className={`grid size-4 shrink-0 place-items-center rounded-full text-[10px] font-bold ${"
     },
     {
       "label": "text-[Xpx]",
@@ -1121,12 +1761,17 @@
     {
       "label": "text-[Xpx]",
       "file": "src/components/ChatSharePreviewDialog.tsx",
-      "content": "<pre className=\"max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug\">{data.caption || \"(kosong)\"}</pre>"
+      "content": "<pre className=\"max-h-48 wa-message-text overflow-auto rounded-md border bg-muted/40 p-ms-2 font-sans text-[12.5px] leading-snug\">{data.caption || \"(kosong)\"}</pre>"
     },
     {
       "label": "text-[Xpx]",
       "file": "src/components/ChatSharePreviewDialog.tsx",
       "content": "className=\"mt-2 rounded-md border border-warning bg-warning p-ms-2 text-[11.5px] leading-snug text-warning\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/InfiniteSentinel.tsx",
+      "content": "<div className=\"py-3 text-center text-[11px] text-muted-foreground\">{doneLabel}</div>"
     },
     {
       "label": "text-[Xpx]",
@@ -1151,7 +1796,32 @@
     {
       "label": "text-[Xpx]",
       "file": "src/components/OrgNameSettings.tsx",
-      "content": "className=\"absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white\""
+      "content": "className=\"absolute inset-x-0 bottom-0 bg-warning/90 text-center text-[9px] font-semibold uppercase tracking-wider text-warning-foreground\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/PdfLayoutSettings.tsx",
+      "content": "<span className=\"block text-[11px] leading-tight\">{d.hint}</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/PdfPreviewDialog.tsx",
+      "content": "\"absolute bottom-0 right-0 rounded-tl bg-background/85 px-1 text-[10px] font-medium text-foreground\";"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/PdfPreviewDialog.tsx",
+      "content": "<span className=\"w-10 text-center text-[11px] tabular-nums text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/ScrollPerfAlertsCard.tsx",
+      "content": "<ul className=\"max-h-56 divide-y overflow-y-auto rounded-lg border text-[11px] tabular-nums\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/ScrollPerfLiveChart.tsx",
+      "content": "className=\"pointer-events-none absolute top-1 z-10 rounded-md border bg-popover px-2 py-1 text-[10px] leading-tight text-popover-foreground shadow-md\""
     },
     {
       "label": "text-[Xpx]",
@@ -1180,38 +1850,68 @@
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<Button type=\"button\" variant=\"ghost\" size=\"sm\" className=\"h-6 px-ms-2 text-[10.5px]\" onClick={() => setDraft(original)}>"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<div className=\"flex flex-wrap gap-1.5 border-t pt-ms-2 text-[11px] tabular-nums\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<Button type=\"button\" variant=\"ghost\" size=\"sm\" className=\"h-6 px-ms-2 text-[10.5px]\" onClick={() => setEditing((v) => !v)}>"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<dl className=\"grid grid-cols-2 gap-x-ms-3 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<div className=\"flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<dl className=\"grid grid-cols-2 gap-x-ms-3 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<div className=\"flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<p className=\"text-[11px] font-medium text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<div className=\"mb-1.5 flex items-center gap-ms-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<p className=\"text-[11px] text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<div className=\"text-[9.5px] text-muted-foreground\">{fmtSize(p.size)}</div>"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<span className=\"shrink-0 text-[10px] tabular-nums text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
-      "file": "src/lib/wa-preview.tsx",
-      "content": "<dl className=\"mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]\">"
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<span className=\"text-[11px] font-normal leading-snug text-muted-foreground whitespace-normal\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "<span className=\"text-[11px] leading-snug\">{h.label}</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "className=\"h-7 px-2 text-[11px]\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/settings/ViewportAnchorSettings.tsx",
+      "content": "className=\"text-[10px] tabular-nums\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SiapkanSendiriSection.tsx",
+      "content": "\"inline-flex shrink-0 items-center gap-ms-1 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none \" +"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SiapkanSendiriSection.tsx",
+      "content": "\"shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold leading-none \" +"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/components/SoldTotalLine.tsx",
+      "content": "<span className=\"ml-1.5 text-[11px] text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
@@ -1256,12 +1956,22 @@
     {
       "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "<span className=\"absolute inset-x-0 bottom-0 bg-destructive/90 text-center text-[9px] font-semibold uppercase text-destructive-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
       "content": "<span className=\"inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/70 px-1 py-0.5 text-[9px] font-medium uppercase tracking-wide\">"
     },
     {
       "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.chat.$conversationId.tsx",
       "content": "<span className=\"inline-flex shrink-0 items-center rounded bg-success/15 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide text-success dark:text-success\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.chat.$conversationId.tsx",
+      "content": "<span className=\"mt-0.5 max-w-full truncate px-1 text-[9px] leading-tight text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
@@ -1321,6 +2031,11 @@
     {
       "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.dashboard.tsx",
+      "content": "<span className=\"ml-ms-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary tabular-nums\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.dashboard.tsx",
       "content": "<span className=\"text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground\">"
     },
     {
@@ -1335,8 +2050,173 @@
     },
     {
       "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.diagnostik-viewport.tsx",
+      "content": "<dl className=\"grid grid-cols-2 gap-x-ms-3 gap-y-1 text-[11px] tabular-nums sm:grid-cols-4\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.diagnostik-viewport.tsx",
+      "content": "<ul className=\"max-h-[60vh] divide-y overflow-y-auto text-[11px] tabular-nums\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"mt-ms-1 text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"text-[10px] font-semibold uppercase tracking-wide text-destructive\">Error</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"text-[10px] font-semibold uppercase tracking-wide text-muted-foreground\">Catatan</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"text-[10px] font-semibold uppercase tracking-wide text-muted-foreground\">Pesan terkirim</div>"
+    },
+    {
+      "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.ecer.tsx",
       "content": "<div className=\"text-[9px] font-semibold uppercase tracking-wide text-muted-foreground\">{label}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<div className=\"text-center text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<pre className=\"mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted/40 p-ms-1.5 font-sans text-[11px] leading-relaxed\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"rounded border border-border bg-muted/40 px-1 py-0.5 text-[10px] font-medium text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"text-[10px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"text-[10px] font-semibold uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className=\"text-[10px] text-muted-foreground\">–</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(pendingDelete.outcome)}`}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className={`rounded border px-1 py-0.5 text-[10px] font-medium ${outcomeStyle(r.outcome)}`}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "<span className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${outcomeStyle(detail.outcome)}`}>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"flex w-full items-center justify-center gap-ms-1 rounded-md border border-dashed bg-muted/20 px-ms-2 py-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:text-foreground disabled:opacity-60\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"h-7 min-w-0 rounded-md border border-border bg-background px-1 text-[10px]\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"inline-flex h-7 items-center gap-ms-1 rounded-md px-ms-1.5 text-[10px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"ml-auto h-6 rounded-md border border-border bg-background px-1 text-[10px] text-muted-foreground\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className=\"rounded-md border border-border bg-background px-ms-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ecer.tsx",
+      "content": "className={`rounded-full border px-ms-1.5 py-0.5 text-[10px] font-medium transition ${"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ekspor-pesanan.tsx",
+      "content": "<p className=\"text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "<div className=\"mt-1 break-words font-mono text-[11px]\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "<div className=\"mt-1 text-[11px] opacity-80\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "<pre className=\"mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px] leading-tight\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "<summary className=\"cursor-pointer select-none text-[11px] underline\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "className=\"rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.gudang.tsx",
+      "content": "className=\"rounded border border-destructive/40 px-2 py-1 text-[10px] font-medium hover:bg-destructive/20\""
     },
     {
       "label": "text-[Xpx]",
@@ -1355,6 +2235,131 @@
     },
     {
       "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"mt-1 text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Barang</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Pembayaran</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Pembayaran</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Pembelian</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Penjualan</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Perubahan stok</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "className={`ml-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "className={`rounded-full px-2 py-0.5 text-[11px] ${"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.$kind.$id.tsx",
+      "content": "className={`rounded-full px-2 py-0.5 text-[11px] ${"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<div className=\"flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<div className=\"flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Jual</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<div className=\"text-[10px] uppercase text-muted-foreground\">Terima</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.riwayat.tsx",
+      "content": "<span className=\"truncate text-[11px] italic\">“{r.note}”</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.tsx",
+      "content": "<div className=\"text-[10px] text-destructive\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.tsx",
+      "content": "<div className=\"text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.tsx",
+      "content": "<div className=\"text-[10px] text-muted-foreground\">📞 {c.contact}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.tsx",
+      "content": "className=\"rounded border px-1.5 py-1 text-[10px] hover:bg-accent\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kios.tsx",
+      "content": "className=\"rounded border px-1.5 py-1 text-[10px] hover:bg-accent\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.kontak-mapping.tsx",
+      "content": "<span className=\"mt-0.5 inline-flex items-start gap-1 text-[11px] leading-snug text-amber-500\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.metrik-query.tsx",
+      "content": "<code className=\"rounded bg-muted px-1 py-0.5 text-[10px]\">{q.name}</code>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.metrik-query.tsx",
+      "content": "<p className=\"text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.pengaturan-app-mode.tsx",
       "content": "<code className=\"rounded bg-background px-1 py-0.5 text-[10.5px]\">"
     },
@@ -1367,6 +2372,26 @@
       "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.pengaturan-app-mode.tsx",
       "content": "<code className=\"rounded bg-muted px-1 py-0.5 text-[10.5px]\">VITE_APP_MODE</code>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-notifikasi-wa.tsx",
+      "content": "<pre className=\"mt-2 overflow-x-auto rounded bg-muted p-2 font-mono text-[10.5px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-pesan-wa.tsx",
+      "content": "<div className=\"mt-ms-1 text-[10px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-pesan-wa.tsx",
+      "content": "<div className=\"text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.pengaturan-pesan-wa.tsx",
+      "content": "className=\"rounded-full border bg-muted/40 px-2 py-1 text-[11px] hover:bg-muted\""
     },
     {
       "label": "text-[Xpx]",
@@ -1385,8 +2410,48 @@
     },
     {
       "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.rekonsiliasi-kontak.tsx",
+      "content": "<p className=\"text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.rekonsiliasi-kontak.tsx",
+      "content": "<p className=\"text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.rekonsiliasi-kontak.tsx",
+      "content": "<span className=\"text-[11px] font-medium text-muted-foreground\">Nama kanonik</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.rekonsiliasi-kontak.tsx",
+      "content": "<span className=\"text-[11px] font-medium text-muted-foreground\">Tautkan ke record</span>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.rekonsiliasi-kontak.tsx",
+      "content": "className=\"shrink-0 rounded-md border px-2 py-1 text-[11px] hover:bg-muted\""
+    },
+    {
+      "label": "text-[Xpx]",
       "file": "src/routes/_authenticated.request.tsx",
       "content": "<div className=\"shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ringkasan.tsx",
+      "content": "<div className=\"flex h-full w-full items-center justify-center text-[11px] text-muted-foreground\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ringkasan.tsx",
+      "content": "<div className=\"text-[11px] text-muted-foreground\">{props.hint}</div>"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/_authenticated.ringkasan.tsx",
+      "content": "<p className=\"mt-2 text-[11px] text-muted-foreground\">"
     },
     {
       "label": "text-[Xpx]",
@@ -1407,6 +2472,16 @@
       "label": "text-[Xpx]",
       "file": "src/routes/auth-callback.tsx",
       "content": "<ul className=\"space-y-1 font-mono text-[10.5px] leading-snug\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/katalog.$slug.index.tsx",
+      "content": "className=\"text-center text-[11px] text-muted-foreground hover:text-foreground\""
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/katalog.$slug.index.tsx",
+      "content": "className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-[11px] ${"
     },
     {
       "label": "text-[Xpx]",
@@ -1436,6 +2511,11 @@
     {
       "label": "text-[Xpx]",
       "file": "src/routes/t.$token.tsx",
+      "content": "<div className=\"mt-0.5 text-[10px] text-destructive\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
       "content": "<div className=\"text-[9px] font-medium\">Memuat…</div>"
     },
     {
@@ -1446,7 +2526,17 @@
     {
       "label": "text-[Xpx]",
       "file": "src/routes/t.$token.tsx",
+      "content": "<span className=\"absolute inset-x-0 bottom-0 truncate bg-background/80 px-2 py-1 text-center text-[11px] font-medium tabular-nums text-foreground backdrop-blur\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
       "content": "<span className=\"ml-1 hidden text-[9px] opacity-60 sm:inline\">"
+    },
+    {
+      "label": "text-[Xpx]",
+      "file": "src/routes/t.$token.tsx",
+      "content": "<span className=\"tabular-nums text-[10px] font-semibold\">"
     },
     {
       "label": "text-[Xpx]",

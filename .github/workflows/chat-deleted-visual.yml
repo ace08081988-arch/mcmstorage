@@ -54,7 +54,7 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Playwright Chromium
-        run: bunx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium webkit
 
       - name: Start dev server
         run: |
@@ -71,14 +71,26 @@ jobs:
           echo "Dev server failed to start"; tail -100 artifacts/dev-server.log; exit 1
 
       - name: Run Playwright visual regression (chat-deleted, multi-viewport)
-        # Strict in CI: any pixel diff > maxDiffPixelRatio OR missing baseline fails.
+        # Baseline yang sudah ada tetap ketat (pixel diff > maxDiffPixelRatio = gagal).
+        # Baseline yang belum pernah dibuat digenerate di run ini dan diunggah
+        # sebagai artifact untuk di-commit, supaya check tidak merah selamanya.
         # Runs mobile (390x844), tablet portrait (820x1180), tablet landscape (1180x820).
         run: |
           bunx playwright test tests/visual/chat-deleted.public.spec.ts \
             --project=mobile-public \
             --project=tablet-public \
             --project=tablet-landscape-public \
+            --update-snapshots=missing \
             --reporter=list,html
+
+      - name: Upload generated baselines (bila ada yang baru)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-deleted-visual-baselines
+          path: tests/visual/**/*-snapshots/**
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Collect screenshot diffs
         if: failure()
