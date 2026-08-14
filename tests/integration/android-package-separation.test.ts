@@ -237,14 +237,14 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
       "ANDROID_" + "KEY_PASSWORD",
     ];
     for (const name of legacy) {
-      const hits = rgFiles(`${name}\\b`, [self]);
+      const hits = searchFiles(`${name}\\b`, [self]);
       expect(hits, `${name} masih dipakai di: ${hits.join(", ")}`).toEqual([]);
     }
   });
 
   it("tidak ada sisa package chat / private connect di repo", () => {
     const self = "tests/integration/android-package-separation.test.ts";
-    const hits = rgFiles("biz\\.mcmstorage\\.chat|com\\.mcm\\.privateconnect", [self, "*.md"]);
+    const hits = searchFiles("biz\\.mcmstorage\\.chat|com\\.mcm\\.privateconnect", [self, "*.md"]);
     // Referensi yang boleh tersisa hanya: komentar penjelas, atau daftar
     // package TERLARANG di preflight (justru penjaga pemisahan).
     const offending: string[] = [];
