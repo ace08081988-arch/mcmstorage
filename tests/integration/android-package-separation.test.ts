@@ -42,6 +42,8 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
     expect(strings).toContain('<string name="app_name">MCM Storage</string>');
     expect(strings).toContain('<string name="custom_url_scheme">mcmstorage.app</string>');
     expect(strings).not.toMatch(/biz\.mcmstorage\.app|Ace Chat|Private Connect/i);
+    expect(manifest).toContain('<data android:scheme="${applicationId}" />');
+    expect(read("android/app/build.gradle")).toContain('applicationId "mcmstorage.app"');
   });
 
   it("komponen panggilan/bubble milik Private Connect tidak ikut", () => {

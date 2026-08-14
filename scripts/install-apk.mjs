@@ -95,7 +95,7 @@ const apkPath = apkOverride ? resolve(ROOT, apkOverride) : defaultApk;
 if (!existsSync(apkPath)) {
   fail(
     `APK tidak ditemukan: ${apkPath}\n` +
-      "Build dulu: bun run apk:full lalu di Android Studio: Build → Build APK(s).\n" +
+      "Build dulu: bun run mobile:sync lalu di Android Studio: Build → Build APK(s).\n" +
       "Atau lewat --apk <path> kalau lokasi custom.",
   );
 }

@@ -11,7 +11,7 @@
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
  *   2. Typecheck (tsc --noEmit).
- *   3. Build web + cap sync (`apk:full`).
+ *   3. Build web + cap sync (`mobile:sync`).
  *   4. Jalankan `./gradlew :app:bundleRelease` (atau bundleDebug).
  *   5. Cetak path .aab hasilnya.
  *
@@ -132,8 +132,8 @@ if (!skipTypecheck) {
 }
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
-step("3/4  Build web + cap sync (apk:full)");
-run("bun", ["run", "apk:full"]);
+step("3/4  Build web + cap sync (mobile:sync)");
+run("bun", ["run", "mobile:sync"]);
 console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle bundle ─────────────────────────────────────────────────
