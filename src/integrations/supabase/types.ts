@@ -2545,6 +2545,7 @@ export type Database = {
           action: string
           expires_at: string
           nonce: string
+          result: Json | null
           used_at: string
           user_id: string
         }
@@ -2552,6 +2553,7 @@ export type Database = {
           action: string
           expires_at: string
           nonce: string
+          result?: Json | null
           used_at?: string
           user_id: string
         }
@@ -2559,6 +2561,7 @@ export type Database = {
           action?: string
           expires_at?: string
           nonce?: string
+          result?: Json | null
           used_at?: string
           user_id?: string
         }
@@ -4358,12 +4361,16 @@ export type Database = {
           status: Database["public"]["Enums"]["friend_request_status"]
         }[]
       }
+      chat_capabilities_internal: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: Json
+      }
       chat_clear_conversation_for_me: {
         Args: { _conv: string }
         Returns: string[]
       }
       chat_conversation_capabilities: {
-        Args: { _conversation_id: string; _user_id?: string }
+        Args: { _conversation_id: string }
         Returns: Json
       }
       chat_heartbeat: { Args: never; Returns: undefined }

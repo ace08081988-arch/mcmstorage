@@ -17,6 +17,10 @@ import androidx.core.app.NotificationCompat;
  * Tujuannya menjaga proses tetap hidup saat panggilan aktif (WebRTC berjalan
  * di WebView) tanpa menahan baterai di luar panggilan — service dihentikan
  * begitu panggilan ditolak, berakhir, atau timeout.
+ *
+ * Service type = microphone (+camera untuk video). Aplikasi TIDAK memakai
+ * Telecom/self-managed ConnectionService, jadi `phoneCall` TIDAK diklaim.
+ * Service hanya dimulai SETELAH pengguna menekan Jawab.
  */
 public class CallForegroundService extends Service {
     private static final int NOTIF_ID = 424242;
@@ -49,7 +53,7 @@ public class CallForegroundService extends Service {
         String kind = intent == null ? "audio" : String.valueOf(intent.getStringExtra(EX_KIND));
         Intent open = new Intent(this, MainActivity.class)
                 .setAction(Intent.ACTION_VIEW)
-                .setData(AceMessagingService.deepLink("/chat"))
+                .setData(AceMessagingService.deepLink(this, "/chat"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pi = PendingIntent.getActivity(
                 this, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -66,7 +70,9 @@ public class CallForegroundService extends Service {
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL);
+                int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+                if ("video".equals(kind)) type |= ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA;
+                startForeground(NOTIF_ID, n, type);
             } else {
                 startForeground(NOTIF_ID, n);
             }

@@ -15,6 +15,7 @@ import androidx.core.app.Person;
 import androidx.core.app.RemoteInput;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -24,6 +25,9 @@ import java.util.concurrent.Executors;
  * autentikasi memakai action token HMAC sekali-pakai dari payload FCM.
  */
 public class AceActionReceiver extends BroadcastReceiver {
+
+    /** Satu executor untuk seluruh proses — jangan buat baru tiap aksi. */
+    private static final ExecutorService IO = Executors.newSingleThreadExecutor();
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -52,7 +56,11 @@ public class AceActionReceiver extends BroadcastReceiver {
                     if (conversationId != null) AceChatStore.clear(ctx, conversationId);
                     cancel(ctx, notifId);
                 } else {
-                    toast(ctx, "Balasan gagal terkirim — buka aplikasi untuk mencoba lagi");
+                    // Jangan buang teks pengguna: simpan di antrean lokal dan
+                    // beri notifikasi kegagalan yang bisa ditekan untuk membuka
+                    // percakapan dengan draft.
+                    AceReplyQueue.enqueue(ctx, conversationId, token, reply);
+                    AceReplyQueue.notifyFailure(ctx, conversationId, notifId, reply);
                 }
             });
             return;
@@ -60,9 +68,16 @@ public class AceActionReceiver extends BroadcastReceiver {
 
         if (AceNotify.ACTION_MARK_READ.equals(action)) {
             if (token == null) return;
-            cancel(ctx, notifId);
-            if (conversationId != null) AceChatStore.clear(ctx, conversationId);
-            run(ctx, () -> AceNotify.postAction(ctx, token, "mark-read", null));
+            // Notifikasi baru dihapus SETELAH server menerima — kalau gagal,
+            // pesan tetap terlihat belum dibaca.
+            run(ctx, () -> {
+                if (AceNotify.postAction(ctx, token, "mark-read", null)) {
+                    if (conversationId != null) AceChatStore.clear(ctx, conversationId);
+                    cancel(ctx, notifId);
+                } else {
+                    toast(ctx, "Gagal menandai dibaca — coba lagi dari aplikasi");
+                }
+            });
             return;
         }
 
@@ -110,7 +125,7 @@ public class AceActionReceiver extends BroadcastReceiver {
 
     private void run(Context ctx, Runnable task) {
         final PendingResult pending = goAsync();
-        Executors.newSingleThreadExecutor().execute(() -> {
+        IO.execute(() -> {
             try {
                 task.run();
             } finally {

@@ -33,6 +33,11 @@ export const createAndRingCall = createServerFn({ method: "POST" })
     if (capErr) throw new Error(capErr.message);
     const cap = normalizeCapabilities(capRaw);
     if (!cap.canCall) throw new Error(`chat_capability:${cap.reasonCode}`);
+    // Callee TIDAK boleh datang dari klien tanpa verifikasi: hanya peer DM
+    // yang dikembalikan capability yang sah.
+    if (!cap.peerUserId || cap.peerUserId !== data.calleeId)
+      throw new Error("chat_capability:callee_mismatch");
+    if (data.calleeId === userId) throw new Error("chat_capability:self_call");
 
     const { data: call, error } = await supabase
       .from("chat_calls")

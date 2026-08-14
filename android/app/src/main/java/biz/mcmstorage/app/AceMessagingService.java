@@ -39,6 +39,16 @@ public class AceMessagingService extends FirebaseMessagingService {
         // (`src/lib/native-push.ts`). Di sini cukup catat supaya token lama
         // tidak dipakai diam-diam.
         Log.i(AceNotify.TAG, "FCM token baru diterima");
+        // Persist agar lapisan web bisa mendaftarkan ulang setelah auth siap
+        // (proses bisa mati sebelum WebView sempat hidup).
+        try {
+            getSharedPreferences("ace_push", MODE_PRIVATE)
+                    .edit()
+                    .putString("pending_token", token)
+                    .putLong("pending_token_at", System.currentTimeMillis())
+                    .apply();
+        } catch (Exception ignored) {
+        }
     }
 
     @Override
@@ -46,6 +56,13 @@ public class AceMessagingService extends FirebaseMessagingService {
         Map<String, String> d = message.getData();
         if (d == null || d.isEmpty()) return;
         AceNotify.ensureChannels(this);
+        // Kesempatan bagus untuk mengirim ulang balasan yang tertunda.
+        try {
+            if (AceReplyQueue.pending(this) > 0) {
+                new Thread(() -> AceReplyQueue.flush(this)).start();
+            }
+        } catch (Exception ignored) {
+        }
 
         String kind = value(d, "kind", "system");
         if ("call".equals(kind)) {
@@ -234,17 +251,21 @@ public class AceMessagingService extends FirebaseMessagingService {
         return AceNotify.CH_SYSTEM;
     }
 
-    static Uri deepLink(String path) {
+    /**
+     * Scheme deep link mengikuti applicationId varian (full: `mcmstorage.app`,
+     * chat: `biz.mcmstorage.chat`) — JANGAN hard-code paket sumber Java.
+     */
+    static Uri deepLink(Context ctx, String path) {
         String p = path == null || path.isEmpty() ? "/" : path;
         if (p.startsWith("http")) return Uri.parse(p);
         if (!p.startsWith("/")) p = "/" + p;
-        return Uri.parse("biz.mcmstorage.app:/" + p);
+        return Uri.parse(ctx.getPackageName() + ":/" + p);
     }
 
     private PendingIntent openIntent(String conversationId, String url, int notifId) {
         Intent i = new Intent(this, MainActivity.class)
                 .setAction(Intent.ACTION_VIEW)
-                .setData(deepLink(url))
+                .setData(deepLink(this, url))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         if (conversationId != null) i.putExtra(AceNotify.EX_CONVERSATION, conversationId);
         return PendingIntent.getActivity(this, notifId, i, immutableFlags());
@@ -280,7 +301,7 @@ public class AceMessagingService extends FirebaseMessagingService {
             String id = "conv_" + conversationId;
             Intent target = new Intent(this, MainActivity.class)
                     .setAction(Intent.ACTION_VIEW)
-                    .setData(deepLink(url));
+                    .setData(deepLink(this, url));
             ShortcutInfo info = new ShortcutInfo.Builder(this, id)
                     .setShortLabel(title)
                     .setLongLabel(title)
@@ -301,12 +322,18 @@ public class AceMessagingService extends FirebaseMessagingService {
     private NotificationCompat.BubbleMetadata bubbleMetadata(String conversationId, String url) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null;
         try {
+            android.app.NotificationManager nm =
+                    getSystemService(android.app.NotificationManager.class);
+            // Bubble dinonaktifkan user/OEM → fallback ke notifikasi biasa.
+            if (nm == null || !nm.areBubblesAllowed()) return null;
             Intent i = new Intent(this, ChatBubbleActivity.class)
                     .setAction(Intent.ACTION_VIEW)
-                    .setData(deepLink(url))
+                    .setData(deepLink(this, url))
                     .putExtra(AceNotify.EX_CONVERSATION, conversationId);
+            // Bubble WAJIB memakai PendingIntent mutable (sistem menyesuaikan
+            // intent saat bubble diperluas). Target tetap explicit + non-exported.
             PendingIntent pi = PendingIntent.getActivity(
-                    this, AceChatStore.notifId(conversationId) * 10 + 6, i, immutableFlags());
+                    this, AceChatStore.notifId(conversationId) * 10 + 6, i, mutableFlags());
             return new NotificationCompat.BubbleMetadata.Builder(
                     pi, androidx.core.graphics.drawable.IconCompat.createWithResource(
                             this, R.mipmap.ic_launcher))

@@ -92,7 +92,7 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
         <service
             android:name="biz.mcmstorage.app.CallForegroundService"
             android:exported="false"
-            android:foregroundServiceType="phoneCall" />
+            android:foregroundServiceType="microphone|camera" />
 
         <receiver
             android:name="biz.mcmstorage.app.AceActionReceiver"
@@ -110,7 +110,6 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
             android:exported="false"
             android:launchMode="singleInstance"
             android:excludeFromRecents="true"
-            android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:showWhenLocked="true"
             android:theme="@style/AppTheme.NoActionBar"
@@ -140,10 +139,24 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
     note("manifest: komponen ditambahkan");
   }
 
-  const perms = [
-    "android.permission.FOREGROUND_SERVICE",
+  // Izin yang HARUS dicabut: aplikasi tidak memakai Telecom/self-managed
+  // ConnectionService, jadi klaim phone-call tidak dibenarkan platform.
+  for (const stale of [
     "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
     "android.permission.MANAGE_OWN_CALLS",
+  ]) {
+    const re = new RegExp(`[ \\t]*<uses-permission android:name="${stale}" />\\n`, "g");
+    if (re.test(xml)) {
+      xml = xml.replace(re, "");
+      changed++;
+      note(`manifest: izin ${stale} dihapus`);
+    }
+  }
+
+  const perms = [
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+    "android.permission.FOREGROUND_SERVICE_CAMERA",
     "android.permission.USE_FULL_SCREEN_INTENT",
   ];
   const missing = perms.filter((p) => !xml.includes(`"${p}"`));
@@ -156,6 +169,14 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
     changed++;
     note(`manifest: izin ${missing.length} ditambahkan`);
   }
+  // Deep-link scheme mengikuti applicationId varian.
+  const schemeRe = /android:scheme="biz\.mcmstorage\.app"/g;
+  if (schemeRe.test(xml)) {
+    xml = xml.replace(schemeRe, 'android:scheme="${applicationId}"');
+    changed++;
+    note("manifest: scheme deep link mengikuti applicationId");
+  }
+
   writeFileSync(MANIFEST, xml);
 }
 
@@ -165,9 +186,11 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
   const block = `    ${MARK_GRADLE}
     // Diperlukan service FCM kustom (Capacitor hanya menariknya transitif,
     // tanpa jaminan API MessagingStyle/CallStyle tersedia saat kompilasi).
-    implementation platform("com.google.firebase:firebase-bom:33.7.0")
+    // BOM harus >= yang ditarik Capacitor PushNotifications 8, dan
+    // androidx.core TIDAK dipin di sini supaya tidak menurunkan versi
+    // dari android/variables.gradle (coreVersion).
+    implementation platform("com.google.firebase:firebase-bom:34.4.0")
     implementation "com.google.firebase:firebase-messaging"
-    implementation "androidx.core:core:1.13.1"
     // ace-native:end
 `;
   const re = new RegExp(`[ \\t]*${MARK_GRADLE.replace("/", "\\/")}[\\s\\S]*?// ace-native:end\\n`);
