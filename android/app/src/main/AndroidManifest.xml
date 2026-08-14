@@ -63,6 +63,54 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- ace-native:begin -->
+        <!-- Ace Chat native: FCM data-only, aksi notifikasi, panggilan.
+             Dipasang ulang otomatis oleh scripts/sync-native.mjs. -->
+        <service
+            android:name="biz.mcmstorage.app.AceMessagingService"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="biz.mcmstorage.app.CallForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
+
+        <receiver
+            android:name="biz.mcmstorage.app.AceActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="biz.mcmstorage.app.REPLY" />
+                <action android:name="biz.mcmstorage.app.MARK_READ" />
+                <action android:name="biz.mcmstorage.app.CALL_DECLINE" />
+                <action android:name="biz.mcmstorage.app.DISMISS" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name="biz.mcmstorage.app.IncomingCallActivity"
+            android:exported="false"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:showWhenLocked="true"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="orientation|keyboardHidden|screenSize|uiMode" />
+
+        <activity
+            android:name="biz.mcmstorage.app.ChatBubbleActivity"
+            android:exported="false"
+            android:allowEmbedded="true"
+            android:resizeableActivity="true"
+            android:documentLaunchMode="always"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density" />
+        <!-- ace-native:end -->
     </application>
 
     <!-- ── Jaringan ───────────────────────────────────────────────── -->
@@ -109,4 +157,10 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
+    <!-- ace-native: panggilan masuk & foreground service saat panggilan -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 </manifest>
