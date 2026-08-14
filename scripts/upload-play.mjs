@@ -6,7 +6,6 @@
  *
  * Pemakaian:
  *   node scripts/upload-play.mjs                        # varian full, track internal
- *   node scripts/upload-play.mjs --variant chat
  *   node scripts/upload-play.mjs --track production --release-status draft
  *   node scripts/upload-play.mjs --aab path/ke.aab
  *   node scripts/upload-play.mjs --package mcmstorage.app
@@ -56,8 +55,15 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = flag("--variant", "full");
-if (!["full", "chat"].includes(variant)) fail(`Varian tidak dikenal: ${variant}`);
+const variant = "full";
+{
+  const requested = flag("--variant");
+  if (requested && requested !== "full") {
+    fail(
+      `Varian "${requested}" sudah dihapus. Project ini hanya merilis package mcmstorage.app.`,
+    );
+  }
+}
 const track = flag("--track", "internal");
 const releaseStatus = flag("--release-status", "draft");
 const releaseName = flag("--release-name");
@@ -94,7 +100,7 @@ const VALID_STATUS = ["draft", "inProgress", "halted", "completed"];
 if (!VALID_STATUS.includes(releaseStatus))
   fail(`--release-status harus salah satu: ${VALID_STATUS.join(", ")}`);
 
-banner(`Upload AAB ke Play Console · varian ${variant.toUpperCase()} · track ${track}`);
+banner(`Upload AAB ke Play Console · MCM Storage · track ${track}`);
 const TOTAL = 7;
 
 // ─── 1. Load service account ──────────────────────────────────────────
@@ -105,7 +111,7 @@ console.log(`  ✓ client_email: ${sa.client_email}`);
 // ─── 2. Tentukan package name & AAB ───────────────────────────────────
 step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
-  packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "mcmstorage.app");
+  packageOverride ?? "mcmstorage.app";
 console.log(`  ✓ packageName: ${packageName}`);
 runSummary.packageName = packageName;
 
@@ -115,7 +121,7 @@ const aabPath = aabOverride
 if (!existsSync(aabPath)) {
   fail(
     `AAB tidak ditemukan: ${aabPath}\n` +
-      "Build dulu: bun run aab:build (atau aab:build:chat). Lalu ulangi.",
+      "Build dulu: bun run aab:build. Lalu ulangi.",
   );
 }
 const aabSize = statSync(aabPath).size;

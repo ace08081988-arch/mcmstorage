@@ -30,7 +30,7 @@
 
             <!-- Deep link scheme kustom (dipertahankan untuk kompatibilitas
                  link lama). Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
-            <intent-filter android:label="Ace Storage Deep Link">
+            <intent-filter android:label="MCM Storage Deep Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -42,7 +42,7 @@
                  lihat docs/ANDROID_APP_LINKS.md. Hanya route yang memang
                  harus membuka aplikasi: portal tugas pegawai (/t/...) dan
                  undangan (/undang...). -->
-            <intent-filter android:autoVerify="true" android:label="Ace Storage App Link">
+            <intent-filter android:autoVerify="true" android:label="MCM Storage App Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -64,7 +64,7 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
         <!-- ace-native:begin -->
-        <!-- Ace Chat native: FCM data-only, aksi notifikasi, panggilan.
+        <!-- MCM Storage native: FCM data-only + aksi notifikasi.
              Dipasang ulang otomatis oleh scripts/sync-native.mjs. -->
         <service
             android:name="biz.mcmstorage.app.AceMessagingService"
@@ -75,40 +75,15 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name="biz.mcmstorage.app.CallForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="microphone|camera" />
-
         <receiver
             android:name="biz.mcmstorage.app.AceActionReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="biz.mcmstorage.app.REPLY" />
                 <action android:name="biz.mcmstorage.app.MARK_READ" />
-                <action android:name="biz.mcmstorage.app.CALL_DECLINE" />
                 <action android:name="biz.mcmstorage.app.DISMISS" />
             </intent-filter>
         </receiver>
-
-        <activity
-            android:name="biz.mcmstorage.app.IncomingCallActivity"
-            android:exported="false"
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
-            android:turnScreenOn="true"
-            android:showWhenLocked="true"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|screenSize|uiMode" />
-
-        <activity
-            android:name="biz.mcmstorage.app.ChatBubbleActivity"
-            android:exported="false"
-            android:allowEmbedded="true"
-            android:resizeableActivity="true"
-            android:documentLaunchMode="always"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density" />
         <!-- ace-native:end -->
     </application>
 
@@ -157,11 +132,4 @@
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
-    <!-- ace-native: panggilan masuk & foreground service saat panggilan -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-
-    <!-- ace-native: panggilan masuk & foreground service saat panggilan -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 </manifest>
