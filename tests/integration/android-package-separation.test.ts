@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, posix, sep } from "node:path";
 
 const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
 
@@ -23,27 +23,70 @@ const childKeysOf = (yml: string, key: string) => {
   return out;
 };
 
-/** rg wrapper: exit 0 = ada match, 1 = tidak ada, lainnya = error (harus gagal). */
-const rgFiles = (pattern: string, exclude: string[]) => {
-  const r = spawnSync(
-    "rg",
-    [
-      "-l",
-      "--glob",
-      "!node_modules",
-      "--glob",
-      "!dist",
-      ...exclude.flatMap((e) => ["--glob", `!${e}`]),
-      pattern,
-      ".",
-    ],
-    { encoding: "utf8" },
-  );
-  if (r.error) throw new Error(`rg tidak dapat dijalankan: ${r.error.message}`);
-  if (r.status !== 0 && r.status !== 1) {
-    throw new Error(`rg gagal (exit ${r.status}): ${r.stderr}`);
+/**
+ * Pencarian repo murni Node (portable lokal/CI, tanpa executable eksternal).
+ * - Direktori yang dilewati: VCS, dependency, dan output build.
+ * - Ekstensi biner dilewati.
+ * - File yang tidak terbaca dilaporkan sebagai error, bukan ditelan.
+ */
+const SKIP_DIRS = new Set([
+  ".git",
+  "node_modules",
+  "dist",
+  "build",
+  ".output",
+  ".nitro",
+  ".vinxi",
+  ".vite",
+  "coverage",
+  "test-artifacts",
+  "playwright-report",
+  "test-results",
+  ".gradle",
+  ".idea",
+  ".next",
+  ".cache",
+]);
+
+const BINARY_EXT =
+  /\.(png|jpe?g|gif|webp|avif|ico|icns|svgz|pdf|zip|gz|tgz|bz2|xz|7z|jar|aar|aab|apk|keystore|jks|so|dll|dylib|exe|bin|class|dex|woff2?|ttf|otf|eot|mp[34]|mov|mp4|webm|wav|ogg|lockb|node)$/i;
+
+const listRepoFiles = (dir = ".", acc: string[] = []): string[] => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = dir === "." ? entry.name : `${dir}${sep}${entry.name}`;
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      listRepoFiles(rel, acc);
+    } else if (entry.isFile()) {
+      if (BINARY_EXT.test(entry.name)) continue;
+      acc.push(rel.split(sep).join(posix.sep));
+    }
   }
-  return r.status === 1 ? [] : r.stdout.trim().split("\n").filter(Boolean);
+  return acc;
+};
+
+/** Cari file yang cocok pattern. `exclude` = path relatif (posix) atau "*.ext". */
+const searchFiles = (pattern: string, exclude: string[]) => {
+  const re = new RegExp(pattern);
+  const excludedExt = exclude
+    .filter((e) => e.startsWith("*."))
+    .map((e) => e.slice(1).toLowerCase());
+  const excludedPaths = new Set(exclude.filter((e) => !e.startsWith("*.")).map((e) => e.toLowerCase()));
+  const hits: string[] = [];
+  for (const file of listRepoFiles()) {
+    const lower = file.toLowerCase();
+    if (excludedPaths.has(lower)) continue;
+    if (excludedExt.some((ext) => lower.endsWith(ext))) continue;
+    let content: string;
+    try {
+      content = readFileSync(join(...file.split(posix.sep)), "utf8");
+    } catch (err) {
+      throw new Error(`gagal membaca ${file}: ${(err as Error).message}`);
+    }
+    if (content.includes("\u0000")) continue; // biner tak berekstensi
+    if (re.test(content)) hits.push(file);
+  }
+  return hits;
 };
 
 const workflow = read(".github/workflows/mcm-storage-play-release.yml");
@@ -194,14 +237,14 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
       "ANDROID_" + "KEY_PASSWORD",
     ];
     for (const name of legacy) {
-      const hits = rgFiles(`${name}\\b`, [self]);
+      const hits = searchFiles(`${name}\\b`, [self]);
       expect(hits, `${name} masih dipakai di: ${hits.join(", ")}`).toEqual([]);
     }
   });
 
   it("tidak ada sisa package chat / private connect di repo", () => {
     const self = "tests/integration/android-package-separation.test.ts";
-    const hits = rgFiles("biz\\.mcmstorage\\.chat|com\\.mcm\\.privateconnect", [self, "*.md"]);
+    const hits = searchFiles("biz\\.mcmstorage\\.chat|com\\.mcm\\.privateconnect", [self, "*.md"]);
     // Referensi yang boleh tersisa hanya: komentar penjelas, atau daftar
     // package TERLARANG di preflight (justru penjaga pemisahan).
     const offending: string[] = [];
