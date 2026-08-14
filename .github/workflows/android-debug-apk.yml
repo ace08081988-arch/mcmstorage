@@ -7,11 +7,6 @@ name: Android Debug APK (QA)
 on:
   workflow_dispatch:
     inputs:
-      variant:
-        description: "Varian app"
-        type: choice
-        default: full
-        options: [full, chat]
   pull_request:
     paths:
       - "android/**"
@@ -20,16 +15,16 @@ on:
       - ".github/workflows/android-debug-apk.yml"
 
 concurrency:
-  group: android-debug-${{ github.ref }}-${{ github.event.inputs.variant || 'full' }}
+  group: android-debug-${{ github.ref }}-full
   cancel-in-progress: true
 
 jobs:
   debug-apk:
-    name: assembleDebug (${{ github.event.inputs.variant || 'full' }})
+    name: assembleDebug (full)
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      VARIANT: ${{ github.event.inputs.variant || 'full' }}
+      VARIANT: full
     steps:
       - name: Checkout
         uses: actions/checkout@v4
