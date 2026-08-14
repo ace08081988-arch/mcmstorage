@@ -11,6 +11,10 @@ concurrency:
   group: ci-typecheck-build-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   typecheck-build:
     name: Typecheck & Build
