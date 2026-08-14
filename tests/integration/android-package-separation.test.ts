@@ -8,8 +8,7 @@ const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
  * Parser struktural minimal (tanpa dependency YAML) untuk workflow GitHub:
  * mengembalikan key top-level dan anak langsung dari sebuah blok top-level.
  */
-const topLevelKeys = (yml: string) =>
-  [...yml.matchAll(/^([A-Za-z_][\w-]*):/gm)].map((m) => m[1]);
+const topLevelKeys = (yml: string) => [...yml.matchAll(/^([A-Za-z_][\w-]*):/gm)].map((m) => m[1]);
 
 const childKeysOf = (yml: string, key: string) => {
   const lines = yml.split("\n");
@@ -28,7 +27,16 @@ const childKeysOf = (yml: string, key: string) => {
 const rgFiles = (pattern: string, exclude: string[]) => {
   const r = spawnSync(
     "rg",
-    ["-l", "--glob", "!node_modules", "--glob", "!dist", ...exclude.flatMap((e) => ["--glob", `!${e}`]), pattern, "."],
+    [
+      "-l",
+      "--glob",
+      "!node_modules",
+      "--glob",
+      "!dist",
+      ...exclude.flatMap((e) => ["--glob", `!${e}`]),
+      pattern,
+      ".",
+    ],
     { encoding: "utf8" },
   );
   if (r.error) throw new Error(`rg tidak dapat dijalankan: ${r.error.message}`);
@@ -59,7 +67,9 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
 
   it("workflow Play tidak menerima atau meneruskan varian", () => {
     expect(workflow).toContain("name: MCM Storage Play Release");
-    expect(workflow).not.toMatch(/\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i);
+    expect(workflow).not.toMatch(
+      /\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i,
+    );
     expect(workflow).toContain("node scripts/build-aab.mjs");
     expect(workflow).toContain("mcm-storage-aab-${{ github.run_number }}");
     expect(workflow).toContain("GOOGLE_SERVICES_JSON_B64");
@@ -68,7 +78,9 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
   });
 
   it("workflow debug juga hanya menghasilkan MCM Storage", () => {
-    expect(debugWorkflow).not.toMatch(/\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i);
+    expect(debugWorkflow).not.toMatch(
+      /\bvariant\s*:|--variant|\bVARIANT\b|mcmstorage\.chat|privateconnect/i,
+    );
     expect(debugWorkflow).toContain("mcm-storage-debug-apk-${{ github.run_number }}");
     expect(debugWorkflow).toContain("bunx tsc --noEmit");
   });
@@ -198,7 +210,8 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
       lines.forEach((line, i) => {
         if (!/biz\.mcmstorage\.chat|com\.mcm\.privateconnect/.test(line)) return;
         const isComment = /^\s*(\/\/|\/\*|\*|#)/.test(line);
-        const isForbiddenListEntry = /^\s*"(biz\.mcmstorage\.chat|com\.mcm\.privateconnect)",?\s*$/.test(line);
+        const isForbiddenListEntry =
+          /^\s*"(biz\.mcmstorage\.chat|com\.mcm\.privateconnect)",?\s*$/.test(line);
         if (!isComment && !isForbiddenListEntry) offending.push(`${file}:${i + 1}: ${line.trim()}`);
       });
     }
