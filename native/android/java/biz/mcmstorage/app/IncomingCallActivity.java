@@ -29,6 +29,8 @@ public class IncomingCallActivity extends AppCompatActivity {
     private String callId;
     private String conversationId;
     private String declineToken;
+    private String callerName = "";
+    private String callKind = "audio";
     private int notifId;
 
     @Override
@@ -44,9 +46,12 @@ public class IncomingCallActivity extends AppCompatActivity {
         String callerName = str(i.getStringExtra(AceNotify.EX_CALLER));
         String callKind = str(i.getStringExtra(AceNotify.EX_CALL_KIND));
         if (callerName.isEmpty()) callerName = "Panggilan masuk";
+        if (callKind.isEmpty()) callKind = "audio";
 
-        // Foreground service hanya hidup selama panggilan berdering/aktif.
-        CallForegroundService.start(this, callerName, callKind);
+        // Saat BERDERING cukup notifikasi + activity full-screen. Foreground
+        // service baru dimulai setelah pengguna menekan Jawab (lihat accept()).
+        this.callerName = callerName;
+        this.callKind = callKind;
 
         setContentView(buildView(callerName, callKind));
 
@@ -119,13 +124,14 @@ public class IncomingCallActivity extends AppCompatActivity {
 
     private void accept() {
         cancelNotification();
+        CallForegroundService.start(this, callerName, callKind);
         // Web layer yang memegang WebRTC — buka ruang chat dengan ?call=<id>.
         String path = conversationId.isEmpty()
                 ? "/chat"
                 : "/chat/" + conversationId + (callId.isEmpty() ? "" : "?call=" + callId);
         Intent open = new Intent(this, MainActivity.class)
                 .setAction(Intent.ACTION_VIEW)
-                .setData(AceMessagingService.deepLink(path))
+                .setData(AceMessagingService.deepLink(this, path))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(open);
         finish();

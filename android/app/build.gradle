@@ -87,9 +87,11 @@ dependencies {
     // ace-native:begin
     // Diperlukan service FCM kustom (Capacitor hanya menariknya transitif,
     // tanpa jaminan API MessagingStyle/CallStyle tersedia saat kompilasi).
-    implementation platform("com.google.firebase:firebase-bom:33.7.0")
+    // BOM harus >= yang ditarik Capacitor PushNotifications 8, dan
+    // androidx.core TIDAK dipin di sini supaya tidak menurunkan versi
+    // dari android/variables.gradle (coreVersion).
+    implementation platform("com.google.firebase:firebase-bom:34.4.0")
     implementation "com.google.firebase:firebase-messaging"
-    implementation "androidx.core:core:1.13.1"
     // ace-native:end
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"

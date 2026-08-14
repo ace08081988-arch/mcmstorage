@@ -3245,7 +3245,12 @@ function ChatRoomPage() {
                     className="h-8"
                     onClick={async () => {
                       try {
-                        await unblockChatPeer({ data: { conversationId } });
+                        const peerUserId = cap?.peerUserId;
+                        if (!peerUserId) {
+                          toast.error("Kontak tidak dikenali");
+                          return;
+                        }
+                        await unblockChatPeer({ data: { peerUserId } });
                         await capabilities.refetch();
                         toast.success("Blokir dibuka");
                       } catch (e) {
