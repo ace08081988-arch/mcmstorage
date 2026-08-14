@@ -1,8 +1,8 @@
 # Sprint 4 — Android/APK Release Readiness (laporan)
 
-Tanggal: 9 Agustus 2026 · Merek: **Ace Storage** / **Ace Chat**
-`applicationId`: `mcmstorage.app` (chat: `biz.mcmstorage.chat`) — disamakan dengan
-package name aplikasi ACE STORAGE di Play Console. `namespace` Android tetap
+Tanggal: 9 Agustus 2026 · Aplikasi: **MCM Storage**
+`applicationId`: `mcmstorage.app` — disamakan dengan
+package name aplikasi MCM Storage di Play Console. `namespace` Android tetap
 `biz.mcmstorage.app` (paket kelas Java/R saja).
 Tidak ada keystore dibuat/diganti, tidak ada secret ditulis ke repo/log,
 tidak ada upload Play Store, tidak ada deploy web.
@@ -67,9 +67,9 @@ tanpa mewajibkan file properties.
 
 Workflow:
 - **Android Debug APK (QA)** (baru): `assembleDebug` tanpa keystore/secret,
-  menghasilkan artifact `dist/qa/ace-<varian>-debug-<versionName>-<code>.apk`
+  menghasilkan artifact `dist/qa/mcm-storage-debug-<versionName>-<code>.apk`
   + `SHA256SUMS.txt`, retensi 14 hari.
-- **Build & Release AAB**: fail-fast bila secret keystore/Play belum ada,
+- **MCM Storage Play Release**: fail-fast bila secret keystore/Firebase belum ada,
   versi dibaca dari SSOT (tidak pernah bump), artifact AAB + mapping +
   `SHA256SUMS.txt` retensi 30 hari, keystore dihapus dari runner di akhir.
 

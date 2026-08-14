@@ -16,7 +16,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Helper notifikasi Ace: channel stabil + pemanggilan endpoint aksi.
+ * Helper notifikasi MCM Storage: channel stabil + pemanggilan endpoint aksi.
  *
  * ID channel WAJIB sama persis dengan `src/lib/local-notify.ts`
  * (NOTIF_CHANNELS) dan `FCM_CHANNELS` di `src/lib/fcm.server.ts`, kalau
@@ -36,8 +36,6 @@ public final class AceNotify {
 
     public static final String ACTION_REPLY = "biz.mcmstorage.app.REPLY";
     public static final String ACTION_MARK_READ = "biz.mcmstorage.app.MARK_READ";
-    public static final String ACTION_CALL_DECLINE = "biz.mcmstorage.app.CALL_DECLINE";
-    public static final String ACTION_CALL_ACCEPT = "biz.mcmstorage.app.CALL_ACCEPT";
 
     public static final String KEY_REPLY_TEXT = "ace_reply_text";
 
@@ -45,9 +43,6 @@ public final class AceNotify {
     public static final String EX_CONVERSATION = "conversationId";
     public static final String EX_NOTIF_ID = "notifId";
     public static final String EX_URL = "url";
-    public static final String EX_CALL_ID = "callId";
-    public static final String EX_CALL_KIND = "callKind";
-    public static final String EX_CALLER = "callerName";
 
     /** Buat semua channel sekali (idempotent — Android mengabaikan duplikat). */
     public static void ensureChannels(Context ctx) {
@@ -56,7 +51,9 @@ public final class AceNotify {
         if (nm == null) return;
         create(nm, CH_CHAT, "Pesan chat", "Pesan masuk dari pelanggan, supplier, dan pegawai",
                 NotificationManager.IMPORTANCE_HIGH, false);
-        create(nm, CH_CALL, "Panggilan masuk", "Panggilan suara dan video masuk",
+        // Panggilan internal berjalan di dalam aplikasi (WebRTC di WebView);
+        // channel ini hanya untuk pemberitahuan biasa, tanpa full-screen intent.
+        create(nm, CH_CALL, "Panggilan", "Pemberitahuan panggilan suara dan video",
                 NotificationManager.IMPORTANCE_HIGH, true);
         create(nm, CH_TUGAS, "Penyiapan & tugas", "Pegawai mengunggah penyiapan, tugas selesai atau gagal",
                 NotificationManager.IMPORTANCE_DEFAULT, false);
@@ -82,10 +79,6 @@ public final class AceNotify {
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build();
             ch.setSound(ring, attrs);
-        }
-        if (CH_CHAT.equals(id)) {
-            // Bubble hanya boleh untuk channel chat.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ch.setAllowBubbles(true);
         }
         nm.createNotificationChannel(ch);
     }

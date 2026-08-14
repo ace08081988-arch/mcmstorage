@@ -4,7 +4,7 @@
  * dalam satu perintah, dengan pesan error yang ringkas & bahasa Indonesia.
  *
  * Pemakaian:
- *   node scripts/build-apk.mjs                # default: varian full
+ *   node scripts/build-apk.mjs                # MCM Storage
  *   node scripts/build-apk.mjs --open         # + buka Android Studio
  *   node scripts/build-apk.mjs --skip-typecheck  (kalau sudah dicek manual)
  *   node scripts/build-apk.mjs --assemble          # + ./gradlew assembleDebug
@@ -19,7 +19,7 @@
  *   - Cek `android/` sudah di-generate — kalau belum, kasih instruksi.
  *   - Cek `ANDROID_HOME` / `JAVA_HOME` — kalau kosong, kasih hint.
  *   - Semua langkah pakai script yang SUDAH ADA di package.json
- *     (`apk:full`) supaya tidak ada logic duplikat.
+ *     (`mobile:sync`) supaya tidak ada logic duplikat.
  *   - Opsional: kalau --install, chain otomatis ke scripts/install-apk.mjs
  *     (adb install -r -d + verifikasi package terdaftar & versionCode match).
  */
@@ -33,19 +33,6 @@ function flagValue(name) {
   const i = argv.indexOf(name);
   return i === -1 ? undefined : argv[i + 1];
 }
-// Project ini hanya punya satu package Android: mcmstorage.app.
-const variant = "full";
-{
-  const i = process.argv.indexOf("--variant");
-  const requested = process.argv.find((a) => a.startsWith("--variant="))?.split("=")[1] ??
-    (i === -1 ? undefined : process.argv[i + 1]);
-  if (requested && requested !== "full") {
-    fail(
-      `Varian "${requested}" sudah dihapus. MCM Storage hanya membangun mcmstorage.app.`,
-    );
-  }
-}
-
 const skipTypecheck = args.has("--skip-typecheck");
 const openStudio = args.has("--open");
 const doInstall = args.has("--install");
@@ -84,8 +71,8 @@ console.log("  ✓ lingkungan siap");
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
-  step("2/4  Typecheck (tsgo --noEmit)");
-  run("bunx", ["tsgo", "--noEmit"]);
+  step("2/4  Typecheck (tsc --noEmit)");
+  run("bunx", ["tsc", "--noEmit"]);
   console.log("  ✓ typecheck bersih");
 } else {
   step("2/4  Typecheck DILEWATI (--skip-typecheck)");
@@ -93,8 +80,8 @@ if (!skipTypecheck) {
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
 const totalSteps = doAssemble ? (doInstall ? 6 : 5) : 4;
-step(`3/${totalSteps}  Build web + cap sync (apk:full)`);
-run("bun", ["run", "apk:full"]);
+step(`3/${totalSteps}  Build web + cap sync (mobile:sync)`);
+run("bun", ["run", "mobile:sync"]);
 console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle assemble (opsional) ────────────────────────────────────

@@ -4,7 +4,7 @@
  * langsung ke HP via `adb install` tanpa menunggu Play Store.
  *
  * Pemakaian:
- *   node scripts/aab-to-apk.mjs                          # varian full, release AAB
+ *   node scripts/aab-to-apk.mjs                          # MCM Storage release AAB
  *   node scripts/aab-to-apk.mjs --debug                  # dari bundle debug
  *   node scripts/aab-to-apk.mjs --aab path/ke.aab --out out/mcm.apk
  *   node scripts/aab-to-apk.mjs --install                # sekalian adb install
@@ -57,11 +57,6 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = "full";
-{
-  const requested = flag("--variant");
-  if (requested && requested !== "full") fail(`Varian "${requested}" sudah dihapus dari project ini.`);
-}
 const isDebug = args.has("--debug");
 const doInstall = args.has("--install");
 const forceDeviceSpec = args.has("--device-spec");
@@ -172,7 +167,7 @@ if (useDeviceSpec) {
   // (bundletool akan pick split yang tepat). Simpan .apks untuk arsip.
   const outApks = outOverride
     ? resolveHome(outOverride)
-    : resolve(ROOT, `dist/mcm-${variant}-${isDebug ? "debug" : "release"}-device.apks`);
+    : resolve(ROOT, `dist/mcm-storage-${isDebug ? "debug" : "release"}-device.apks`);
   mkdirSync(dirname(outApks), { recursive: true });
   writeFileSync(outApks, readFileSync(apksPath));
   finalApk = outApks;
@@ -187,7 +182,7 @@ if (useDeviceSpec) {
   }
   const outApk = outOverride
     ? resolveHome(outOverride)
-    : resolve(ROOT, `dist/mcm-${variant}-${isDebug ? "debug" : "release"}-universal.apk`);
+    : resolve(ROOT, `dist/mcm-storage-${isDebug ? "debug" : "release"}-universal.apk`);
   mkdirSync(dirname(outApk), { recursive: true });
   writeFileSync(outApk, readFileSync(universalApk));
   finalApk = outApk;

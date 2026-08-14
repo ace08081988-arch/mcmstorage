@@ -11,7 +11,7 @@
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
  *   2. Typecheck (tsc --noEmit).
- *   3. Build web + cap sync (`apk:full`).
+ *   3. Build web + cap sync (`mobile:sync`).
  *   4. Jalankan `./gradlew :app:bundleRelease` (atau bundleDebug).
  *   5. Cetak path .aab hasilnya.
  *
@@ -34,20 +34,6 @@ import { resolve, join } from "node:path";
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
-// SATU varian saja: MCM Storage (`mcmstorage.app`). Flag --variant
-// dipertahankan hanya untuk menolak pemakaian lama secara eksplisit.
-const variant = "full";
-if (argv.some((a) => a === "--variant" || a.startsWith("--variant="))) {
-  const requested = argv.find((a) => a.startsWith("--variant="))?.split("=")[1] ??
-    argv[argv.indexOf("--variant") + 1];
-  if (requested && requested !== "full") {
-    fail(
-      `Varian "${requested}" tidak ada lagi di project ini. MCM Storage hanya membangun\n` +
-        "satu package: mcmstorage.app. Aplikasi chat privat = project terpisah\n" +
-        "MCM: Private Connect (com.mcm.privateconnect).",
-    );
-  }
-}
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
 const doUpload = args.has("--upload");
@@ -132,7 +118,7 @@ if (!debugBundle) {
 // ─── 1d. Pre-flight minify/proguard/signing ──────────────────────────
 if (!debugBundle) {
   step("1d/4 Pre-flight release (minify/proguard/signing)");
-  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--variant", variant]);
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs")]);
   console.log("  ✓ konfigurasi release aman");
 }
 
@@ -146,8 +132,8 @@ if (!skipTypecheck) {
 }
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
-step("3/4  Build web + cap sync (apk:full)");
-run("bun", ["run", "apk:full"]);
+step("3/4  Build web + cap sync (mobile:sync)");
+run("bun", ["run", "mobile:sync"]);
 console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle bundle ─────────────────────────────────────────────────
@@ -157,7 +143,7 @@ run(gradlew, [gradleTask], { cwd: ANDROID_DIR });
 // ─── Post-build: verifikasi mapping.txt + arsip ─────────────────────
 if (!debugBundle) {
   step("Post-build  Verifikasi mapping.txt + arsip AAB");
-  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--post", "--variant", variant]);
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--post"]);
 }
 
 const aabPath = join(ANDROID_DIR, "app", "build", "outputs", "bundle", outSubdir);
@@ -173,13 +159,7 @@ if (doUpload) {
     console.log("⚠ --debug + --upload: skip upload (Play Console menolak debug AAB).");
   } else {
     step(`Upload AAB → Play Console (track: ${uploadTrack})`);
-    const uploadArgs = [
-      resolve(ROOT, "scripts/upload-play.mjs"),
-      "--variant",
-      variant,
-      "--track",
-      uploadTrack,
-    ];
+    const uploadArgs = [resolve(ROOT, "scripts/upload-play.mjs"), "--track", uploadTrack];
     if (releaseStatus) uploadArgs.push("--release-status", releaseStatus);
     if (uploadDryRun) uploadArgs.push("--dry-run");
     if (skipVersionCheck) uploadArgs.push("--skip-version-check");

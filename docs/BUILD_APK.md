@@ -1,4 +1,4 @@
-# Build APK Ace Storage / Ace Chat
+# Build APK MCM Storage
 
 Panduan cepat generate APK dari Android Studio dengan langkah minim error.
 Script `scripts/build-apk.mjs` men-cover semua pre-flight (typecheck, cek
@@ -9,14 +9,14 @@ karena error yang sebetulnya bisa ketahuan lebih awal.
 
 1. Install Android Studio (Hedgehog / Iguana / lebih baru).
 2. Buka **Settings → Languages & Frameworks → Android SDK**, install:
-   - Android SDK Platform 34
-   - Android SDK Build-Tools 34.0.0
+    - Android SDK Platform 36
+    - Android SDK Build-Tools 36.0.0
    - Android SDK Command-line Tools
 3. Set env var di shell profile Anda:
    ```bash
    export ANDROID_HOME="$HOME/Android/Sdk"          # Linux
    # export ANDROID_HOME="$HOME/Library/Android/sdk" # macOS
-   export JAVA_HOME="$(/usr/libexec/java_home -v 17)" # macOS
+   export JAVA_HOME="$(/usr/libexec/java_home -v 21)" # macOS
    export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
    ```
 4. Generate folder `android/` **satu kali**:
@@ -26,21 +26,15 @@ karena error yang sebetulnya bisa ketahuan lebih awal.
 
 ## Build harian (2 perintah)
 
-### Varian Ace Storage (full)
+### MCM Storage
 ```bash
 bun run apk:build         # typecheck → vite build → cap sync android
 bun run apk:open          # buka Android Studio
 ```
 
-### Varian Ace Chat
-```bash
-bun run apk:build:chat
-bun run apk:open
-```
-
 ### Sekali jalan langsung buka Studio
 ```bash
-node scripts/build-apk.mjs --variant full --open
+node scripts/build-apk.mjs --open
 ```
 
 ## Di dalam Android Studio
@@ -77,7 +71,7 @@ Centang **"Remember passwords"** supaya tidak input ulang.
 | `Folder android/ belum ada` di skrip | Belum pernah `cap add android` | `bunx cap add android` lalu ulangi |
 | Typecheck merah sebelum build | Ada error TS di kode | Lihat output; perbaiki dulu, baru rebuild |
 | Gradle sync gagal `SDK location not found` | `ANDROID_HOME` kosong | Set env var di prasyarat, restart Android Studio |
-| `Unsupported class file major version 65` | JDK terlalu baru (JDK 21+) | Pakai JDK 17 (`JAVA_HOME` → JDK 17) |
+| Versi Java tidak didukung | JDK tidak sesuai | Pakai JDK 21 (`JAVA_HOME` → JDK 21) |
 | Build APK sukses tapi splash kosong di HP | `dist/` belum ke-sync ke android | Jalankan `bun run apk:build` **ulang** sebelum Build APK |
 | APK terpasang tapi versi lama | Cache Gradle | Di Studio: Build → **Clean Project** → Build APK lagi |
 | WA share tidak jalan | `allowMixedContent: false` blokir http | Pastikan tautan wa.me pakai `https://` (sudah default) |
@@ -86,7 +80,6 @@ Centang **"Remember passwords"** supaya tidak input ulang.
 
 | Flag | Fungsi |
 | --- | --- |
-| `--variant full` \| `--variant chat` | Pilih varian (default: `full`) |
 | `--open` | Sekaligus buka Android Studio setelah sync |
 | `--skip-typecheck` | Lewati typecheck (hanya kalau baru saja dicek manual) |
 

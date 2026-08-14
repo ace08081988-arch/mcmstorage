@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Aksi dari notifikasi: Balas (RemoteInput), Tandai dibaca, Tolak panggilan.
+ * Aksi dari notifikasi MCM Storage: Balas (RemoteInput) dan Tandai dibaca.
  *
  * Semua dieksekusi TANPA membuka aplikasi dan tanpa sesi Supabase di device:
  * autentikasi memakai action token HMAC sekali-pakai dari payload FCM.
@@ -79,14 +79,6 @@ public class AceActionReceiver extends BroadcastReceiver {
                 }
             });
             return;
-        }
-
-        if (AceNotify.ACTION_CALL_DECLINE.equals(action)) {
-            cancel(ctx, notifId);
-            CallForegroundService.stop(ctx);
-            if (token != null && !token.isEmpty()) {
-                run(ctx, () -> AceNotify.postAction(ctx, token, "call-decline", null));
-            }
         }
     }
 

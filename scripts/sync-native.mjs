@@ -58,7 +58,7 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
   note(`java: ${f}`);
 }
 
-// ── 2. strings.xml: ace_api_base ───────────────────────────────────────
+// ── 2. strings.xml: API base + package-aligned custom scheme ───────────
 {
   let xml = readFileSync(STRINGS, "utf8");
   const entry = `    <string name="ace_api_base">${API_BASE}</string>`;
@@ -75,6 +75,24 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
     writeFileSync(STRINGS, xml);
     changed++;
     note("strings.xml: ace_api_base ditambahkan");
+  }
+  const schemeEntry = '    <string name="custom_url_scheme">mcmstorage.app</string>';
+  if (xml.includes('name="custom_url_scheme"')) {
+    const replaced = xml.replace(
+      / {4}<string name="custom_url_scheme">[^<]*<\/string>/,
+      schemeEntry,
+    );
+    if (replaced !== xml) {
+      xml = replaced;
+      writeFileSync(STRINGS, xml);
+      changed++;
+      note("strings.xml: custom_url_scheme = mcmstorage.app");
+    }
+  } else {
+    xml = xml.replace("</resources>", `${schemeEntry}\n</resources>`);
+    writeFileSync(STRINGS, xml);
+    changed++;
+    note("strings.xml: custom_url_scheme ditambahkan");
   }
 }
 

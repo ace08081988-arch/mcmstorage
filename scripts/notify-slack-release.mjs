@@ -6,7 +6,7 @@
  * (kondisional: hanya jalan kalau secret SLACK_WEBHOOK_URL di-set).
  *
  * Sumber data:
- *   - Env vars dari workflow: RELEASE_OUTCOME, VARIANT, TRACK,
+ *   - Env vars dari workflow: RELEASE_OUTCOME, TRACK,
  *     RELEASE_STATUS, DRY_RUN, SKIP_VERSION_CHECK, RUN_URL,
  *     GITHUB_ACTOR, GITHUB_REF_NAME, GITHUB_EVENT_NAME.
  *   - File JSON dari scripts/upload-play.mjs (UPLOAD_PLAY_SUMMARY_JSON):
@@ -45,7 +45,6 @@ const emoji =
           ? "⏹️"
           : "ℹ️";
 
-const variant = s?.variant ?? process.env.VARIANT ?? "full";
 const track = s?.track ?? process.env.TRACK ?? "internal";
 const releaseStatus = s?.releaseStatus ?? process.env.RELEASE_STATUS ?? "draft";
 const dryRun =
@@ -80,7 +79,8 @@ const skipLabel = skipVer ? " · ⚠ skip-version-check" : "";
 
 const lines = [
   `${emoji} *AAB Release — ${outcomeLabel}*`,
-  `• Varian: \`${variant}\`  ·  Track: \`${track}\`  ·  Status: \`${releaseStatus}\``,
+  `• Aplikasi: \`MCM Storage\`  ·  Package: \`mcmstorage.app\``,
+  `• Track: \`${track}\`  ·  Status: \`${releaseStatus}\``,
   `• Mode: ${modeLabel}${skipLabel}  ·  Committed: \`${committed}\``,
   `• Lokal: \`vc=${localVc}\` \`vn=${localVn}\``,
   `• Play (tertinggi semua bundle): \`vc=${playMax}\`  ·  Track \`${track}\`: \`vc=${trackVc}\` \`vn=${trackVn}\``,
