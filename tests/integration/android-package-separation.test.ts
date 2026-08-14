@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, existsSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, posix, sep } from "node:path";
 
 const read = (p: string) => (existsSync(p) ? readFileSync(p, "utf8") : "");
 
