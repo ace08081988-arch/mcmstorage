@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T13:51:26.834Z",
+  "generatedAt": "2026-08-14T16:08:31.978Z",
   "gitAvailable": true,
   "weeks": [
     {
@@ -647,7 +647,7 @@
       "start": "2026-08-10",
       "tanstack": 0,
       "router-plugin": 0,
-      "lainnya": 1,
+      "lainnya": 2,
       "changes": [
         {
           "name": "@lovable.dev/vite-tanstack-config",
@@ -655,6 +655,13 @@
           "to": "2.12.0",
           "group": "lainnya",
           "date": "2026-08-14T08:05:11.000Z"
+        },
+        {
+          "name": "@lovable.dev/vite-tanstack-config",
+          "from": "2.12.0",
+          "to": "2.13.1",
+          "group": "lainnya",
+          "date": "2026-08-14T15:05:39.000Z"
         }
       ]
     }
@@ -688,7 +695,7 @@
     "dependencies": {
       "ok": true,
       "skipped": true,
-      "output": "⚠️  Lewati audit dependensi: `bun audit --json` tidak mengembalikan JSON.\n[0.02ms] \".env\"\n\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.3 (274e01c7)\u001b[0m\nerror: audit request failed (status 404)"
+      "output": "⚠️  Lewati audit dependensi: `bun audit --json` tidak mengembalikan JSON.\n[0.03ms] \".env\"\n\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.3 (274e01c7)\u001b[0m\nerror: audit request failed (status 404)"
     }
   }
 }
