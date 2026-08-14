@@ -258,9 +258,9 @@ function readSigning() {
   }
   const out = {
     storeFile: process.env.KEYSTORE_FILE ?? fromFile.storeFile,
-    storePassword: process.env.KEYSTORE_STORE_PASS ?? fromFile.storePassword,
+    storePassword: (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD) ?? fromFile.storePassword,
     keyAlias: process.env.KEYSTORE_ALIAS ?? fromFile.keyAlias,
-    keyPassword: process.env.KEYSTORE_KEY_PASS ?? fromFile.keyPassword,
+    keyPassword: (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD) ?? fromFile.keyPassword,
   };
   if (!out.storeFile || !out.storePassword || !out.keyAlias || !out.keyPassword) return null;
   out.storeFile = resolveHome(out.storeFile);

@@ -1,0 +1,55 @@
+name: MCM Storage Android CI (no credentials)
+
+# Menggantikan trigger push pada workflow rilis Play. Workflow ini TIDAK
+# memegang secret keystore/Play sama sekali: hanya typecheck, tes invarian
+# paket, dan preflight statis untuk mcmstorage.app.
+on:
+  push:
+    branches: ["Mcmstorage.biz", "main"]
+    paths:
+      - ".github/workflows/mcm-storage-play-release.yml"
+      - ".github/workflows/mcm-storage-android-ci.yml"
+      - "scripts/build-aab.mjs"
+      - "scripts/preflight-release.mjs"
+      - "scripts/sync-native.mjs"
+      - "scripts/upload-play.mjs"
+      - "tests/integration/android-package-separation.test.ts"
+      - "capacitor.config.ts"
+      - "android/**"
+      - "package.json"
+      - "bun.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mcm-storage-android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Invarian paket & typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Versi aplikasi (SSOT android/version.properties)
+        run: node scripts/read-app-version.mjs
+
+      - name: Typecheck
+        run: bunx tsc --noEmit
+
+      - name: Tes invarian paket tunggal MCM Storage
+        run: bunx vitest run tests/integration/android-package-separation.test.ts
+
+      - name: Preflight release (statis, tanpa keystore)
+        run: node scripts/preflight-release.mjs || true

@@ -53,10 +53,10 @@ New repository secret**:
 
 | Secret | Isi |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | isi file keystore `.jks` yang di-encode base64 |
-| `ANDROID_KEYSTORE_PASSWORD` | password store |
-| `ANDROID_KEY_ALIAS` | alias kunci (mis. `mcm`) |
-| `ANDROID_KEY_PASSWORD` | password key |
+| `KEYSTORE_BASE64` | isi file keystore `.jks` yang di-encode base64 |
+| `KEYSTORE_STORE_PASSWORD` | password store |
+| `KEYSTORE_ALIAS` | alias kunci (mis. `mcm`) |
+| `KEYSTORE_KEY_PASSWORD` | password key |
 
 Encode keystore di komputer sendiri:
 
@@ -185,8 +185,8 @@ Kredensial tidak pernah masuk repo. Dua sumber, prioritas env var:
 # a) CI / shell
 export KEYSTORE_FILE=/path/ke/ace-release.keystore
 export KEYSTORE_ALIAS=mcm
-export KEYSTORE_STORE_PASS='…'
-export KEYSTORE_KEY_PASS='…'
+export KEYSTORE_STORE_PASSWORD='…'
+export KEYSTORE_KEY_PASSWORD='…'
 
 # b) lokal (ditulis oleh wizard, di-gitignore)
 bun run aab:setup-keystore   # → android/keystore.properties

@@ -28,8 +28,8 @@ Prosedur + cara mengambil fingerprint: `docs/ANDROID_APP_LINKS.md`.
 ## 2. Signed release
 
 - `android/app/build.gradle`: membaca `android/keystore.properties` **dan**
-  env var (`KEYSTORE_FILE`, `KEYSTORE_ALIAS`, `KEYSTORE_STORE_PASS`,
-  `KEYSTORE_KEY_PASS`); env var menang untuk CI. Tidak ada secret di repo;
+  env var (`KEYSTORE_FILE`, `KEYSTORE_ALIAS`, `KEYSTORE_STORE_PASSWORD`,
+  `KEYSTORE_KEY_PASSWORD`); env var menang untuk CI. Tidak ada secret di repo;
   `.gitignore` menambah `android/keystore.properties`, `*.keystore`, `*.jks`,
   `google-services.json`.
 - `signingConfigs.release` + `buildTypes.release { signingConfig … }` aktif

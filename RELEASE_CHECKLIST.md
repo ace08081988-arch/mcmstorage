@@ -1,4 +1,41 @@
-# Release Checklist — Ace Storage / Ace Chat
+# Release Checklist — MCM Storage (`mcmstorage.app`)
+
+> Project ini HANYA merilis satu aplikasi Android: **MCM Storage**.
+> Aplikasi chat privat umum (`com.mcm.privateconnect`) adalah project terpisah
+> dan tidak pernah dibangun dari repo ini.
+
+## Identity Matrix (wajib cocok)
+
+| Item | Nilai |
+|------|-------|
+| Nama aplikasi | `MCM Storage` |
+| applicationId / package Play | `mcmstorage.app` |
+| Namespace sumber Java (bukan identitas Play) | `biz.mcmstorage.app` |
+| Activity class explicit | `biz.mcmstorage.app.MainActivity` |
+| Component untuk adb | `mcmstorage.app/biz.mcmstorage.app.MainActivity` |
+| Capacitor `appId` | `mcmstorage.app` |
+| Web aktif | `https://mcmstorage.lovable.app` |
+| Track rilis tahap ini | `internal` (Internal testing) saja |
+
+> `namespace` ≠ `applicationId`. Namespace hanya menentukan paket kelas Java/R,
+> sedangkan `applicationId` (`mcmstorage.app`) adalah identitas di Google Play
+> dan Firebase. Keduanya memang berbeda — itu bukan kesalahan konfigurasi.
+
+## Kontrak Secrets (satu-satunya nama yang valid)
+
+| Secret | Isi |
+|--------|-----|
+| `KEYSTORE_BASE64` | keystore upload/rilis, base64 |
+| `KEYSTORE_ALIAS` | alias key |
+| `KEYSTORE_STORE_PASSWORD` | password store |
+| `KEYSTORE_KEY_PASSWORD` | password key |
+| `GOOGLE_SERVICES_JSON_B64` | `google-services.json` Firebase untuk package `mcmstorage.app`, base64 |
+| `PLAY_SERVICE_ACCOUNT_JSON_B64` | service account Play (akses ke `mcmstorage.app`), base64 |
+
+Nilai secret tidak pernah dicetak ke log/artifact. Nama lama
+(`MCM_STORAGE_KEYSTORE_FILE`, `MCM_STORAGE_STORE_PASS`, `ANDROID_KEYSTORE_*`)
+sudah tidak dipakai di mana pun.
+
 
 > Copy-paste template untuk setiap upload AAB ke Google Play Console.
 > Ganti placeholder `{{ ... }}` sesuai rilis yang sedang dikerjakan, atau jalankan `bun run release:checklist` untuk mengisinya otomatis.
@@ -27,11 +64,11 @@
 - [ ] Version code lebih besar dari rilis sebelumnya di Play Console.
 - [ ] Format versionName valid (contoh: `1.2.3`, `1.2.3-beta.1`).
 - [ ] File AAB sudah dibangun: `bun run aab:build:release` → `dist/app-release.aab` ada.
-- [ ] Preflight strict lolos: `bun run aab:preflight:strict`.
+- [ ] Preflight strict lolos: `bun run aab:preflight`.
 - [ ] Changelog / release notes sudah ditulis (lihat bagian Changelog di bawah).
 - [ ] Keystore dan `keystore.properties` sudah diamankan (tidak ikut ke repo).
 - [ ] Tidak mengunggah APK ke Production (AAB wajib untuk production).
-- [ ] `assetlinks.json` terpasang & `adb shell pm get-app-links biz.mcmstorage.app` = `verified` (lihat `docs/ANDROID_APP_LINKS.md`).
+- [ ] `assetlinks.json` terpasang & `adb shell pm get-app-links mcmstorage.app` = `verified` (lihat `docs/ANDROID_APP_LINKS.md`).
 - [ ] SHA-256 artifact dicatat (`dist/checksums/SHA256SUMS.txt` dari workflow).
 - [ ] `mapping.txt` tersimpan di `dist/mapping/` untuk deobfuscation.
 
@@ -64,22 +101,12 @@
 
 ---
 
-## Production Track
+## Production Track — DIKUNCI
 
-> Lanjutkan hanya setelah internal testing lolos smoke test.
-
-- [ ] Pilih menu **Rilis → Production**.
-- [ ] Klik **Create release** / **Buat rilis**.
-- [ ] Upload AAB yang sama dan final: `dist/app-release.aab`.
-- [ ] Isi **Release name**: `{{ 1.2.3 (5) }}`.
-- [ ] Isi **Release notes** untuk setiap bahasa aktif:
-  - Indonesia: `{{ ... }}`
-  - English: `{{ ... }}`
-- [ ] Klik **Review release**.
-- [ ] Periksa peringatan/error Play Console (content rating, policy, dsb).
-- [ ] Klik **Start rollout to Production**.
-- [ ] Pantau status review Google (bisa memakan waktu beberapa jam hingga beberapa hari).
-- [ ] Setelah rilis aktif, cek aplikasi dari perangkat pengguna / akun non-developer.
+Tahap ini **tidak** merilis ke closed testing, open testing, atau production.
+`scripts/upload-play.mjs` menolak track selain `internal`, dan workflow
+`MCM Storage Play Release` hanya menyediakan pilihan `internal`.
+Buka kembali bagian ini hanya setelah keputusan produk eksplisit.
 
 ---
 
@@ -117,13 +144,16 @@ bun run version:check
 bun run aab:build:release
 
 # Validasi preflight
-bun run aab:preflight:strict
+bun run aab:preflight
 
 # Konversi AAB ke APK untuk testing
 bun run aab:to-apk --aab dist/app-release.aab --out dist/mcm.apk
 
 # Install + buka di HP
 bun run apk:install:launch -- --apk dist/mcm.apk
+
+# Launch manual lewat adb (component faktual)
+adb shell am start -n mcmstorage.app/biz.mcmstorage.app.MainActivity
 
 # Tag rilis
 git tag -a v{{ 1.2.3 }} -m "Release {{ 1.2.3 }}"
