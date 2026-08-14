@@ -126,6 +126,12 @@ export async function startDeepLinkListener(router: DeepLinkRouter) {
       } catch {
         window.location.assign(path);
       }
+      if (chat.callId) {
+        const callId = chat.callId;
+        void import("@/components/chat/CallHost").then(({ dispatchAnswerCall }) => {
+          dispatchAnswerCall(callId);
+        });
+      }
       return;
     }
     const parsed = parseDeepLink(rawUrl);
