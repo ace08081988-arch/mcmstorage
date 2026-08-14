@@ -85,8 +85,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Typecheck (tsgo)
-        run: bunx tsgo --noEmit
+      - name: Typecheck (tsc)
+        run: bunx tsc --noEmit
 
       - name: Build (production)
         env:

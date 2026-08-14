@@ -11,6 +11,10 @@ concurrency:
   group: ci-typecheck-build-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   typecheck-build:
     name: Typecheck & Build
@@ -28,8 +32,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Typecheck (tsgo)
-        run: bunx tsgo --noEmit
+      - name: Typecheck (tsc)
+        run: bunx tsc --noEmit
 
       - name: Audit kompatibilitas versi router
         run: bun run audit:router-versions
