@@ -4,4 +4,5 @@
     <string name="title_activity_main">ACE STORAGE</string>
     <string name="package_name">mcmstorage.app</string>
     <string name="custom_url_scheme">biz.mcmstorage.app</string>
+    <string name="ace_api_base">https://mcmstorage.app</string>
 </resources>

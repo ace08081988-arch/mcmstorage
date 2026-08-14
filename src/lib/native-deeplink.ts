@@ -51,6 +51,37 @@ export function parseDeepLink(rawUrl: string): { token: string; pin: string | nu
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Deep link chat dari notifikasi native / bubble Android.
+ *
+ *   biz.mcmstorage.app://chat/<conversationId>[?call=<callId>]
+ *   https://mcmstorage.app/chat/<conversationId>
+ *
+ * Dipisah dari `parseDeepLink` (portal pegawai /t/<token>) supaya kedua
+ * bentuk tidak saling menebak: token portal bebas, id percakapan UUID.
+ */
+export function parseChatDeepLink(
+  rawUrl: string,
+): { conversationId: string; callId: string | null } | null {
+  try {
+    const u = new URL(rawUrl);
+    const parts = u.pathname.split("/").filter(Boolean);
+    let id: string | null = null;
+    if (u.host === "chat") id = parts[0] ?? null;
+    else {
+      const idx = parts.indexOf("chat");
+      if (idx >= 0) id = parts[idx + 1] ?? null;
+    }
+    if (!id || !UUID_RE.test(id)) return null;
+    const call = u.searchParams.get("call");
+    return { conversationId: id, callId: call && UUID_RE.test(call) ? call : null };
+  } catch {
+    return null;
+  }
+}
+
 export function shouldSkipDeepLinkNavigation(
   current: Pick<Location, "pathname" | "search" | "hash">,
   targetPath: string,
@@ -85,6 +116,24 @@ export async function startDeepLinkListener(router: DeepLinkRouter) {
   if (!Capacitor.isNativePlatform()) return;
 
   const handle = (rawUrl: string) => {
+    // Chat dulu — notifikasi/bubble Android memakai bentuk /chat/<uuid>.
+    const chat = parseChatDeepLink(rawUrl);
+    if (chat) {
+      const path = `/chat/${chat.conversationId}`;
+      if (window.location.pathname === path && !chat.callId) return;
+      try {
+        router.navigate({ to: path });
+      } catch {
+        window.location.assign(path);
+      }
+      if (chat.callId) {
+        const callId = chat.callId;
+        void import("@/components/chat/CallHost").then(({ dispatchAnswerCall }) => {
+          dispatchAnswerCall(callId);
+        });
+      }
+      return;
+    }
     const parsed = parseDeepLink(rawUrl);
     if (!parsed) return;
     const path = `/t/${encodeURIComponent(parsed.token)}`;
