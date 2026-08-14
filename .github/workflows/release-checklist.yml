@@ -10,7 +10,7 @@ name: Release Checklist (strict AAB validate)
 
 on:
   workflow_run:
-    workflows: ["Build & Release AAB"]
+    workflows: ["MCM Storage Play Release"]
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -18,11 +18,6 @@ on:
         description: "Run ID Build & Release AAB (opsional; default: run terakhir yang sukses)"
         type: string
         default: ""
-      variant:
-        description: "Varian AAB yang mau divalidasi"
-        type: choice
-        default: full
-        options: [full, chat]
 
 concurrency:
   group: release-checklist-${{ github.event.workflow_run.id || github.run_id }}
@@ -73,8 +68,8 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           # Nama artifact mengikuti pola di aab-release.yml:
-          #   aab-<variant>-<run_number>
-          pattern: aab-${{ github.event.inputs.variant || 'full' }}-*
+          #   mcm-storage-aab-<run_number>
+          pattern: mcm-storage-aab-*
           path: downloaded-aab
           merge-multiple: true
           github-token: ${{ github.token }}

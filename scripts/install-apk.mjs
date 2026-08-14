@@ -5,7 +5,6 @@
  *
  * Pemakaian:
  *   node scripts/install-apk.mjs                        # varian full, debug APK
- *   node scripts/install-apk.mjs --variant chat         # varian Ace Chat
  *   node scripts/install-apk.mjs --release              # apk release (harus signed)
  *   node scripts/install-apk.mjs --apk path/to.apk      # override path APK
  *   node scripts/install-apk.mjs --device R58...        # pilih device spesifik
@@ -37,8 +36,11 @@ function flag(name) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = flag("--variant") ?? "full";
-if (!["full", "chat"].includes(variant)) fail(`Varian tidak dikenal: ${variant}`);
+const variant = "full";
+{
+  const requested = flag("--variant");
+  if (requested && requested !== "full") fail(`Varian "${requested}" sudah dihapus dari project ini.`);
+}
 const isRelease = args.has("--release");
 const doLaunch = args.has("--launch");
 const doUninstallFirst = args.has("--uninstall-first");
@@ -46,7 +48,7 @@ const deviceArg = flag("--device");
 const apkOverride = flag("--apk");
 
 banner(
-  `Install APK · varian ${variant.toUpperCase()} · ${isRelease ? "RELEASE" : "DEBUG"}`,
+  `Install APK · MCM Storage · ${isRelease ? "RELEASE" : "DEBUG"}`,
 );
 
 // ─── 1. adb tersedia? ─────────────────────────────────────────────────
@@ -98,7 +100,7 @@ const apkPath = apkOverride ? resolve(ROOT, apkOverride) : defaultApk;
 if (!existsSync(apkPath)) {
   fail(
     `APK tidak ditemukan: ${apkPath}\n` +
-      `Build dulu: bun run apk:${variant} lalu di Android Studio: Build → Build APK(s).\n` +
+      "Build dulu: bun run apk:full lalu di Android Studio: Build → Build APK(s).\n" +
       "Atau lewat --apk <path> kalau lokasi custom.",
   );
 }
@@ -120,8 +122,8 @@ if (aapt) {
   }
 }
 if (!appId) {
-  // Fallback: infer dari capacitor.config.ts (based on variant).
-  appId = variant === "chat" ? "biz.mcmstorage.chat" : "mcmstorage.app";
+  // Fallback: satu-satunya applicationId project ini.
+  appId = "mcmstorage.app";
   console.log(`  ⚠ aapt tidak tersedia — fallback appId dari varian: ${appId}`);
 } else {
   console.log(`  ✓ appId=${appId}${versionCode ? ` versionCode=${versionCode}` : ""}`);

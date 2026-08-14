@@ -5,7 +5,6 @@
  *
  * Pemakaian:
  *   node scripts/aab-to-apk.mjs                          # varian full, release AAB
- *   node scripts/aab-to-apk.mjs --variant chat
  *   node scripts/aab-to-apk.mjs --debug                  # dari bundle debug
  *   node scripts/aab-to-apk.mjs --aab path/ke.aab --out out/mcm.apk
  *   node scripts/aab-to-apk.mjs --install                # sekalian adb install
@@ -58,8 +57,11 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = flag("--variant", "full");
-if (!["full", "chat"].includes(variant)) fail(`Varian tidak dikenal: ${variant}`);
+const variant = "full";
+{
+  const requested = flag("--variant");
+  if (requested && requested !== "full") fail(`Varian "${requested}" sudah dihapus dari project ini.`);
+}
 const isDebug = args.has("--debug");
 const doInstall = args.has("--install");
 const forceDeviceSpec = args.has("--device-spec");
@@ -67,7 +69,7 @@ const aabOverride = flag("--aab");
 const outOverride = flag("--out");
 
 banner(
-  `AAB → APK · varian ${variant.toUpperCase()} · ${isDebug ? "debug" : "release"}${doInstall ? " + install" : ""}`,
+  `AAB → APK · MCM Storage · ${isDebug ? "debug" : "release"}${doInstall ? " + install" : ""}`,
 );
 
 // ─── 1. Java ──────────────────────────────────────────────────────────
@@ -96,7 +98,7 @@ const aabPath = aabOverride ? resolveHome(aabOverride) : aabDefault;
 if (!existsSync(aabPath)) {
   fail(
     `AAB tidak ditemukan: ${aabPath}\n` +
-      `Build dulu: bun run aab:build${isDebug ? ":debug" : variant === "chat" ? ":chat" : ""}`,
+      `Build dulu: bun run aab:build${isDebug ? ":debug" : ""}`,
   );
 }
 console.log(`  ✓ ${aabPath} (${(statSync(aabPath).size / 1024 / 1024).toFixed(1)} MB)`);
@@ -209,9 +211,7 @@ if (doInstall) {
       "node",
       [
         resolve(ROOT, "scripts/install-apk.mjs"),
-        "--variant",
-        variant,
-        "--apk",
+                "--apk",
         finalApk,
         ...(isDebug ? [] : ["--release"]),
       ],

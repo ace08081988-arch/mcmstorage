@@ -253,7 +253,7 @@ public class AceMessagingService extends FirebaseMessagingService {
 
     /**
      * Scheme deep link mengikuti applicationId varian (full: `mcmstorage.app`,
-     * chat: `biz.mcmstorage.chat`) — JANGAN hard-code paket sumber Java.
+     * JANGAN hard-code paket sumber Java.
      */
     static Uri deepLink(Context ctx, String path) {
         String p = path == null || path.isEmpty() ? "/" : path;

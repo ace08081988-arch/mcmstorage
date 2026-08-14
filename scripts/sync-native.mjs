@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 /**
- * Menanam lapisan Android native Ace Chat ke proyek `android/` hasil
+ * Menanam lapisan Android native MCM Storage ke proyek `android/` hasil
  * Capacitor. IDEMPOTENT — aman dijalankan berulang kali dan WAJIB
  * dijalankan SETELAH `cap sync`, karena Capacitor bisa menulis ulang
  * manifest/gradle.
  *
  * Yang dipasang:
- *  - Java: FCM service, action receiver, incoming call UI, FGS panggilan
- *  - Manifest: service/receiver/activity + izin FGS panggilan & full-screen
+ *  - Java: FCM service + action receiver (balas / tandai dibaca)
+ *  - Manifest: service & receiver notifikasi MCM Storage
  *  - Gradle: firebase-messaging (Capacitor hanya menariknya transitif)
  *  - strings: ace_api_base (base URL endpoint aksi notifikasi)
+ *
+ * Komponen panggilan masuk full-screen, foreground service panggilan, dan
+ * conversation bubble SENGAJA tidak ada di sini — itu milik project
+ * terpisah MCM: Private Connect (`com.mcm.privateconnect`).
  *
  * Tidak ada secret di sini — token aksi datang dari payload FCM.
  */
@@ -78,7 +82,7 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
 {
   let xml = readFileSync(MANIFEST, "utf8");
   const components = `        ${MARK_MANIFEST}
-        <!-- Ace Chat native: FCM data-only, aksi notifikasi, panggilan.
+        <!-- MCM Storage native: FCM data-only + aksi notifikasi.
              Dipasang ulang otomatis oleh scripts/sync-native.mjs. -->
         <service
             android:name="biz.mcmstorage.app.AceMessagingService"
@@ -89,40 +93,15 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
             </intent-filter>
         </service>
 
-        <service
-            android:name="biz.mcmstorage.app.CallForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="microphone|camera" />
-
         <receiver
             android:name="biz.mcmstorage.app.AceActionReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="biz.mcmstorage.app.REPLY" />
                 <action android:name="biz.mcmstorage.app.MARK_READ" />
-                <action android:name="biz.mcmstorage.app.CALL_DECLINE" />
                 <action android:name="biz.mcmstorage.app.DISMISS" />
             </intent-filter>
         </receiver>
-
-        <activity
-            android:name="biz.mcmstorage.app.IncomingCallActivity"
-            android:exported="false"
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
-            android:turnScreenOn="true"
-            android:showWhenLocked="true"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|screenSize|uiMode" />
-
-        <activity
-            android:name="biz.mcmstorage.app.ChatBubbleActivity"
-            android:exported="false"
-            android:allowEmbedded="true"
-            android:resizeableActivity="true"
-            android:documentLaunchMode="always"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density" />
         <!-- ace-native:end -->
 `;
   const compRe = new RegExp(`[ \\t]*${MARK_MANIFEST}[\\s\\S]*?<!-- ace-native:end -->\\n`);
@@ -139,11 +118,17 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
     note("manifest: komponen ditambahkan");
   }
 
-  // Izin yang HARUS dicabut: aplikasi tidak memakai Telecom/self-managed
-  // ConnectionService, jadi klaim phone-call tidak dibenarkan platform.
+  // Izin yang HARUS dicabut: MCM Storage tidak punya panggilan masuk
+  // full-screen, foreground service panggilan, maupun Telecom/self-managed
+  // ConnectionService. Semua itu milik MCM: Private Connect.
   for (const stale of [
     "android.permission.FOREGROUND_SERVICE_PHONE_CALL",
     "android.permission.MANAGE_OWN_CALLS",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+    "android.permission.FOREGROUND_SERVICE_CAMERA",
+    "android.permission.USE_FULL_SCREEN_INTENT",
+    "android.permission.SYSTEM_ALERT_WINDOW",
   ]) {
     const re = new RegExp(`[ \\t]*<uses-permission android:name="${stale}" />\\n`, "g");
     if (re.test(xml)) {
@@ -152,24 +137,15 @@ for (const f of readdirSync(SRC).filter((n) => n.endsWith(".java"))) {
       note(`manifest: izin ${stale} dihapus`);
     }
   }
-
-  const perms = [
-    "android.permission.FOREGROUND_SERVICE",
-    "android.permission.FOREGROUND_SERVICE_MICROPHONE",
-    "android.permission.FOREGROUND_SERVICE_CAMERA",
-    "android.permission.USE_FULL_SCREEN_INTENT",
-  ];
-  const missing = perms.filter((p) => !xml.includes(`"${p}"`));
-  if (missing.length) {
-    const block =
-      `\n    <!-- ace-native: panggilan masuk & foreground service saat panggilan -->\n` +
-      missing.map((p) => `    <uses-permission android:name="${p}" />`).join("\n") +
-      "\n";
-    xml = xml.replace("</manifest>", `${block}</manifest>`);
+  // Komentar sisa dari blok izin panggilan lama.
+  const staleComment =
+    /[ \t]*<!-- ace-native: panggilan masuk & foreground service saat panggilan -->\n/g;
+  if (staleComment.test(xml)) {
+    xml = xml.replace(staleComment, "");
     changed++;
-    note(`manifest: izin ${missing.length} ditambahkan`);
+    note("manifest: komentar izin panggilan lama dihapus");
   }
-  // Deep-link scheme mengikuti applicationId varian.
+  // Deep-link scheme mengikuti applicationId.
   const schemeRe = /android:scheme="biz\.mcmstorage\.app"/g;
   if (schemeRe.test(xml)) {
     xml = xml.replace(schemeRe, 'android:scheme="${applicationId}"');

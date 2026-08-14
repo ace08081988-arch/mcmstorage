@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Penerima FCM data-only untuk Ace Chat.
+ * Penerima FCM data-only untuk MCM Storage.
  *
  * Server SELALU mengirim data message HIGH priority (lihat
  * `src/lib/fcm.server.ts`) karena notifikasi otomatis Android tidak bisa
- * punya tombol Balas, MessagingStyle, bubble, atau CallStyle. Semua UI
+ * punya tombol Balas atau MessagingStyle. Semua UI
  * notifikasi dibangun di sini, jadi pesan tetap masuk saat aplikasi
  * background, di-swipe, atau layar terkunci.
  */
@@ -65,10 +65,6 @@ public class AceMessagingService extends FirebaseMessagingService {
         }
 
         String kind = value(d, "kind", "system");
-        if ("call".equals(kind)) {
-            showCall(d);
-            return;
-        }
         if ("chat".equals(kind)) {
             showChat(d);
             return;
@@ -76,7 +72,7 @@ public class AceMessagingService extends FirebaseMessagingService {
         showGeneric(d, kind);
     }
 
-    // ── Chat: MessagingStyle + Balas + Tandai dibaca + bubble ──────────
+    // ── Chat internal gudang: MessagingStyle + Balas + Tandai dibaca ────
     private void showChat(Map<String, String> d) {
         String conversationId = value(d, "conversationId", "");
         if (conversationId.isEmpty()) {
@@ -122,8 +118,6 @@ public class AceMessagingService extends FirebaseMessagingService {
         if (shortcutId != null) {
             b.setShortcutId(shortcutId);
             b.setLocusId(new androidx.core.content.LocusIdCompat(shortcutId));
-            NotificationCompat.BubbleMetadata bubble = bubbleMetadata(conversationId, url);
-            if (bubble != null) b.setBubbleMetadata(bubble);
         }
 
         if (replyToken != null && !replyToken.isEmpty()) {
@@ -157,68 +151,9 @@ public class AceMessagingService extends FirebaseMessagingService {
         notify(notifId, b.build());
     }
 
-    // ── Panggilan: CallStyle + full-screen intent ──────────────────────
-    private void showCall(Map<String, String> d) {
-        String callId = value(d, "callId", "");
-        String conversationId = value(d, "conversationId", "");
-        String callerName = value(d, "callerName", value(d, "title", "Panggilan masuk"));
-        String callKind = value(d, "callKind", "audio");
-        String declineToken = value(d, "declineToken", "");
-        if (callId.isEmpty()) {
-            showGeneric(d, "system");
-            return;
-        }
-        int notifId = Math.abs(("call:" + callId).hashCode());
-
-        Intent full = new Intent(this, IncomingCallActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                .putExtra(AceNotify.EX_CALL_ID, callId)
-                .putExtra(AceNotify.EX_CONVERSATION, conversationId)
-                .putExtra(AceNotify.EX_CALL_KIND, callKind)
-                .putExtra(AceNotify.EX_CALLER, callerName)
-                .putExtra(AceNotify.EX_TOKEN, declineToken)
-                .putExtra(AceNotify.EX_NOTIF_ID, notifId);
-        PendingIntent fullPi = PendingIntent.getActivity(this, notifId, full, immutableFlags());
-
-        Intent acceptIntent = new Intent(this, IncomingCallActivity.class)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                .putExtras(full)
-                .putExtra("autoAccept", true);
-        PendingIntent acceptPi = PendingIntent.getActivity(
-                this, notifId * 10 + 3, acceptIntent, immutableFlags());
-
-        Intent declineIntent = actionIntent(AceNotify.ACTION_CALL_DECLINE, conversationId, notifId)
-                .putExtra(AceNotify.EX_TOKEN, declineToken)
-                .putExtra(AceNotify.EX_CALL_ID, callId);
-        PendingIntent declinePi = PendingIntent.getBroadcast(
-                this, notifId * 10 + 4, declineIntent, immutableFlags());
-
-        Person caller = new Person.Builder().setName(callerName).setImportant(true).build();
-        NotificationCompat.Builder b = new NotificationCompat.Builder(this, AceNotify.CH_CALL)
-                .setSmallIcon(android.R.drawable.stat_sys_phone_call)
-                .setCategory(NotificationCompat.CATEGORY_CALL)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOngoing(true)
-                .setAutoCancel(false)
-                .setTimeoutAfter(35000)
-                .setFullScreenIntent(fullPi, true)
-                .setContentIntent(fullPi);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            b.setStyle(NotificationCompat.CallStyle.forIncomingCall(caller, declinePi, acceptPi));
-        } else {
-            b.setContentTitle("Panggilan " + ("video".equals(callKind) ? "video" : "suara") + " masuk")
-                    .setContentText(callerName + " sedang memanggil…")
-                    .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Tolak", declinePi)
-                    .addAction(android.R.drawable.ic_menu_call, "Jawab", acceptPi);
-        }
-        notify(notifId, b.build());
-    }
-
     private void showGeneric(Map<String, String> d, String kind) {
         String channel = channelFor(kind);
-        String title = value(d, "title", "Ace Storage");
+        String title = value(d, "title", "MCM Storage");
         String body = value(d, "body", "");
         String url = value(d, "url", "/");
         int notifId = Math.abs((value(d, "tag", title + body)).hashCode());
@@ -252,8 +187,8 @@ public class AceMessagingService extends FirebaseMessagingService {
     }
 
     /**
-     * Scheme deep link mengikuti applicationId varian (full: `mcmstorage.app`,
-     * chat: `biz.mcmstorage.chat`) — JANGAN hard-code paket sumber Java.
+     * Scheme deep link mengikuti applicationId (`mcmstorage.app`) —
+     * JANGAN hard-code paket sumber Java (`biz.mcmstorage.app`).
      */
     static Uri deepLink(Context ctx, String path) {
         String p = path == null || path.isEmpty() ? "/" : path;
@@ -292,7 +227,7 @@ public class AceMessagingService extends FirebaseMessagingService {
         return PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE;
     }
 
-    /** Shortcut dinamis: syarat MessagingStyle bubble & conversation section. */
+    /** Shortcut dinamis: syarat MessagingStyle & conversation section. */
     private String ensureShortcut(String conversationId, String title, String url) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null;
         try {
@@ -315,33 +250,6 @@ public class AceMessagingService extends FirebaseMessagingService {
             return id;
         } catch (Exception e) {
             Log.w(AceNotify.TAG, "shortcut gagal", e);
-            return null;
-        }
-    }
-
-    private NotificationCompat.BubbleMetadata bubbleMetadata(String conversationId, String url) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return null;
-        try {
-            android.app.NotificationManager nm =
-                    getSystemService(android.app.NotificationManager.class);
-            // Bubble dinonaktifkan user/OEM → fallback ke notifikasi biasa.
-            if (nm == null || !nm.areBubblesAllowed()) return null;
-            Intent i = new Intent(this, ChatBubbleActivity.class)
-                    .setAction(Intent.ACTION_VIEW)
-                    .setData(deepLink(this, url))
-                    .putExtra(AceNotify.EX_CONVERSATION, conversationId);
-            // Bubble WAJIB memakai PendingIntent mutable (sistem menyesuaikan
-            // intent saat bubble diperluas). Target tetap explicit + non-exported.
-            PendingIntent pi = PendingIntent.getActivity(
-                    this, AceChatStore.notifId(conversationId) * 10 + 6, i, mutableFlags());
-            return new NotificationCompat.BubbleMetadata.Builder(
-                    pi, androidx.core.graphics.drawable.IconCompat.createWithResource(
-                            this, R.mipmap.ic_launcher))
-                    .setDesiredHeight(640)
-                    .setAutoExpandBubble(false)
-                    .setSuppressNotification(false)
-                    .build();
-        } catch (Exception e) {
             return null;
         }
     }

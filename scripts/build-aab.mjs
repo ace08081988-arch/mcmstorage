@@ -3,8 +3,7 @@
  * Build Android App Bundle (.aab) — output siap upload ke Google Play Console.
  *
  * Pemakaian:
- *   node scripts/build-aab.mjs                       # varian full, release AAB
- *   node scripts/build-aab.mjs --variant chat        # varian Ace Chat
+ *   node scripts/build-aab.mjs                       # release AAB MCM Storage
  *   node scripts/build-aab.mjs --debug               # bundleDebug (tanpa signing)
  *   node scripts/build-aab.mjs --skip-typecheck      # skip typecheck
  *   node scripts/build-aab.mjs --bump                # naikkan versi dulu (eksplisit)
@@ -12,7 +11,7 @@
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
  *   2. Typecheck (tsc --noEmit).
- *   3. Build web + cap sync (`apk:full` / `apk:chat` — sama scriptnya).
+ *   3. Build web + cap sync (`apk:full`).
  *   4. Jalankan `./gradlew :app:bundleRelease` (atau bundleDebug).
  *   5. Cetak path .aab hasilnya.
  *
@@ -35,16 +34,19 @@ import { resolve, join } from "node:path";
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
-let variant = "full";
-for (const a of argv) {
-  if (a.startsWith("--variant=")) variant = a.split("=")[1];
-  else if (a === "--variant") {
-    const idx = argv.indexOf("--variant");
-    variant = argv[idx + 1] ?? "full";
+// SATU varian saja: MCM Storage (`mcmstorage.app`). Flag --variant
+// dipertahankan hanya untuk menolak pemakaian lama secara eksplisit.
+const variant = "full";
+if (argv.some((a) => a === "--variant" || a.startsWith("--variant="))) {
+  const requested = argv.find((a) => a.startsWith("--variant="))?.split("=")[1] ??
+    argv[argv.indexOf("--variant") + 1];
+  if (requested && requested !== "full") {
+    fail(
+      `Varian "${requested}" tidak ada lagi di project ini. MCM Storage hanya membangun\n` +
+        "satu package: mcmstorage.app. Aplikasi chat privat = project terpisah\n" +
+        "MCM: Private Connect (com.mcm.privateconnect).",
+    );
   }
-}
-if (!["full", "chat"].includes(variant)) {
-  fail(`Varian tidak dikenal: "${variant}". Pilih: full atau chat.`);
 }
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
@@ -69,7 +71,7 @@ const ANDROID_DIR = resolve(ROOT, "android");
 const gradleTask = debugBundle ? ":app:bundleDebug" : ":app:bundleRelease";
 const outSubdir = debugBundle ? "debug" : "release";
 
-banner(`Build AAB · varian ${variant.toUpperCase()} · ${debugBundle ? "DEBUG" : "RELEASE"}`);
+banner(`Build AAB · MCM Storage · ${debugBundle ? "DEBUG" : "RELEASE"}`);
 
 // ─── 1. Pre-flight ─────────────────────────────────────────────────────
 step("1/4  Pre-flight cek lingkungan");
@@ -144,9 +146,9 @@ if (!skipTypecheck) {
 }
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
-step(`3/4  Build web + cap sync (apk:${variant})`);
-run("bun", ["run", `apk:${variant}`]);
-console.log(`  ✓ dist/ ter-generate & android/ ter-sync (varian ${variant})`);
+step("3/4  Build web + cap sync (apk:full)");
+run("bun", ["run", "apk:full"]);
+console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle bundle ─────────────────────────────────────────────────
 step(`4/4  Gradle ${gradleTask}`);
