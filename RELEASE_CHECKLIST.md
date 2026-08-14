@@ -32,9 +32,9 @@
 | `GOOGLE_SERVICES_JSON_B64` | `google-services.json` Firebase untuk package `mcmstorage.app`, base64 |
 | `PLAY_SERVICE_ACCOUNT_JSON_B64` | service account Play (akses ke `mcmstorage.app`), base64 |
 
-Nilai secret tidak pernah dicetak ke log/artifact. Nama lama
-(`MCM_STORAGE_KEYSTORE_FILE`, `MCM_STORAGE_STORE_PASS`, `ANDROID_KEYSTORE_*`)
-sudah tidak dipakai di mana pun.
+Nilai secret tidak pernah dicetak ke log/artifact. Nama-nama secret lama
+(varian berawalan `MCM_STORAGE_…` dan `ANDROID_…`) sudah dihapus dari seluruh
+workflow, skrip, dan dokumentasi — hanya enam nama di tabel ini yang berlaku.
 
 
 > Copy-paste template untuk setiap upload AAB ke Google Play Console.
