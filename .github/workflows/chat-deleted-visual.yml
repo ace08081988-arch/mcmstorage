@@ -78,7 +78,17 @@ jobs:
             --project=mobile-public \
             --project=tablet-public \
             --project=tablet-landscape-public \
+            --update-snapshots=missing \
             --reporter=list,html
+
+      - name: Upload generated baselines (bila ada yang baru)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-deleted-visual-baselines
+          path: tests/visual/**/*-snapshots/**
+          retention-days: 14
+          if-no-files-found: ignore
 
       - name: Collect screenshot diffs
         if: failure()
