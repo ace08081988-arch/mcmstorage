@@ -4,7 +4,7 @@
  * dalam satu perintah, dengan pesan error yang ringkas & bahasa Indonesia.
  *
  * Pemakaian:
- *   node scripts/build-apk.mjs                # default: varian full
+ *   node scripts/build-apk.mjs                # MCM Storage
  *   node scripts/build-apk.mjs --open         # + buka Android Studio
  *   node scripts/build-apk.mjs --skip-typecheck  (kalau sudah dicek manual)
  *   node scripts/build-apk.mjs --assemble          # + ./gradlew assembleDebug
@@ -33,19 +33,6 @@ function flagValue(name) {
   const i = argv.indexOf(name);
   return i === -1 ? undefined : argv[i + 1];
 }
-// Project ini hanya punya satu package Android: mcmstorage.app.
-const variant = "full";
-{
-  const i = process.argv.indexOf("--variant");
-  const requested = process.argv.find((a) => a.startsWith("--variant="))?.split("=")[1] ??
-    (i === -1 ? undefined : process.argv[i + 1]);
-  if (requested && requested !== "full") {
-    fail(
-      `Varian "${requested}" sudah dihapus. MCM Storage hanya membangun mcmstorage.app.`,
-    );
-  }
-}
-
 const skipTypecheck = args.has("--skip-typecheck");
 const openStudio = args.has("--open");
 const doInstall = args.has("--install");

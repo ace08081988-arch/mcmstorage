@@ -4,7 +4,7 @@
  * verifikasi pemasangan (package terdaftar + versionCode match).
  *
  * Pemakaian:
- *   node scripts/install-apk.mjs                        # varian full, debug APK
+ *   node scripts/install-apk.mjs                        # MCM Storage debug APK
  *   node scripts/install-apk.mjs --release              # apk release (harus signed)
  *   node scripts/install-apk.mjs --apk path/to.apk      # override path APK
  *   node scripts/install-apk.mjs --device R58...        # pilih device spesifik
@@ -36,11 +36,6 @@ function flag(name) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = "full";
-{
-  const requested = flag("--variant");
-  if (requested && requested !== "full") fail(`Varian "${requested}" sudah dihapus dari project ini.`);
-}
 const isRelease = args.has("--release");
 const doLaunch = args.has("--launch");
 const doUninstallFirst = args.has("--uninstall-first");
@@ -124,7 +119,7 @@ if (aapt) {
 if (!appId) {
   // Fallback: satu-satunya applicationId project ini.
   appId = "mcmstorage.app";
-  console.log(`  ⚠ aapt tidak tersedia — fallback appId dari varian: ${appId}`);
+  console.log(`  ⚠ aapt tidak tersedia — fallback appId project: ${appId}`);
 } else {
   console.log(`  ✓ appId=${appId}${versionCode ? ` versionCode=${versionCode}` : ""}`);
 }

@@ -5,7 +5,7 @@
  * signing JWT service-account + fetch bawaan Node 20.
  *
  * Pemakaian:
- *   node scripts/upload-play.mjs                        # varian full, track internal
+ *   node scripts/upload-play.mjs                        # MCM Storage, track internal
  *   node scripts/upload-play.mjs --track production --release-status draft
  *   node scripts/upload-play.mjs --aab path/ke.aab
  *   node scripts/upload-play.mjs --package mcmstorage.app
@@ -55,15 +55,6 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = "full";
-{
-  const requested = flag("--variant");
-  if (requested && requested !== "full") {
-    fail(
-      `Varian "${requested}" sudah dihapus. Project ini hanya merilis package mcmstorage.app.`,
-    );
-  }
-}
 const track = flag("--track", "internal");
 const releaseStatus = flag("--release-status", "draft");
 const releaseName = flag("--release-name");
@@ -76,7 +67,6 @@ const skipVersionCheck = args.has("--skip-version-check");
 
 // State untuk ringkasan GitHub Actions (ditulis ke $GITHUB_STEP_SUMMARY di akhir).
 const runSummary = {
-  variant,
   packageName: null,
   track,
   releaseStatus,
@@ -112,6 +102,9 @@ console.log(`  ✓ client_email: ${sa.client_email}`);
 step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
   packageOverride ?? "mcmstorage.app";
+if (packageName !== "mcmstorage.app") {
+  fail(`Package ${packageName} ditolak. Project ini hanya boleh mengunggah mcmstorage.app.`);
+}
 console.log(`  ✓ packageName: ${packageName}`);
 runSummary.packageName = packageName;
 
@@ -476,7 +469,7 @@ function writeStepSummary(s) {
     const rows = [];
     rows.push(`## ${emoji} Play Console upload — ${outcomeLabel}`);
     rows.push("");
-    rows.push(`**Package:** \`${s.packageName ?? "—"}\` · **Varian:** \`${s.variant}\``);
+    rows.push(`**Aplikasi:** MCM Storage · **Package:** \`${s.packageName ?? "—"}\``);
     rows.push("");
     rows.push("| Field | Nilai |");
     rows.push("| --- | --- |");

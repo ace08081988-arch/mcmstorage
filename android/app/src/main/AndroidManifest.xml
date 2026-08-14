@@ -28,8 +28,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link scheme kustom (dipertahankan untuk kompatibilitas
-                 link lama). Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
+            <!-- Deep link scheme mengikuti applicationId Play. -->
             <intent-filter android:label="MCM Storage Deep Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
