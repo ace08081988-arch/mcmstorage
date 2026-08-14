@@ -116,6 +116,18 @@ export async function startDeepLinkListener(router: DeepLinkRouter) {
   if (!Capacitor.isNativePlatform()) return;
 
   const handle = (rawUrl: string) => {
+    // Chat dulu — notifikasi/bubble Android memakai bentuk /chat/<uuid>.
+    const chat = parseChatDeepLink(rawUrl);
+    if (chat) {
+      const path = `/chat/${chat.conversationId}`;
+      if (window.location.pathname === path && !chat.callId) return;
+      try {
+        router.navigate({ to: path });
+      } catch {
+        window.location.assign(path);
+      }
+      return;
+    }
     const parsed = parseDeepLink(rawUrl);
     if (!parsed) return;
     const path = `/t/${encodeURIComponent(parsed.token)}`;
