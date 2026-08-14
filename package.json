@@ -150,7 +150,9 @@
     "version:check": "node scripts/read-app-version.mjs",
     "version:check:json": "node scripts/read-app-version.mjs --json",
     "version:print": "node scripts/bump-version.mjs --print",
-    "release:aab": "node scripts/build-aab.mjs"
+    "release:aab": "node scripts/build-aab.mjs",
+    "build:e2e": "cross-env-shell CAPACITOR_BUILD=1 vite build",
+    "serve:e2e": "node scripts/serve-e2e.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
