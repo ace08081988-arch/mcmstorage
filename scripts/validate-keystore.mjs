@@ -30,6 +30,10 @@ import { resolve, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { createInterface } from "node:readline";
 
+// Dideklarasikan di atas: dipakai oleh rl() dan cleanup `__rl?.close()`
+// yang berjalan sebelum blok helper di bawah (hindari temporal dead zone).
+let __rl;
+
 const argv = process.argv.slice(2);
 function flag(name) {
   const i = argv.indexOf(name);
@@ -45,18 +49,18 @@ const propsPath = resolve(ROOT, flag("--props") ?? "android/keystore.properties"
 
 // Prioritas: CLI flag > env var > keystore.properties
 // Env yang diakui:
-//   KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS
+//   KEYSTORE_STORE_PASSWORD, KEYSTORE_KEY_PASSWORD
 //   KEYSTORE_FILE (path), KEYSTORE_ALIAS
 let storeFile = flag("--store") ?? process.env.KEYSTORE_FILE;
-let storePassword = flag("--store-pass") ?? process.env.KEYSTORE_STORE_PASS;
+let storePassword = flag("--store-pass") ?? (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD);
 let keyAlias = flag("--alias") ?? process.env.KEYSTORE_ALIAS;
-let keyPassword = flag("--key-pass") ?? process.env.KEYSTORE_KEY_PASS;
+let keyPassword = flag("--key-pass") ?? (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD);
 const sources = [];
 if (flag("--store") || flag("--store-pass") || flag("--alias") || flag("--key-pass"))
   sources.push("CLI flag");
 if (
-  process.env.KEYSTORE_STORE_PASS ||
-  process.env.KEYSTORE_KEY_PASS ||
+  (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD) ||
+  (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD) ||
   process.env.KEYSTORE_FILE ||
   process.env.KEYSTORE_ALIAS
 )
@@ -88,8 +92,8 @@ if (!storeFile || !storePassword || !keyAlias || !keyPassword) {
         "  a) Env var (recommended untuk CI):\n" +
         "       export KEYSTORE_FILE=/path/ke/.keystore\n" +
         "       export KEYSTORE_ALIAS=mcm\n" +
-        "       export KEYSTORE_STORE_PASS='…'\n" +
-        "       export KEYSTORE_KEY_PASS='…'\n\n" +
+        "       export KEYSTORE_STORE_PASSWORD='…'\n" +
+        "       export KEYSTORE_KEY_PASSWORD='…'\n\n" +
         "  b) File android/keystore.properties (dari `bun run aab:setup-keystore`).\n\n" +
         "  c) CLI flag lengkap:\n" +
         "       --store <path> --alias <alias> --store-pass <pw> --key-pass <pw>\n",
@@ -323,7 +327,6 @@ function truncate(s, n) {
 }
 
 // ─── Interactive prompt helpers ──────────────────────────────────────
-let __rl;
 function rl() {
   if (!__rl) __rl = createInterface({ input: process.stdin, output: process.stdout });
   return __rl;

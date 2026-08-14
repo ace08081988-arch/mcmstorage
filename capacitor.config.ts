@@ -1,14 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// Varian build: "full" (default) = Ace Storage lengkap; "chat" = APK
-// Ace Chat (UI storage disembunyikan via VITE_APP_MODE=chat).
-// Diset lewat env `APP_VARIANT` saat menjalankan `bunx cap sync`.
-const variant = (process.env.APP_VARIANT ?? "full").toLowerCase();
-const isChat = variant === "chat";
-
+// SATU identitas Android untuk project ini: MCM Storage.
+// Aplikasi chat privat umum adalah project TERPISAH
+// (MCM: Private Connect / `com.mcm.privateconnect`) — jangan pernah
+// menambahkan varian/flavor chat di sini.
 const config: CapacitorConfig = {
-  appId: isChat ? "biz.mcmstorage.chat" : "biz.mcmstorage.app",
-  appName: isChat ? "Ace Chat" : "ACE STORAGE",
+  // Package name aplikasi di Google Play Console.
+  // Namespace sumber Java tetap `biz.mcmstorage.app` (android/app/build.gradle).
+  appId: "mcmstorage.app",
+  appName: "MCM Storage",
   webDir: "dist",
   server: {
     androidScheme: "https",

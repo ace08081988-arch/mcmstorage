@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { pingLovableAi } from "@/lib/ai-ping.functions";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
+import { useVisualViewportBox, visualViewportDialogStyle } from "@/hooks/use-visual-viewport-inset";
 import {
   Boxes,
   Truck,
@@ -2618,18 +2619,30 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   }
 
   const editTrapRef = useFocusTrap<HTMLDivElement>({ onEscape: onClose });
+  const editVvBox = useVisualViewportBox();
+  const editVvStyle = visualViewportDialogStyle(editVvBox);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-ms-3" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60" onClick={onClose}>
       <div
         ref={editTrapRef}
         role="dialog"
         aria-modal="true"
         aria-label="Edit barang"
-        className="w-full max-w-md rounded-lg border bg-card p-ms-4 space-ms-3"
+        style={
+          editVvStyle
+            ? { top: editVvStyle.top, maxHeight: editVvStyle.maxHeight, transform: "translate(-50%, -50%)" }
+            : undefined
+        }
+        className={`fixed left-1/2 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 flex-col rounded-lg border bg-card ${
+          editVvStyle
+            ? ""
+            : "top-1/2 -translate-y-1/2 [max-height:calc(var(--app-vh-visible,var(--app-vh,100dvh))-2rem)]"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-ms-sm font-semibold">Edit Barang</div>
+        <div className="shrink-0 border-b px-ms-4 py-ms-3 text-ms-sm font-semibold">Edit Barang</div>
+        <div className="min-h-0 flex-1 space-ms-3 overflow-y-auto overscroll-contain px-ms-4 py-ms-3">
         <label className="block">
           <span className="text-[0.6875rem] text-muted-foreground">Nama</span>
           <input className="mt-1 w-full rounded-md border bg-background px-ms-2 py-1.5 text-ms-sm" value={name} onChange={(e) => setName(e.target.value)} />
@@ -2713,19 +2726,23 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
             jenis kemasan antara <i>gram</i> dan <i>botol/sachet/pcs</i>.
           </div>
         )}
-        <div className="flex gap-ms-2 pt-1">
-          <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50">
-            {saving ? "Menyimpan..." : "Simpan"}
-          </button>
-          <button onClick={onClose} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPackages(true)}
-          className="mt-1 w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-xs font-semibold hover:bg-accent"
-        >
-          📦 Paket Siap Kirim
-        </button>
+        {/* Footer sticky: aksi selalu terjangkau meski soft-keyboard terbuka. */}
+        <div className="shrink-0 space-ms-2 border-t bg-card px-ms-4 py-ms-3 [padding-bottom:max(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)),0.75rem)] rounded-b-lg">
+          <div className="flex gap-ms-2">
+            <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-ms-3 py-ms-2 text-ms-sm font-semibold text-primary-foreground disabled:opacity-50">
+              {saving ? "Menyimpan..." : "Simpan"}
+            </button>
+            <button onClick={onClose} className="rounded-md border px-ms-3 py-ms-2 text-ms-sm hover:bg-accent">Batal</button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPackages(true)}
+            className="mt-1 w-full rounded-md border bg-background px-ms-3 py-ms-2 text-ms-xs font-semibold hover:bg-accent"
+          >
+            📦 Paket Siap Kirim
+          </button>
+        </div>
       </div>
       {showPackages && uid && (
         <ReadyPackagesPanel

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { armFilePickerLock } from "@/lib/app-lock";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
@@ -154,12 +155,14 @@ export function ProductEditDrawer(props: Props) {
                 📷
                 <span>{draft.foto ? "Ganti" : "Foto"}</span>
                 <input type="file" accept="image/*" capture="environment" className="hidden"
+                  onClick={(e) => armFilePickerLock(e.currentTarget)}
                   onChange={(e) => setFoto(draft.id, e.target.files)} />
               </label>
               <label className="inline-flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-ms-2xs hover:bg-accent">
                 🖼️
                 <span>Galeri</span>
                 <input type="file" accept="image/*" multiple className="hidden"
+                  onClick={(e) => armFilePickerLock(e.currentTarget)}
                   onChange={(e) => addGaleri(draft.id, e.target.files)} />
               </label>
             </div>

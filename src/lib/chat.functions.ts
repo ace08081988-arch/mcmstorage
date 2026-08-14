@@ -20,6 +20,17 @@ export const sendMessage = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    // SSOT capability — predicate yang sama dipakai UI, endpoint aksi
+    // notifikasi, dan pembuatan panggilan.
+    const { data: capRaw, error: capErr } = await supabase.rpc(
+      "chat_conversation_capabilities",
+      { _conversation_id: data.conversationId },
+    );
+    if (capErr) throw new Error(capErr.message);
+    const { normalizeCapabilities } = await import("@/lib/chat-capabilities");
+    const cap = normalizeCapabilities(capRaw);
+    if (!cap.canSend) throw new Error(`chat_capability:${cap.reasonCode}`);
+
     // Insert (RLS akan memastikan pengirim adalah anggota percakapan)
     const { data: msg, error } = await supabase
       .from("messages")
@@ -95,6 +106,8 @@ export const sendMessage = createServerFn({ method: "POST" })
           messageId: msg.id,
           icon: prof?.avatar_url || undefined,
           kind: "chat",
+          senderName,
+          senderId: userId,
           requireInteraction: false,
           vibrate: [80, 40, 80],
           timestamp: Date.now(),

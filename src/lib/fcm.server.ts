@@ -94,35 +94,80 @@ async function getAccessToken(): Promise<string | null> {
 
 export type FcmTokenRow = { id: string; token: string };
 
-/** Send one FCM message. Returns ok=false + status when the token is dead. */
-export async function sendFcm(row: FcmTokenRow, payload: PushPayload) {
+/**
+ * Channel Android stabil — HARUS sama persis dengan `NOTIF_CHANNELS`
+ * di `src/lib/local-notify.ts` dan konstanta di `AceMessagingService.java`.
+ */
+export const FCM_CHANNELS = {
+  chat: "mcm_chat",
+  call: "mcm_call",
+  tugas: "mcm_tugas",
+  order: "mcm_order",
+  system: "mcm_system",
+} as const;
+
+export function channelIdForKind(kind?: string): string {
+  if (!kind) return FCM_CHANNELS.system;
+  return (FCM_CHANNELS as Record<string, string>)[kind] ?? FCM_CHANNELS.system;
+}
+
+/**
+ * Send one FCM message. Returns ok=false + status when the token is dead.
+ *
+ * Selalu **data-only + HIGH priority** supaya `AceMessagingService` di
+ * Android ikut dipanggil saat aplikasi mati/di-background dan bisa
+ * membangun MessagingStyle/CallStyle sendiri (notifikasi otomatis Android
+ * tidak bisa punya tombol Balas atau bubble).
+ */
+export async function sendFcm(
+  row: FcmTokenRow,
+  payload: PushPayload,
+  extraData?: Record<string, string>,
+) {
   const acc = getSA();
   if (!acc) return { ok: false as const, status: 0, error: "not_configured" };
   const access = await getAccessToken();
   if (!access) return { ok: false as const, status: 0, error: "no_access_token" };
 
-  const data: Record<string, string> = {};
+  const isCall = payload.kind === "call";
+  const channelId = channelIdForKind(payload.kind);
+  const data: Record<string, string> = {
+    title: payload.title,
+    body: payload.body,
+    channelId,
+    kind: payload.kind ?? "system",
+    ...(extraData ?? {}),
+  };
   if (payload.url) data.url = payload.url;
   if (payload.tag) data.tag = payload.tag;
   if (payload.conversationId) data.conversationId = payload.conversationId;
   if (payload.messageId) data.messageId = payload.messageId;
-  if (payload.kind) data.kind = payload.kind;
+  if (payload.senderName) data.senderName = payload.senderName;
+  if (payload.senderId) data.senderId = payload.senderId;
+  if (payload.icon) data.icon = payload.icon;
+  if (payload.callId) data.callId = payload.callId;
+  if (payload.callKind) data.callKind = payload.callKind;
+  if (payload.callerName) data.callerName = payload.callerName;
 
   const body = {
     message: {
       token: row.token,
-      notification: {
-        title: payload.title,
-        body: payload.body,
-        ...(payload.image ? { image: payload.image } : {}),
-      },
       data,
       android: {
         priority: "HIGH" as const,
-        notification: {
-          channel_id: "chat",
-          tag: payload.tag,
-          click_action: "FCM_PLUGIN_ACTIVITY",
+        // TTL pendek untuk panggilan: push yang telat tidak boleh
+        // memunculkan layar "panggilan masuk" basi.
+        ttl: isCall ? "35s" : "3600s",
+        direct_boot_ok: true,
+      },
+      apns: {
+        headers: { "apns-priority": "10" },
+        payload: {
+          aps: {
+            alert: { title: payload.title, body: payload.body },
+            sound: isCall ? "default" : undefined,
+            "content-available": 1,
+          },
         },
       },
     },
@@ -159,14 +204,51 @@ export async function sendFcmToUsers(opts: {
   if (targets.length === 0) return { sent: 0, pruned: 0 };
   const { data: rows, error } = await supabaseAdmin
     .from("fcm_tokens")
-    .select("id, token")
+    .select("id, token, user_id")
     .in("user_id", targets);
   if (error || !rows || rows.length === 0) return { sent: 0, pruned: 0 };
+
+  // Token aksi per PENERIMA (bukan per device) — dipakai tombol Balas /
+  // Tandai dibaca / Tolak saat aplikasi tidak hidup. Bila secret belum
+  // dikonfigurasi, data aksi dikosongkan dan Android otomatis hanya
+  // menampilkan tap-to-open (lihat AceMessagingService).
+  const perUser = new Map<string, Record<string, string>>();
+  try {
+    const { pushActionSecret } = await import("./push-ownership.server");
+    const secret = pushActionSecret();
+    const cid = opts.payload.conversationId;
+    if (secret && cid) {
+      const { signPushActionToken } = await import("./push-action-token");
+      const uniqueUsers = [...new Set((rows as { user_id: string }[]).map((r) => r.user_id))];
+      await Promise.all(
+        uniqueUsers.map(async (uid) => {
+          const base = { uid, cid, mid: opts.payload.messageId, callId: opts.payload.callId };
+          const extra: Record<string, string> = {};
+          if (opts.payload.kind === "call" && opts.payload.callId) {
+            extra.declineToken = await signPushActionToken(
+              { ...base, act: "call-decline" },
+              secret,
+            );
+          } else {
+            extra.replyToken = await signPushActionToken({ ...base, act: "reply" }, secret);
+            extra.markReadToken = await signPushActionToken(
+              { ...base, act: "mark-read" },
+              secret,
+            );
+          }
+          perUser.set(uid, extra);
+        }),
+      );
+    }
+  } catch (e) {
+    console.warn("[fcm] gagal membuat token aksi", e);
+  }
+
   let sent = 0;
   const dead: string[] = [];
   await Promise.all(
-    rows.map(async (r) => {
-      const res = await sendFcm(r, opts.payload);
+    (rows as { id: string; token: string; user_id: string }[]).map(async (r) => {
+      const res = await sendFcm(r, opts.payload, perUser.get(r.user_id));
       if (res.ok) sent++;
       else if (res.status === 404 || res.status === 400) {
         // UNREGISTERED / INVALID_ARGUMENT — prune stale token

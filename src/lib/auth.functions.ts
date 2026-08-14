@@ -39,7 +39,7 @@ function clientIpFromRequest(req: Request): string {
 }
 
 function safeAuthCallbackUrl(req: Request): string {
-  const fallback = "https://mcmstorage.biz";
+  const fallback = "https://mcmstorage.app";
   const candidates = [
     req.headers.get("origin"),
     req.headers.get("referer"),
@@ -57,6 +57,8 @@ function safeAuthCallbackUrl(req: Request): string {
       const url = new URL(candidate);
       const host = url.hostname.toLowerCase();
       const allowed =
+        host === "mcmstorage.app" ||
+        host === "www.mcmstorage.app" ||
         host === "mcmstorage.biz" ||
         host === "www.mcmstorage.biz" ||
         host === "localhost" ||

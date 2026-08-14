@@ -4,8 +4,7 @@
  * dalam satu perintah, dengan pesan error yang ringkas & bahasa Indonesia.
  *
  * Pemakaian:
- *   node scripts/build-apk.mjs                # default: varian full
- *   node scripts/build-apk.mjs --variant chat # varian Ace Chat
+ *   node scripts/build-apk.mjs                # MCM Storage
  *   node scripts/build-apk.mjs --open         # + buka Android Studio
  *   node scripts/build-apk.mjs --skip-typecheck  (kalau sudah dicek manual)
  *   node scripts/build-apk.mjs --assemble          # + ./gradlew assembleDebug
@@ -20,7 +19,7 @@
  *   - Cek `android/` sudah di-generate — kalau belum, kasih instruksi.
  *   - Cek `ANDROID_HOME` / `JAVA_HOME` — kalau kosong, kasih hint.
  *   - Semua langkah pakai script yang SUDAH ADA di package.json
- *     (`apk:full` / `apk:chat`) supaya tidak ada logic duplikat.
+ *     (`mobile:sync`) supaya tidak ada logic duplikat.
  *   - Opsional: kalau --install, chain otomatis ke scripts/install-apk.mjs
  *     (adb install -r -d + verifikasi package terdaftar & versionCode match).
  */
@@ -34,18 +33,6 @@ function flagValue(name) {
   const i = argv.indexOf(name);
   return i === -1 ? undefined : argv[i + 1];
 }
-let variant = "full";
-for (const a of process.argv.slice(2)) {
-  if (a.startsWith("--variant=")) variant = a.split("=")[1];
-  else if (a === "--variant") {
-    const idx = process.argv.indexOf("--variant");
-    variant = process.argv[idx + 1] ?? "full";
-  }
-}
-if (!["full", "chat"].includes(variant)) {
-  fail(`Varian tidak dikenal: "${variant}". Pilih: full atau chat.`);
-}
-
 const skipTypecheck = args.has("--skip-typecheck");
 const openStudio = args.has("--open");
 const doInstall = args.has("--install");
@@ -57,7 +44,7 @@ const doAssemble = args.has("--assemble") || doInstall || isRelease;
 const deviceArg = flagValue("--device");
 const ROOT = resolve(process.cwd());
 
-banner(`Build APK · varian ${variant.toUpperCase()}`);
+banner("Build APK · MCM Storage");
 
 // ─── 1. Pre-flight ─────────────────────────────────────────────────────
 step("1/4  Pre-flight cek lingkungan");
@@ -84,8 +71,8 @@ console.log("  ✓ lingkungan siap");
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
-  step("2/4  Typecheck (tsgo --noEmit)");
-  run("bunx", ["tsgo", "--noEmit"]);
+  step("2/4  Typecheck (tsc --noEmit)");
+  run("bunx", ["tsc", "--noEmit"]);
   console.log("  ✓ typecheck bersih");
 } else {
   step("2/4  Typecheck DILEWATI (--skip-typecheck)");
@@ -93,9 +80,9 @@ if (!skipTypecheck) {
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
 const totalSteps = doAssemble ? (doInstall ? 6 : 5) : 4;
-step(`3/${totalSteps}  Build web + cap sync (apk:${variant})`);
-run("bun", ["run", `apk:${variant}`]);
-console.log(`  ✓ dist/ ter-generate & android/ ter-sync (varian ${variant})`);
+step(`3/${totalSteps}  Build web + cap sync (mobile:sync)`);
+run("bun", ["run", "mobile:sync"]);
+console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle assemble (opsional) ────────────────────────────────────
 if (doAssemble) {
@@ -125,7 +112,7 @@ if (doAssemble) {
 // ─── 5. Install & verifikasi (opsional) ───────────────────────────────
 if (doInstall) {
   step(`5/${totalSteps}  adb install + verifikasi pemasangan`);
-  const installArgs = ["run", "apk:install", "--", "--variant", variant];
+  const installArgs = ["run", "apk:install", "--"];
   if (isRelease) installArgs.push("--release");
   if (doLaunch) installArgs.push("--launch");
   if (doUninstallFirst) installArgs.push("--uninstall-first");
@@ -150,9 +137,9 @@ if (openStudio) {
       "    android/app/build/outputs/apk/{debug|release}/*.apk\n",
   );
 } else if (doInstall) {
-  banner(`APK varian ${variant.toUpperCase()} terpasang & terverifikasi`);
+  banner("APK MCM Storage terpasang & terverifikasi");
 } else {
-  banner(`APK varian ${variant.toUpperCase()} berhasil di-build`);
+  banner("APK MCM Storage berhasil di-build");
 }
 
 // ─── util ─────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-# Android App Links (HTTPS terverifikasi) — Ace Storage
+# Android App Links (HTTPS terverifikasi) — MCM Storage
 
 Manifest sudah mendeklarasikan intent-filter `autoVerify="true"` untuk:
 
@@ -8,8 +8,7 @@ Manifest sudah mendeklarasikan intent-filter `autoVerify="true"` untuk:
 | `mcmstorage.app` | `/undang` | Link undangan |
 | `www.mcmstorage.app` | `/t/`, `/undang` | Sama, host www |
 
-Scheme kustom lama (`biz.mcmstorage.app://…`) TETAP dipertahankan agar link
-yang sudah tersebar tidak mati.
+Scheme kustom mengikuti package Play: `mcmstorage.app://…`.
 
 ## Yang harus dipasang owner (belum bisa otomatis)
 
@@ -29,7 +28,7 @@ Isi file (ganti `SHA_256_CERT_FINGERPRINT`):
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "biz.mcmstorage.app",
+      "package_name": "mcmstorage.app",
       "sha256_cert_fingerprints": [
         "AA:BB:CC:...:FF"
       ]
@@ -62,17 +61,13 @@ Masukkan **semua** fingerprint yang mungkin menandatangani APK yang dipasang use
 curl -sI https://mcmstorage.app/.well-known/assetlinks.json
 
 # 2. Cek status verifikasi di perangkat (Android 12+)
-adb shell pm get-app-links biz.mcmstorage.app
+adb shell pm get-app-links mcmstorage.app
 # harapkan: mcmstorage.app: verified
 
 # 3. Paksa verifikasi ulang
-adb shell pm verify-app-links --re-verify biz.mcmstorage.app
+adb shell pm verify-app-links --re-verify mcmstorage.app
 ```
 
 Kalau statusnya bukan `verified`, link tetap terbuka di browser (tidak ada
 kerusakan fungsional) — perbaiki assetlinks lalu re-verify.
 
-## Varian chat
-
-`biz.mcmstorage.chat` belum punya App Links. Kalau nanti dibutuhkan, buat
-blok assetlinks kedua dengan `package_name` dan fingerprint varian tersebut.

@@ -46,7 +46,30 @@ export type StickerObj = {
   visible?: boolean; locked?: boolean;
 };
 
-export type SceneObject = DrawObj | ShapeObj | TextObj | StickerObj;
+/**
+ * Foto tambahan yang ditempel di atas foto dasar ("merge photo").
+ *
+ * `src` sengaja disimpan sebagai data URL supaya scene JSON bisa dimuat
+ * ulang kapan saja (blob:/object URL mati begitu tab/WebView restart).
+ * Ukurannya sudah diturunkan lebih dulu (lihat `src/lib/image-layer.ts`)
+ * agar JSON tidak meledak dan Android WebView tidak kehabisan memori.
+ *
+ * Kind ini bersifat aditif: scene lama yang tidak punya objek `image`
+ * tetap valid dan tetap ter-deserialize seperti biasa.
+ */
+export type ImageObj = {
+  id: SceneId;
+  kind: "image";
+  src: string; // data URL persisten
+  x: number; y: number; width: number; height: number; rotation: number;
+  opacity: number;
+  /** Dimensi natural sumbernya (setelah downscale) — untuk jaga rasio. */
+  naturalWidth?: number;
+  naturalHeight?: number;
+  visible?: boolean; locked?: boolean;
+};
+
+export type SceneObject = DrawObj | ShapeObj | TextObj | StickerObj | ImageObj;
 
 export type Scene = {
   version: 1;
@@ -78,4 +101,13 @@ export function deserializeScene(raw: string | null | undefined, fallback: Scene
 
 export function newId(prefix = "o"): SceneId {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Objek yang benar-benar dirender ke stage (dan karenanya ikut ter-ekspor
+ * ke JPEG akhir). Layer yang disembunyikan dibuang; layer foto tambahan
+ * diperlakukan sama seperti anotasi lain.
+ */
+export function visibleObjectsForExport(s: Scene): SceneObject[] {
+  return s.objects.filter((o) => o.visible !== false);
 }

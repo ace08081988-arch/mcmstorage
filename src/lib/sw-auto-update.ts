@@ -1,3 +1,4 @@
+import { isNativeApp } from "./is-native";
 /**
  * Registrasi service worker Ace + mekanisme auto-update.
  *
@@ -92,6 +93,8 @@ function watchWaiting(reg: ServiceWorkerRegistration) {
 let installed = false;
 
 export function installSwAutoUpdate(): (() => void) | void {
+  // Service worker adalah mekanisme web; di APK tidak dipakai sama sekali.
+  if (isNativeApp()) return;
   if (installed) return;
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;

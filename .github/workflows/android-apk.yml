@@ -8,8 +8,8 @@ name: Android APK (manual)
 on:
   workflow_dispatch:
     inputs:
-      variant:
-        description: "Varian build"
+      build_type:
+        description: "Jenis APK MCM Storage"
         type: choice
         default: debug
         options: [debug, release]
@@ -31,11 +31,11 @@ concurrency:
 
 jobs:
   build-apk:
-    name: APK ${{ inputs.variant }} ${{ inputs.version_name }} (${{ inputs.version_code }})
+    name: MCM Storage APK ${{ inputs.build_type }} ${{ inputs.version_name }} (${{ inputs.version_code }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      VARIANT: ${{ inputs.variant }}
+      BUILD_TYPE: ${{ inputs.build_type }}
       VERSION_NAME: ${{ inputs.version_name }}
       VERSION_CODE: ${{ inputs.version_code }}
     steps:
@@ -45,7 +45,7 @@ jobs:
       - name: Validasi input
         run: |
           set -euo pipefail
-          case "$VARIANT" in debug|release) ;; *) echo "variant tidak valid"; exit 1 ;; esac
+          case "$BUILD_TYPE" in debug|release) ;; *) echo "build_type tidak valid"; exit 1 ;; esac
           echo "$VERSION_NAME" | grep -Eq '^[0-9A-Za-z._+-]{1,32}$' || { echo "version_name tidak valid"; exit 1; }
           echo "$VERSION_CODE" | grep -Eq '^[0-9]{1,9}$' || { echo "version_code harus angka"; exit 1; }
 
@@ -78,7 +78,7 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'placeholder' }}
           VITE_SUPABASE_PROJECT_ID: ${{ vars.VITE_SUPABASE_PROJECT_ID || 'placeholder' }}
-        run: bun run build
+        run: bun run build:mobile
 
       - name: Siapkan proyek Android (Capacitor 8, ephemeral)
         run: |
@@ -93,24 +93,24 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/patch-android-build.mjs \
-            --app-name "ACE STORAGE" \
+            --app-name "MCM Storage" \
             --version-name "$VERSION_NAME" \
             --version-code "$VERSION_CODE"
 
       - name: Validasi secrets signing (release, fail-closed)
-        if: inputs.variant == 'release'
+        if: inputs.build_type == 'release'
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           missing=""
-          [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] || missing="$missing ANDROID_KEYSTORE_BASE64"
-          [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] || missing="$missing ANDROID_KEYSTORE_PASSWORD"
-          [ -n "${ANDROID_KEY_ALIAS:-}" ] || missing="$missing ANDROID_KEY_ALIAS"
-          [ -n "${ANDROID_KEY_PASSWORD:-}" ] || missing="$missing ANDROID_KEY_PASSWORD"
+          [ -n "${KEYSTORE_BASE64:-}" ] || missing="$missing KEYSTORE_BASE64"
+          [ -n "${KEYSTORE_STORE_PASSWORD:-}" ] || missing="$missing KEYSTORE_STORE_PASSWORD"
+          [ -n "${KEYSTORE_ALIAS:-}" ] || missing="$missing KEYSTORE_ALIAS"
+          [ -n "${KEYSTORE_KEY_PASSWORD:-}" ] || missing="$missing KEYSTORE_KEY_PASSWORD"
           if [ -n "$missing" ]; then
             echo "::error::Secrets signing belum lengkap:$missing (pasang di GitHub → Settings → Secrets and variables → Actions)"
             exit 1
@@ -118,28 +118,28 @@ jobs:
           echo "Semua secret signing tersedia (nilai tidak ditampilkan)."
 
       - name: Decode keystore ke RUNNER_TEMP
-        if: inputs.variant == 'release'
+        if: inputs.build_type == 'release'
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           umask 077
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           test -s "$RUNNER_TEMP/release.jks" || { echo "::error::Keystore hasil decode kosong/tidak valid"; exit 1; }
 
       - name: Gradle assembleDebug
-        if: inputs.variant == 'debug'
+        if: inputs.build_type == 'debug'
         working-directory: android
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Gradle assembleRelease (signed)
-        if: inputs.variant == 'release'
+        if: inputs.build_type == 'release'
         working-directory: android
         env:
           KEYSTORE_FILE: ${{ runner.temp }}/release.jks
-          KEYSTORE_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEYSTORE_KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
           KEYSTORE_STORE_TYPE: PKCS12
         run: ./gradlew :app:assembleRelease --stacktrace
 
@@ -148,13 +148,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/qa
-          if [ "$VARIANT" = "release" ]; then
+          if [ "$BUILD_TYPE" = "release" ]; then
             SRC="android/app/build/outputs/apk/release/app-release.apk"
           else
             SRC="android/app/build/outputs/apk/debug/app-debug.apk"
           fi
           test -f "$SRC" || { echo "::error::APK tidak ditemukan di $SRC"; exit 1; }
-          OUT="dist/qa/ace-storage-${VARIANT}-${VERSION_NAME}-${VERSION_CODE}.apk"
+          OUT="dist/qa/mcm-storage-${BUILD_TYPE}-${VERSION_NAME}-${VERSION_CODE}.apk"
           cp "$SRC" "$OUT"
           sha256sum "$OUT" > "$OUT.sha256"
           echo "apk=$OUT" >> "$GITHUB_OUTPUT"
@@ -172,11 +172,12 @@ jobs:
           set -euo pipefail
           APK='${{ steps.collect.outputs.apk }}'
           {
-            echo "## APK ACE STORAGE"
+            echo "## APK MCM Storage"
             echo ""
             echo "| Field | Nilai |"
             echo "| --- | --- |"
-            echo "| Varian | \`$VARIANT\` |"
+            echo "| Jenis build | \`$BUILD_TYPE\` |"
+            echo "| Package | \`mcmstorage.app\` |"
             echo "| versionName | \`$VERSION_NAME\` |"
             echo "| versionCode | \`$VERSION_CODE\` |"
             echo "| File | \`$APK\` |"
@@ -190,7 +191,7 @@ jobs:
       - name: Upload artifact (APK + checksum)
         uses: actions/upload-artifact@v4
         with:
-          name: ace-storage-${{ inputs.variant }}-${{ inputs.version_name }}-${{ inputs.version_code }}
+          name: mcm-storage-${{ inputs.build_type }}-${{ inputs.version_name }}-${{ inputs.version_code }}
           path: |
             dist/qa/*.apk
             dist/qa/*.apk.sha256

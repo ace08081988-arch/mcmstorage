@@ -14,6 +14,12 @@ export type StagedPhoto = {
   size: number; // ukuran blob final dalam bytes
   originalFormat?: string; // format asli sebelum konversi/kompresi (bila berbeda)
   converted?: boolean; // true bila format asli berubah (mis. HEIC → JPEG)
+  /**
+   * true HANYA setelah foto melewati PhotoEditor (onSave). Foto mentah dari
+   * kamera/galeri selalu false supaya submit bisa menolak foto tak teredit.
+   */
+  edited?: boolean;
+  editedAt?: number;
 };
 
 import { compressImage } from "./prep-image-compress";
@@ -80,7 +86,25 @@ export function formatLabel(file: Blob): string {
 }
 
 export function buildStagedPhoto(dataUrl: string, blob: Blob): StagedPhoto {
-  return { dataUrl, blob, format: formatLabel(blob), size: blob.size };
+  // Dipakai oleh hasil PhotoEditor (onSave) dan hasil merge foto teredit.
+  return {
+    dataUrl,
+    blob,
+    format: formatLabel(blob),
+    size: blob.size,
+    edited: true,
+    editedAt: Date.now(),
+  };
+}
+
+/** Apakah foto ini sudah melewati editor? */
+export function isPhotoEdited(p: Pick<StagedPhoto, "edited">): boolean {
+  return p.edited === true;
+}
+
+/** Jumlah foto yang belum melewati editor. */
+export function countUneditedPhotos(list: Pick<StagedPhoto, "edited">[]): number {
+  return list.reduce((n, p) => (isPhotoEdited(p) ? n : n + 1), 0);
 }
 
 export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
@@ -131,6 +155,7 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
           size: f.size,
           originalFormat: converted ? originalFormat : undefined,
           converted,
+          edited: false,
         };
       }
     } catch {
@@ -154,5 +179,6 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
     size: f.size,
     originalFormat: converted ? originalFormat : undefined,
     converted,
+    edited: false,
   };
 }

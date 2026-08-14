@@ -17,7 +17,7 @@
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".MainActivity"
+            android:name="biz.mcmstorage.app.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
@@ -28,13 +28,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link scheme kustom (dipertahankan untuk kompatibilitas
-                 link lama). Contoh: biz.mcmstorage.app://t/<share_token>?p=<pin> -->
-            <intent-filter android:label="Ace Storage Deep Link">
+            <!-- Deep link scheme mengikuti applicationId Play. -->
+            <intent-filter android:label="MCM Storage Deep Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="biz.mcmstorage.app" />
+                <data android:scheme="${applicationId}" />
             </intent-filter>
 
             <!-- Verified HTTPS App Links.
@@ -42,7 +41,7 @@
                  lihat docs/ANDROID_APP_LINKS.md. Hanya route yang memang
                  harus membuka aplikasi: portal tugas pegawai (/t/...) dan
                  undangan (/undang...). -->
-            <intent-filter android:autoVerify="true" android:label="Ace Storage App Link">
+            <intent-filter android:autoVerify="true" android:label="MCM Storage App Link">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -63,6 +62,28 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- ace-native:begin -->
+        <!-- MCM Storage native: FCM data-only + aksi notifikasi.
+             Dipasang ulang otomatis oleh scripts/sync-native.mjs. -->
+        <service
+            android:name="biz.mcmstorage.app.AceMessagingService"
+            android:exported="false"
+            android:directBootAware="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <receiver
+            android:name="biz.mcmstorage.app.AceActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="biz.mcmstorage.app.REPLY" />
+                <action android:name="biz.mcmstorage.app.MARK_READ" />
+                <action android:name="biz.mcmstorage.app.DISMISS" />
+            </intent-filter>
+        </receiver>
+        <!-- ace-native:end -->
     </application>
 
     <!-- ── Jaringan ───────────────────────────────────────────────── -->
@@ -109,4 +130,5 @@
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+
 </manifest>

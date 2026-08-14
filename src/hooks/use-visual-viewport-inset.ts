@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { keyboardInsetFromGap } from "@/lib/keyboard-gap";
 
 /**
  * Melacak selisih antara layout viewport (window.innerHeight) dan visual
@@ -44,7 +45,9 @@ export function useVisualViewportKeyboardInset(): number {
       raf = requestAnimationFrame(() => {
         // `offsetTop` menutup kasus keyboard iOS yang menggeser visualViewport
         // ke atas alih-alih mengecilkan tinggi.
-        const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        // SSOT: gap <=120px = toolbar/address bar browser, bukan keyboard.
+        const kb = keyboardInsetFromGap(gap);
         // Ambang 1px menghindari flicker akibat sub-pixel rounding saat
         // toolbar browser bergerak halus.
         setInset((prev) => (Math.abs(prev - kb) < 1 ? prev : Math.round(kb)));

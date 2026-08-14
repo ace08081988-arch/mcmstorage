@@ -5,14 +5,13 @@
  * signing JWT service-account + fetch bawaan Node 20.
  *
  * Pemakaian:
- *   node scripts/upload-play.mjs                        # varian full, track internal
- *   node scripts/upload-play.mjs --variant chat
- *   node scripts/upload-play.mjs --track production --release-status draft
+ *   node scripts/upload-play.mjs                        # MCM Storage, track internal
+ *   node scripts/upload-play.mjs --track internal --release-status draft
  *   node scripts/upload-play.mjs --aab path/ke.aab
- *   node scripts/upload-play.mjs --package biz.mcmstorage.app
+ *   node scripts/upload-play.mjs --package mcmstorage.app
  *
  * Flag:
- *   --track            internal (default) | alpha | beta | production
+ *   --track            internal (satu-satunya nilai yang diizinkan saat ini)
  *   --release-status   draft (default) | inProgress | halted | completed
  *   --release-name     Nama release (default: versionCode dari AAB)
  *   --rollout          Fraksi rollout 0..1 untuk track production
@@ -56,8 +55,6 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = flag("--variant", "full");
-if (!["full", "chat"].includes(variant)) fail(`Varian tidak dikenal: ${variant}`);
 const track = flag("--track", "internal");
 const releaseStatus = flag("--release-status", "draft");
 const releaseName = flag("--release-name");
@@ -70,7 +67,6 @@ const skipVersionCheck = args.has("--skip-version-check");
 
 // State untuk ringkasan GitHub Actions (ditulis ke $GITHUB_STEP_SUMMARY di akhir).
 const runSummary = {
-  variant,
   packageName: null,
   track,
   releaseStatus,
@@ -88,13 +84,19 @@ process.on("exit", () => {
   writeSummaryJson(runSummary);
 });
 
-const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
-if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
+// Tahap rilis saat ini: HANYA Internal testing. Production/closed/open testing
+// sengaja ditolak agar tidak ada rilis publik yang tidak disengaja.
+const VALID_TRACKS = ["internal"];
+if (!VALID_TRACKS.includes(track))
+  fail(
+    `--track "${track}" ditolak. Tahap ini hanya mengizinkan: ${VALID_TRACKS.join(", ")} ` +
+      "(Internal testing). Production/alpha/beta tidak tersedia dari skrip ini.",
+  );
 const VALID_STATUS = ["draft", "inProgress", "halted", "completed"];
 if (!VALID_STATUS.includes(releaseStatus))
   fail(`--release-status harus salah satu: ${VALID_STATUS.join(", ")}`);
 
-banner(`Upload AAB ke Play Console · varian ${variant.toUpperCase()} · track ${track}`);
+banner(`Upload AAB ke Play Console · MCM Storage · track ${track}`);
 const TOTAL = 7;
 
 // ─── 1. Load service account ──────────────────────────────────────────
@@ -105,7 +107,10 @@ console.log(`  ✓ client_email: ${sa.client_email}`);
 // ─── 2. Tentukan package name & AAB ───────────────────────────────────
 step(`2/${TOTAL}  Cari AAB & tentukan packageName`);
 const packageName =
-  packageOverride ?? (variant === "chat" ? "biz.mcmstorage.chat" : "biz.mcmstorage.app");
+  packageOverride ?? "mcmstorage.app";
+if (packageName !== "mcmstorage.app") {
+  fail(`Package ${packageName} ditolak. Project ini hanya boleh mengunggah mcmstorage.app.`);
+}
 console.log(`  ✓ packageName: ${packageName}`);
 runSummary.packageName = packageName;
 
@@ -115,7 +120,7 @@ const aabPath = aabOverride
 if (!existsSync(aabPath)) {
   fail(
     `AAB tidak ditemukan: ${aabPath}\n` +
-      "Build dulu: bun run aab:build (atau aab:build:chat). Lalu ulangi.",
+      "Build dulu: bun run aab:build. Lalu ulangi.",
   );
 }
 const aabSize = statSync(aabPath).size;
@@ -470,7 +475,7 @@ function writeStepSummary(s) {
     const rows = [];
     rows.push(`## ${emoji} Play Console upload — ${outcomeLabel}`);
     rows.push("");
-    rows.push(`**Package:** \`${s.packageName ?? "—"}\` · **Varian:** \`${s.variant}\``);
+    rows.push(`**Aplikasi:** MCM Storage · **Package:** \`${s.packageName ?? "—"}\``);
     rows.push("");
     rows.push("| Field | Nilai |");
     rows.push("| --- | --- |");

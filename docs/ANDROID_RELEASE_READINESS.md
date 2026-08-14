@@ -1,7 +1,9 @@
 # Sprint 4 — Android/APK Release Readiness (laporan)
 
-Tanggal: 9 Agustus 2026 · Merek: **Ace Storage** / **Ace Chat**
-`applicationId`: `biz.mcmstorage.app` (chat: `biz.mcmstorage.chat`) — tidak diubah.
+Tanggal: 9 Agustus 2026 · Aplikasi: **MCM Storage**
+`applicationId`: `mcmstorage.app` — disamakan dengan
+package name aplikasi MCM Storage di Play Console. `namespace` Android tetap
+`biz.mcmstorage.app` (paket kelas Java/R saja).
 Tidak ada keystore dibuat/diganti, tidak ada secret ditulis ke repo/log,
 tidak ada upload Play Store, tidak ada deploy web.
 
@@ -26,8 +28,8 @@ Prosedur + cara mengambil fingerprint: `docs/ANDROID_APP_LINKS.md`.
 ## 2. Signed release
 
 - `android/app/build.gradle`: membaca `android/keystore.properties` **dan**
-  env var (`KEYSTORE_FILE`, `KEYSTORE_ALIAS`, `KEYSTORE_STORE_PASS`,
-  `KEYSTORE_KEY_PASS`); env var menang untuk CI. Tidak ada secret di repo;
+  env var (`KEYSTORE_FILE`, `KEYSTORE_ALIAS`, `KEYSTORE_STORE_PASSWORD`,
+  `KEYSTORE_KEY_PASSWORD`); env var menang untuk CI. Tidak ada secret di repo;
   `.gitignore` menambah `android/keystore.properties`, `*.keystore`, `*.jks`,
   `google-services.json`.
 - `signingConfigs.release` + `buildTypes.release { signingConfig … }` aktif
@@ -65,9 +67,9 @@ tanpa mewajibkan file properties.
 
 Workflow:
 - **Android Debug APK (QA)** (baru): `assembleDebug` tanpa keystore/secret,
-  menghasilkan artifact `dist/qa/ace-<varian>-debug-<versionName>-<code>.apk`
+  menghasilkan artifact `dist/qa/mcm-storage-debug-<versionName>-<code>.apk`
   + `SHA256SUMS.txt`, retensi 14 hari.
-- **Build & Release AAB**: fail-fast bila secret keystore/Play belum ada,
+- **MCM Storage Play Release**: fail-fast bila secret keystore/Firebase belum ada,
   versi dibaca dari SSOT (tidak pernah bump), artifact AAB + mapping +
   `SHA256SUMS.txt` retensi 30 hari, keystore dihapus dari runner di akhir.
 

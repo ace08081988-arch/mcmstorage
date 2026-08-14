@@ -3,16 +3,15 @@
  * Build Android App Bundle (.aab) — output siap upload ke Google Play Console.
  *
  * Pemakaian:
- *   node scripts/build-aab.mjs                       # varian full, release AAB
- *   node scripts/build-aab.mjs --variant chat        # varian Ace Chat
+ *   node scripts/build-aab.mjs                       # release AAB MCM Storage
  *   node scripts/build-aab.mjs --debug               # bundleDebug (tanpa signing)
- *   node scripts/build-aab.mjs --skip-typecheck      # skip tsgo
+ *   node scripts/build-aab.mjs --skip-typecheck      # skip typecheck
  *   node scripts/build-aab.mjs --bump                # naikkan versi dulu (eksplisit)
  *
  * Alur:
  *   1. Pre-flight: cek folder android/, ANDROID_HOME, JAVA_HOME, gradlew.
- *   2. Typecheck (tsgo --noEmit).
- *   3. Build web + cap sync (`apk:full` / `apk:chat` — sama scriptnya).
+ *   2. Typecheck (tsc --noEmit).
+ *   3. Build web + cap sync (`mobile:sync`).
  *   4. Jalankan `./gradlew :app:bundleRelease` (atau bundleDebug).
  *   5. Cetak path .aab hasilnya.
  *
@@ -35,17 +34,6 @@ import { resolve, join } from "node:path";
 
 const argv = process.argv.slice(2);
 const args = new Set(argv);
-let variant = "full";
-for (const a of argv) {
-  if (a.startsWith("--variant=")) variant = a.split("=")[1];
-  else if (a === "--variant") {
-    const idx = argv.indexOf("--variant");
-    variant = argv[idx + 1] ?? "full";
-  }
-}
-if (!["full", "chat"].includes(variant)) {
-  fail(`Varian tidak dikenal: "${variant}". Pilih: full atau chat.`);
-}
 const skipTypecheck = args.has("--skip-typecheck");
 const debugBundle = args.has("--debug");
 const doUpload = args.has("--upload");
@@ -69,7 +57,7 @@ const ANDROID_DIR = resolve(ROOT, "android");
 const gradleTask = debugBundle ? ":app:bundleDebug" : ":app:bundleRelease";
 const outSubdir = debugBundle ? "debug" : "release";
 
-banner(`Build AAB · varian ${variant.toUpperCase()} · ${debugBundle ? "DEBUG" : "RELEASE"}`);
+banner(`Build AAB · MCM Storage · ${debugBundle ? "DEBUG" : "RELEASE"}`);
 
 // ─── 1. Pre-flight ─────────────────────────────────────────────────────
 step("1/4  Pre-flight cek lingkungan");
@@ -130,23 +118,23 @@ if (!debugBundle) {
 // ─── 1d. Pre-flight minify/proguard/signing ──────────────────────────
 if (!debugBundle) {
   step("1d/4 Pre-flight release (minify/proguard/signing)");
-  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--variant", variant]);
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs")]);
   console.log("  ✓ konfigurasi release aman");
 }
 
 // ─── 2. Typecheck ─────────────────────────────────────────────────────
 if (!skipTypecheck) {
-  step("2/4  Typecheck (tsgo --noEmit)");
-  run("bunx", ["tsgo", "--noEmit"]);
+  step("2/4  Typecheck (tsc --noEmit)");
+  run("bunx", ["tsc", "--noEmit"]);
   console.log("  ✓ typecheck bersih");
 } else {
   step("2/4  Typecheck DILEWATI (--skip-typecheck)");
 }
 
 // ─── 3. Build web + cap sync ──────────────────────────────────────────
-step(`3/4  Build web + cap sync (apk:${variant})`);
-run("bun", ["run", `apk:${variant}`]);
-console.log(`  ✓ dist/ ter-generate & android/ ter-sync (varian ${variant})`);
+step("3/4  Build web + cap sync (mobile:sync)");
+run("bun", ["run", "mobile:sync"]);
+console.log("  ✓ dist/ ter-generate & android/ ter-sync");
 
 // ─── 4. Gradle bundle ─────────────────────────────────────────────────
 step(`4/4  Gradle ${gradleTask}`);
@@ -155,7 +143,7 @@ run(gradlew, [gradleTask], { cwd: ANDROID_DIR });
 // ─── Post-build: verifikasi mapping.txt + arsip ─────────────────────
 if (!debugBundle) {
   step("Post-build  Verifikasi mapping.txt + arsip AAB");
-  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--post", "--variant", variant]);
+  run("node", [resolve(ROOT, "scripts/preflight-release.mjs"), "--post"]);
 }
 
 const aabPath = join(ANDROID_DIR, "app", "build", "outputs", "bundle", outSubdir);
@@ -171,13 +159,7 @@ if (doUpload) {
     console.log("⚠ --debug + --upload: skip upload (Play Console menolak debug AAB).");
   } else {
     step(`Upload AAB → Play Console (track: ${uploadTrack})`);
-    const uploadArgs = [
-      resolve(ROOT, "scripts/upload-play.mjs"),
-      "--variant",
-      variant,
-      "--track",
-      uploadTrack,
-    ];
+    const uploadArgs = [resolve(ROOT, "scripts/upload-play.mjs"), "--track", uploadTrack];
     if (releaseStatus) uploadArgs.push("--release-status", releaseStatus);
     if (uploadDryRun) uploadArgs.push("--dry-run");
     if (skipVersionCheck) uploadArgs.push("--skip-version-check");

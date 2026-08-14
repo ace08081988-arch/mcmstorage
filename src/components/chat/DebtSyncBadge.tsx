@@ -107,6 +107,7 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
         tone={tone}
         amount={amount}
         compactOnly
+        iconOnlyOnMobile
         interactive={false}
         title={
           tone === "empty"
@@ -130,14 +131,19 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
             }}
             disabled={syncing}
             aria-label="Sinkronkan ulang hutang piutang"
-            className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-ms-2xs text-primary disabled:opacity-60"
+            // Mobile (<=430px): tombol ikon 24px tanpa label supaya lebar
+            // preview percakapan tidak tergerus. Label teks kembali muncul
+            // mulai 431px.
+            className="inline-flex h-6 w-6 items-center justify-center gap-1 rounded-full border border-primary/40 bg-primary/10 text-ms-2xs text-primary disabled:opacity-60 min-[431px]:h-auto min-[431px]:w-auto min-[431px]:px-1.5 min-[431px]:py-0.5"
           >
             {candidates.length > 0 ? (
               <Link2 className="h-3 w-3" />
             ) : (
               <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
             )}
-            {syncing ? "Menyinkron…" : candidates.length > 0 ? "Tautkan" : "Sinkronkan"}
+            <span className="hidden min-[431px]:inline">
+              {syncing ? "Menyinkron…" : candidates.length > 0 ? "Tautkan" : "Sinkronkan"}
+            </span>
           </button>
 
           <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
@@ -148,9 +154,8 @@ export function DebtSyncBadge({ title }: { title: string | null | undefined }) {
               <DialogHeader>
                 <DialogTitle>Tautkan “{title}”</DialogTitle>
                 <DialogDescription>
-                  Nama di chat berbeda ejaan dengan buku Hutang &amp; Piutang.
-                  Pilih catatan yang benar agar saldonya tersinkron di semua
-                  halaman.
+                  Nama di chat berbeda ejaan dengan buku Hutang &amp; Piutang. Pilih catatan yang
+                  benar agar saldonya tersinkron di semua halaman.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-2">

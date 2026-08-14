@@ -13,8 +13,8 @@ bukan lewat Android Studio, supaya bisa masuk CI / auto-release nanti.
 Sama dengan build APK — lihat [`docs/BUILD_APK.md`](./BUILD_APK.md)
 bagian "Prasyarat":
 
-1. Android Studio + SDK Platform 34 + Build-Tools 34 + Command-line Tools.
-2. JDK **17** (bukan 21+).
+1. Android Studio + SDK Platform 36 + Build-Tools 36 + Command-line Tools.
+2. JDK **21**.
 3. Env var `ANDROID_HOME` dan `JAVA_HOME` di shell profile.
 4. Folder `android/` sudah di-generate (`bunx cap add android`).
 
@@ -57,8 +57,8 @@ Password bisa ditaruh di env var supaya tidak tersimpan di disk:
 ```bash
 export KEYSTORE_FILE=~/keys/mcm-release.keystore   # opsional
 export KEYSTORE_ALIAS=mcm                          # opsional
-export KEYSTORE_STORE_PASS='…'
-export KEYSTORE_KEY_PASS='…'
+export KEYSTORE_STORE_PASSWORD='…'
+export KEYSTORE_KEY_PASSWORD='…'
 ```
 
 Prioritas resolusi (per-field, dari yang paling menang):
@@ -109,14 +109,9 @@ buildTypes {
 
 ## Build harian (1 perintah)
 
-### Varian Ace Storage (release)
+### MCM Storage release
 ```bash
 bun run aab:build
-```
-
-### Varian Ace Chat (release)
-```bash
-bun run aab:build:chat
 ```
 
 ### Debug bundle (untuk internal testing tanpa signing)
@@ -126,15 +121,13 @@ bun run aab:build:debug
 
 ### Flag manual
 ```bash
-node scripts/build-aab.mjs --variant chat --skip-typecheck
+node scripts/build-aab.mjs --skip-typecheck
 ```
 
 | Flag              | Fungsi                                                      |
 | ----------------- | ----------------------------------------------------------- |
-| `--variant full`  | (default) Ace Storage                                        |
-| `--variant chat`  | Ace Chat (`VITE_APP_MODE=chat`, `appId` chat)                |
 | `--debug`         | `bundleDebug` — tidak butuh keystore, TIDAK bisa upload ke Play |
-| `--skip-typecheck`| Lewati tsgo (hanya kalau baru saja dicek manual)             |
+| `--skip-typecheck`| Lewati tsc (hanya kalau baru saja dicek manual)              |
 
 ## Output
 

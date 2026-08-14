@@ -1,12 +1,12 @@
 # Build APK Android (Capacitor 8)
 
-ACE STORAGE dibungkus dengan Capacitor 8 sehingga bisa di-install sebagai APK
+MCM Storage dibungkus dengan Capacitor 8 sehingga bisa di-install sebagai APK
 Android. Web app tetap berjalan seperti biasa — APK hanya menambahkan
 akses ke izin perangkat (Notifikasi, Kamera, Lokasi, Galeri) saat fiturnya
 dipakai.
 
-- `appId`: `biz.mcmstorage.app` (varian chat: `biz.mcmstorage.chat`)
-- Nama aplikasi native: **ACE STORAGE** (varian chat: `Ace Chat`)
+- `appId`: `mcmstorage.app`
+- Nama aplikasi native: **MCM Storage**
 
 ## Prasyarat (di komputer kamu)
 
@@ -22,12 +22,12 @@ hanya bisa dijalankan manual — tidak pernah otomatis pada push/PR.
 
 1. Buka repo di GitHub → tab **Actions** → **Android APK (manual)**.
 2. Klik **Run workflow**, isi:
-   - `variant`: `debug` (tanpa secret) atau `release` (butuh keystore).
+   - `build_type`: `debug` (tanpa secret) atau `release` (butuh keystore).
    - `version_name`: mis. `1.0.0`
    - `version_code`: mis. `1`
 3. Setelah run selesai, unduh artifact di halaman run:
-   `ace-storage-<variant>-<version_name>-<version_code>` berisi
-   `dist/qa/ace-storage-<variant>-<version_name>-<version_code>.apk`
+   `mcm-storage-<build_type>-<version_name>-<version_code>` berisi
+   `dist/qa/mcm-storage-<build_type>-<version_name>-<version_code>.apk`
    dan file `.apk.sha256`. Retensi artifact **7 hari**.
 4. Verifikasi checksum setelah unduh:
    ```bash
@@ -53,10 +53,10 @@ New repository secret**:
 
 | Secret | Isi |
 |---|---|
-| `ANDROID_KEYSTORE_BASE64` | isi file keystore `.jks` yang di-encode base64 |
-| `ANDROID_KEYSTORE_PASSWORD` | password store |
-| `ANDROID_KEY_ALIAS` | alias kunci (mis. `mcm`) |
-| `ANDROID_KEY_PASSWORD` | password key |
+| `KEYSTORE_BASE64` | isi file keystore `.jks` yang di-encode base64 |
+| `KEYSTORE_STORE_PASSWORD` | password store |
+| `KEYSTORE_ALIAS` | alias kunci (mis. `mcm`) |
+| `KEYSTORE_KEY_PASSWORD` | password key |
 
 Encode keystore di komputer sendiri:
 
@@ -185,8 +185,8 @@ Kredensial tidak pernah masuk repo. Dua sumber, prioritas env var:
 # a) CI / shell
 export KEYSTORE_FILE=/path/ke/ace-release.keystore
 export KEYSTORE_ALIAS=mcm
-export KEYSTORE_STORE_PASS='…'
-export KEYSTORE_KEY_PASS='…'
+export KEYSTORE_STORE_PASSWORD='…'
+export KEYSTORE_KEY_PASSWORD='…'
 
 # b) lokal (ditulis oleh wizard, di-gitignore)
 bun run aab:setup-keystore   # → android/keystore.properties
@@ -212,7 +212,7 @@ mengklaim push berfungsi.
 
 ## Catatan
 
-- `appId`: `biz.mcmstorage.app` (varian chat: `biz.mcmstorage.chat`).
-- Nama aplikasi: `ACE STORAGE` / `Ace Chat`.
+- `appId`: `mcmstorage.app`.
+- Nama aplikasi: `MCM Storage`.
 - Workflow tidak melakukan publish/deploy situs dan tidak mengunggah apa pun
   ke Play Store — unggahan ke Play Console selalu manual oleh pemilik.

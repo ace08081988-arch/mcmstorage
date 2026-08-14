@@ -81,21 +81,156 @@ export const APP_LOCK_REQUEST = "app-lock:lock-now";
 // ─────────────────────────────────────────────────────────────
 const SUPPRESS_KEY = "app-lock:suppress-until";
 
-export function beginNativePicker(reasonMs = 90_000) {
+// Suppression sekarang REFERENCE-COUNTED: satu alur boleh membuka picker
+// bersarang (mis. kamera → editor → galeri). Melepas token A tidak boleh
+// membuka kunci selama token B masih aktif.
+const activeTokens = new Map<number, number>(); // id -> expiry epoch ms
+let tokenSeq = 0;
+
+function pruneTokens(now = Date.now()) {
+  for (const [id, until] of activeTokens) {
+    if (until <= now) activeTokens.delete(id);
+  }
+}
+
+function syncSuppressWindow() {
   try {
-    const until = Date.now() + Math.max(1_000, reasonMs);
+    pruneTokens();
+    if (activeTokens.size === 0) {
+      localStorage.removeItem(SUPPRESS_KEY);
+      return;
+    }
+    let until = 0;
+    for (const v of activeTokens.values()) if (v > until) until = v;
     localStorage.setItem(SUPPRESS_KEY, String(until));
   } catch {}
 }
 
+/**
+ * Mulai suppression app-lock untuk satu picker/share native.
+ * Mengembalikan fungsi release yang IDEMPOTEN (aman dipanggil berkali-kali).
+ */
+export function beginNativePicker(reasonMs = 90_000): () => void {
+  const id = ++tokenSeq;
+  activeTokens.set(id, Date.now() + Math.max(1_000, reasonMs));
+  syncSuppressWindow();
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    activeTokens.delete(id);
+    syncSuppressWindow();
+  };
+}
+
+/** Kompatibilitas lama: paksa lepas SEMUA token suppression. */
 export function endNativePicker() {
+  activeTokens.clear();
+  syncSuppressWindow();
+}
+
+/** Jumlah token suppression yang masih aktif (dipakai tes/diagnostik). */
+export function getNativePickerDepth(): number {
+  pruneTokens();
+  return activeTokens.size;
+}
+
+/** Jalankan operasi native (picker/share) dengan suppression yang pasti dilepas. */
+export async function withNativePicker<T>(
+  fn: () => T | Promise<T>,
+  opts: { reasonMs?: number } = {},
+): Promise<T> {
+  const release = beginNativePicker(opts.reasonMs);
   try {
-    localStorage.removeItem(SUPPRESS_KEY);
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
+/**
+ * Suppression aman untuk `<input type="file">`: dimulai SEBELUM `click()`
+ * dan dilepas tepat sekali saat change / cancel / kembali fokus ke app /
+ * error / kedaluwarsa. Tidak mematikan app-lock: begitu release terjadi,
+ * background biasa tetap mengunci aplikasi.
+ */
+export function armFilePickerLock(
+  input: HTMLInputElement | null | undefined,
+  opts: { reasonMs?: number; returnGraceMs?: number } = {},
+): () => void {
+  const releaseToken = beginNativePicker(opts.reasonMs ?? 90_000);
+  const grace = opts.returnGraceMs ?? 400;
+  let done = false;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let graceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const cleanup = () => {
+    if (timer) clearTimeout(timer);
+    if (graceTimer) clearTimeout(graceTimer);
+    try {
+      input?.removeEventListener("change", release);
+      input?.removeEventListener("cancel", release);
+      input?.removeEventListener("error", release);
+      window.removeEventListener("focus", onReturn);
+      document.removeEventListener("visibilitychange", onVisible);
+    } catch {}
+  };
+
+  function release() {
+    if (done) return;
+    done = true;
+    cleanup();
+    releaseToken();
+  }
+  function onReturn() {
+    if (graceTimer) clearTimeout(graceTimer);
+    graceTimer = setTimeout(release, grace);
+  }
+  function onVisible() {
+    if (typeof document !== "undefined" && document.visibilityState === "visible") onReturn();
+  }
+
+  try {
+    input?.addEventListener("change", release);
+    input?.addEventListener("cancel", release);
+    input?.addEventListener("error", release);
+    window.addEventListener("focus", onReturn);
+    document.addEventListener("visibilitychange", onVisible);
   } catch {}
+  timer = setTimeout(release, opts.reasonMs ?? 90_000);
+  return release;
+}
+
+/** `armFilePickerLock` + klik input. Release jika input tidak ada. */
+export function openFilePickerWithLock(
+  input: HTMLInputElement | null | undefined,
+  opts: { reasonMs?: number; returnGraceMs?: number } = {},
+): () => void {
+  const release = armFilePickerLock(input, opts);
+  if (!input) {
+    release();
+    return release;
+  }
+  try {
+    input.click();
+  } catch {
+    release();
+  }
+  return release;
+}
+
+/**
+ * Suppression untuk share eksternal (WhatsApp / share sheet Capacitor) yang
+ * membuat aplikasi hidden. Dilepas saat user kembali (focus/visible) atau
+ * saat kedaluwarsa — background biasa setelah itu tetap mengunci.
+ */
+export function armExternalShareLock(opts: { reasonMs?: number; returnGraceMs?: number } = {}): () => void {
+  return armFilePickerLock(null, { reasonMs: opts.reasonMs ?? 120_000, returnGraceMs: opts.returnGraceMs ?? 800 });
 }
 
 export function isLockSuppressed(): boolean {
   try {
+    pruneTokens();
     const raw = localStorage.getItem(SUPPRESS_KEY);
     if (!raw) return false;
     const until = Number(raw);
@@ -379,7 +514,7 @@ export async function openBiometricEnrollment(): Promise<boolean> {
 // Buka halaman detail izin aplikasi (App Info) langsung untuk paket ini.
 // Ini adalah rute yang diperlukan saat izin biometrik ditolak permanen.
 export async function openAppPermissionSettings(
-  packageId = "biz.mcmstorage.app",
+  packageId = "mcmstorage.app",
   opts: { preferBiometric?: boolean } = {},
 ): Promise<boolean> {
   if (!isNative()) return false;

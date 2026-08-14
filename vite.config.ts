@@ -46,11 +46,33 @@ const MIGRATION_VERSION = (() => {
 // tidak terbebani. Jalankan: `bun run analyze`.
 const ANALYZE = process.env.ANALYZE === "1" || process.env.ANALYZE === "true";
 
+// Build khusus Capacitor (APK/AAB): TanStack Start dalam mode SPA/static
+// sehingga menghasilkan shell HTML statis yang bisa dipakai WebView.
+// HANYA aktif lewat env `CAPACITOR_BUILD=1` — build web SSR/Cloudflare
+// normal tidak terpengaruh sama sekali.
+const CAPACITOR_BUILD =
+  process.env.CAPACITOR_BUILD === "1" || process.env.CAPACITOR_BUILD === "true";
+
 export default defineConfig({
+  // Build mobile tidak butuh bundle SSR Cloudflare/Nitro — TanStack Start
+  // memancarkan output statis ke `.output/public` yang dipakai Capacitor.
+  ...(CAPACITOR_BUILD ? ({ nitro: false } as const) : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    ...(CAPACITOR_BUILD
+      ? {
+          spa: {
+            enabled: true,
+            prerender: {
+              enabled: true,
+              outputPath: "/index.html",
+              crawlLinks: false,
+            },
+          },
+        }
+      : {}),
     router: {
       routeFileIgnorePattern:
         "(?:^|/)[-_][^/]+\\.test\\.(?:ts|tsx)$|(?:^|/)_authenticated\\.gudang\\.strict-compute-spy\\.ts$",

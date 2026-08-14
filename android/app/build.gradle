@@ -18,9 +18,9 @@ if (keystorePropsFile.exists()) {
     keystorePropsFile.withInputStream { keystoreProps.load(it) }
 }
 def ksStorePath = System.getenv('KEYSTORE_FILE') ?: keystoreProps['storeFile']
-def ksStorePass = System.getenv('KEYSTORE_STORE_PASS') ?: keystoreProps['storePassword']
+def ksStorePass = System.getenv('KEYSTORE_STORE_PASSWORD') ?: keystoreProps['storePassword']
 def ksAlias     = System.getenv('KEYSTORE_ALIAS') ?: keystoreProps['keyAlias']
-def ksKeyPass   = System.getenv('KEYSTORE_KEY_PASS') ?: keystoreProps['keyPassword']
+def ksKeyPass   = System.getenv('KEYSTORE_KEY_PASSWORD') ?: keystoreProps['keyPassword']
 def ksStoreType = System.getenv('KEYSTORE_STORE_TYPE') ?: (keystoreProps['storeType'] ?: 'PKCS12')
 def hasReleaseSigning = ksStorePath && ksStorePass && ksAlias && ksKeyPass && file(ksStorePath).exists()
 if (!hasReleaseSigning) {
@@ -28,10 +28,13 @@ if (!hasReleaseSigning) {
 }
 
 android {
+    // namespace = paket sumber Java/R class (tetap biz.mcmstorage.app supaya
+    // MainActivity & resource tidak perlu dipindah). applicationId =
+    // identitas app di Play Console (mcmstorage.app).
     namespace = "biz.mcmstorage.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "biz.mcmstorage.app"
+        applicationId "mcmstorage.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode
@@ -81,6 +84,15 @@ repositories {
 }
 
 dependencies {
+    // ace-native:begin
+    // Diperlukan service FCM kustom (Capacitor hanya menariknya transitif,
+    // tanpa jaminan API MessagingStyle/CallStyle tersedia saat kompilasi).
+    // BOM harus >= yang ditarik Capacitor PushNotifications 8, dan
+    // androidx.core TIDAK dipin di sini supaya tidak menurunkan versi
+    // dari android/variables.gradle (coreVersion).
+    implementation platform("com.google.firebase:firebase-bom:34.4.0")
+    implementation "com.google.firebase:firebase-messaging"
+    // ace-native:end
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"

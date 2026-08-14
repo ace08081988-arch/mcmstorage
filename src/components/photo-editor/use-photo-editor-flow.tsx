@@ -1,8 +1,7 @@
-import { useCallback, useRef, useState, lazy, Suspense } from "react";
-
-const PhotoEditorV2 = lazy(() =>
-  import("@/components/photo-editor/PhotoEditorV2").then((m) => ({ default: m.PhotoEditorV2 })),
-);
+import { useCallback, useRef, useState } from "react";
+// Satu jalur lazy saja: wrapper ini sudah punya Suspense + error boundary
+// pemulihan chunk, jadi jangan membuat `lazy()` kedua di sini.
+import { PhotoEditorV2 } from "@/components/photo-editor/LazyPhotoEditorV2";
 
 /**
  * Shared "mandatory edit after choose photo" flow.
@@ -107,15 +106,7 @@ export function usePhotoEditorFlow() {
   }, [reset]);
 
   const element = src ? (
-    <Suspense
-      fallback={
-        <div className="flex h-screen items-center justify-center bg-background text-muted-foreground">
-          Memuat editor foto…
-        </div>
-      }
-    >
-      <PhotoEditorV2 src={src} onSave={handleSave} onCancel={handleCancel} />
-    </Suspense>
+    <PhotoEditorV2 src={src} onSave={handleSave} onCancel={handleCancel} />
   ) : null;
 
   return {

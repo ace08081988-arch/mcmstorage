@@ -13,3 +13,16 @@ export function pushOwnershipSecret(): string | null {
   if (!base) return null;
   return `push-ownership:v1:${base}`;
 }
+
+/**
+ * Kunci untuk token aksi notifikasi push (audience berbeda dari kunci
+ * kepemilikan langganan supaya token tidak bisa dipakai lintas fitur).
+ */
+export function pushActionSecret(): string | null {
+  const base =
+    process.env["PUSH_OWNERSHIP_SECRET"] ??
+    process.env["SUPABASE_SERVICE_ROLE_KEY"] ??
+    null;
+  if (!base) return null;
+  return `push-action:v1:${base}`;
+}

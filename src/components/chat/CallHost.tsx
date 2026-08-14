@@ -44,9 +44,20 @@ export type StartCallDetail = {
 };
 
 const START_CALL_EVENT = "mcm:start-call";
+const ANSWER_CALL_EVENT = "mcm:answer-call";
 
 export function dispatchStartCall(detail: StartCallDetail): void {
   window.dispatchEvent(new CustomEvent(START_CALL_EVENT, { detail }));
+}
+
+/**
+ * Dipakai deep link notifikasi Android ("Jawab" dari CallStyle /
+ * IncomingCallActivity): app cold-start langsung ke `/chat/<id>?call=<callId>`
+ * dan kita masuk ke panggilan sebagai callee tanpa menunggu broadcast ring
+ * yang sudah lewat.
+ */
+export function dispatchAnswerCall(callId: string): void {
+  window.dispatchEvent(new CustomEvent(ANSWER_CALL_EVENT, { detail: { callId } }));
 }
 
 export function CallHost() {
@@ -116,6 +127,30 @@ export function CallHost() {
     };
     window.addEventListener(START_CALL_EVENT, onStart as EventListener);
     return () => window.removeEventListener(START_CALL_EVENT, onStart as EventListener);
+  }, []);
+
+  // Cold-start "Jawab" dari notifikasi native.
+  useEffect(() => {
+    const onAnswer = (e: Event) => {
+      const detail = (e as CustomEvent<{ callId?: string }>).detail;
+      const callId = detail?.callId;
+      if (!callId) return;
+      void (async () => {
+        try {
+          const row = await fetchCall(callId);
+          if (!row || !["ringing", "accepted"].includes(row.status)) return;
+          setIncoming(null);
+          setActive((prev) => prev ?? {
+            callId,
+            role: "callee",
+            kind: (row.kind as CallKind) ?? "audio",
+            peerName: "Pemanggil",
+          });
+        } catch { /* panggilan sudah berakhir */ }
+      })();
+    };
+    window.addEventListener(ANSWER_CALL_EVENT, onAnswer as EventListener);
+    return () => window.removeEventListener(ANSWER_CALL_EVENT, onAnswer as EventListener);
   }, []);
 
   // Ringtone sederhana pakai WebAudio (tanpa aset).

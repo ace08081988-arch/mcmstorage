@@ -11,7 +11,7 @@
  *     --alias mcm --store ~/keys/mcm.keystore \
  *     --dname "CN=Ace Storage,O=BAROKAH RIZKI,C=ID" \
  *     --validity 10000
- *     (password dibaca dari env: KEYSTORE_STORE_PASS & KEYSTORE_KEY_PASS)
+ *     (password dibaca dari env: KEYSTORE_STORE_PASSWORD & KEYSTORE_KEY_PASSWORD)
  *
  * Kenapa `android/keystore.properties` (bukan `.env`):
  *   Gradle Android baca sinyal signing dari file properties, bukan dari
@@ -102,10 +102,10 @@ const dname =
 let storePassword;
 let keyPassword;
 if (NON_INTERACTIVE) {
-  storePassword = process.env.KEYSTORE_STORE_PASS;
-  keyPassword = process.env.KEYSTORE_KEY_PASS ?? storePassword;
+  storePassword = (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD);
+  keyPassword = (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD) ?? storePassword;
   if (!storePassword) {
-    fail("--non-interactive butuh env KEYSTORE_STORE_PASS (dan opsional KEYSTORE_KEY_PASS).");
+    fail("--non-interactive butuh env KEYSTORE_STORE_PASSWORD (dan opsional KEYSTORE_KEY_PASSWORD).");
   }
 } else {
   storePassword = await askPassword("Store password (min 6 char): ");
@@ -213,8 +213,8 @@ if (ENV_ONLY) {
   // Tulis hanya path + alias (non-secret). Password harus dari env.
   const propsBody =
     `# Auto-generated oleh scripts/setup-keystore.mjs (--env-only)\n` +
-    `# Password TIDAK ditulis di sini — baca dari env KEYSTORE_STORE_PASS\n` +
-    `# & KEYSTORE_KEY_PASS saat build.\n` +
+    `# Password TIDAK ditulis di sini — baca dari env KEYSTORE_STORE_PASSWORD\n` +
+    `# & KEYSTORE_KEY_PASSWORD saat build.\n` +
     `storeFile=${storeFile}\n` +
     `keyAlias=${alias}\n`;
   writeFileSync(PROPS_PATH, propsBody, { mode: 0o600 });
@@ -224,15 +224,15 @@ if (ENV_ONLY) {
   console.log(`  ✓ ${relative(ROOT, PROPS_PATH)} (chmod 600, tanpa password)`);
   console.log(
     "\n  Tambahkan ke ~/.zshrc atau ~/.bashrc:\n" +
-      "    export KEYSTORE_STORE_PASS='<password store Anda>'\n" +
-      "    export KEYSTORE_KEY_PASS='<password key Anda>'\n" +
+      "    export KEYSTORE_STORE_PASSWORD='<password store Anda>'\n" +
+      "    export KEYSTORE_KEY_PASSWORD='<password key Anda>'\n" +
       "\n  Lalu buka terminal baru sebelum jalankan `bun run aab:build`.\n",
   );
 } else {
   const propsBody =
     `# Auto-generated oleh scripts/setup-keystore.mjs\n` +
     `# JANGAN commit file ini. Sudah masuk .gitignore.\n` +
-    `# Alternatif: pakai --env-only + env var KEYSTORE_STORE_PASS/KEYSTORE_KEY_PASS.\n` +
+    `# Alternatif: pakai --env-only + env var KEYSTORE_STORE_PASSWORD/KEYSTORE_KEY_PASSWORD.\n` +
     `storeFile=${storeFile}\n` +
     `storePassword=${storePassword}\n` +
     `keyAlias=${alias}\n` +
@@ -272,8 +272,8 @@ const val = spawnSync("node", [resolve(ROOT, "scripts/validate-keystore.mjs")], 
     // di mana android/keystore.properties tidak menyimpan password.
     KEYSTORE_FILE: storeFile,
     KEYSTORE_ALIAS: alias,
-    KEYSTORE_STORE_PASS: storePassword,
-    KEYSTORE_KEY_PASS: keyPassword,
+    KEYSTORE_STORE_PASSWORD: storePassword,
+    KEYSTORE_KEY_PASSWORD: keyPassword,
   },
 });
 if (val.status !== 0) {

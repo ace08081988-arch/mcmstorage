@@ -1,5 +1,6 @@
-import { lazy, Suspense, type ComponentProps } from "react";
+import { Component, lazy, Suspense, useState, type ComponentProps, type ReactNode } from "react";
 import type { PhotoEditorV2 as PhotoEditorV2Type } from "@/components/photo-editor/PhotoEditorV2";
+import { isChunkLoadError, recoverFromChunkError } from "@/lib/chunk-recovery";
 
 /**
  * Pembungkus lazy untuk PhotoEditorV2.
@@ -28,10 +29,87 @@ function EditorFallback() {
   );
 }
 
-export function PhotoEditorV2(props: Props) {
+/**
+ * Editor gagal dimuat (chunk konva basi / jaringan putus) tidak boleh berakhir
+ * sebagai spinner abadi atau layar kosong: tampilkan pemulihan eksplisit.
+ */
+function EditorLoadError({
+  onRetry,
+  onCancel,
+}: {
+  onRetry: () => void;
+  onCancel: () => void;
+}) {
   return (
-    <Suspense fallback={<EditorFallback />}>
-      <PhotoEditorV2Lazy {...props} />
-    </Suspense>
+    <div className="fixed inset-0 z-fullscreen flex items-center justify-center bg-background/95 p-6">
+      <div className="w-full max-w-xs space-y-4 rounded-2xl border border-border bg-card p-5 text-center shadow-lg">
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            Editor foto gagal dimuat
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Koneksi terputus atau aplikasi baru diperbarui.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="h-11 rounded-xl bg-primary text-sm font-semibold text-primary-foreground"
+          >
+            Coba lagi
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-11 rounded-xl border border-border text-sm font-medium text-foreground"
+          >
+            Ambil ulang foto
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+class EditorBoundary extends Component<
+  { children: ReactNode; fallback: (err: unknown) => ReactNode },
+  { err: unknown | null }
+> {
+  state: { err: unknown | null } = { err: null };
+
+  static getDerivedStateFromError(err: unknown) {
+    return { err };
+  }
+
+  componentDidCatch(err: unknown) {
+    // Chunk basi: hard reload (dibatasi anti-loop). Kalau reload tidak
+    // dijalankan, UI pemulihan di bawah tetap tampil.
+    if (isChunkLoadError(err)) recoverFromChunkError(err);
+    else console.error("[photo-editor] gagal dimuat", err);
+  }
+
+  render() {
+    if (this.state.err !== null) return this.props.fallback(this.state.err);
+    return this.props.children;
+  }
+}
+
+export function PhotoEditorV2(props: Props) {
+  const [attempt, setAttempt] = useState(0);
+  return (
+    <EditorBoundary
+      key={attempt}
+      fallback={() => (
+        <EditorLoadError
+          onRetry={() => setAttempt((n) => n + 1)}
+          onCancel={props.onCancel}
+        />
+      )}
+    >
+      <Suspense fallback={<EditorFallback />}>
+        <PhotoEditorV2Lazy {...props} />
+      </Suspense>
+    </EditorBoundary>
   );
 }

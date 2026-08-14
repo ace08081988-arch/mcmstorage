@@ -35,7 +35,8 @@ export function ChatBottomNav() {
   // Hook tetap dipanggil untuk menjalankan engine pengukuran & status keyboard.
   const { keyboardOpen } = useViewportAnchor({ lock: true });
   const navRef = useRef<HTMLElement | null>(null);
-  useBottomNavHeightSync(navRef);
+  // Keyboard terbuka -> bar hilang, spacer harus 0 (tanpa dead-space).
+  useBottomNavHeightSync(navRef, !keyboardOpen);
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
@@ -46,14 +47,10 @@ export function ChatBottomNav() {
   // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
   // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
   const activeTo = useMemo(() => {
-    const match = items.find(
-      (it) => path === it.to || path.startsWith(`${it.to}/`),
-    );
+    const match = items.find((it) => path === it.to || path.startsWith(`${it.to}/`));
     return match?.to;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
-
-  const activeIndex = activeTo ? items.findIndex((it) => it.to === activeTo) : -1;
 
   return (
     <nav
@@ -66,7 +63,9 @@ export function ChatBottomNav() {
       // route chat). Fallback lokal disediakan bila nav dipakai tanpa
       // container yang menyetel variabel tersebut. Nilai sudah mencakup
       // `var(--app-safe-bottom,env(safe-area-inset-bottom,0px))` untuk notch/home indicator iOS.
-      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-end border-t bg-[var(--wa-header)]/95 backdrop-blur [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
+      // Latar solid (tanpa transparansi/blur) supaya konten yang lewat di
+      // baliknya tidak "menembus" bar dan kontras label tetap konsisten.
+      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-stretch border-t border-[var(--wa-border)] bg-[var(--wa-header)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
       style={{
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
@@ -74,20 +73,8 @@ export function ChatBottomNav() {
         visibility: keyboardOpen ? "hidden" : "visible",
       }}
     >
-      {/* Indikator aktif — pill halus yang meluncur di bawah ikon aktif. */}
-      <span
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute bottom-1 left-0 h-1 rounded-full transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          activeIndex >= 0 ? "opacity-100" : "opacity-0",
-        )}
-        style={{
-          width: "25%",
-          transform: `translateX(calc(${Math.max(activeIndex, 0)} * 100%))`,
-          background:
-            "linear-gradient(90deg, color-mix(in oklab, var(--wa-green) 70%, transparent), color-mix(in oklab, var(--wa-green) 40%, transparent))",
-        }}
-      />
+      {/* Tanpa indikator meluncur: status aktif cukup ditandai pill + warna
+          ikon/label, sehingga bar terasa tenang dan tidak "berlari". */}
       {items.map(({ to, label, Icon, badge, badgeLoading }) => {
         const active = activeTo === to;
         return (
@@ -105,22 +92,24 @@ export function ChatBottomNav() {
             className={cn(
               // px-0.5 di base → cukup ruang untuk label "Pembaruan" pada
               // 360px tanpa memotong; naik ke px-1 mulai 400px.
-              "group/tab relative flex min-h-[var(--ms-tap)] flex-col items-center justify-center gap-ms-1 px-0.5 py-1 outline-none transition-colors duration-200 min-[400px]:px-1",
+              "group/tab relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 outline-none transition-colors duration-200 min-[400px]:px-1",
               "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
-              active ? "text-[var(--wa-green)]" : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
+              active
+                ? "text-[var(--wa-green)]"
+                : "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
             )}
           >
             <span
               aria-hidden="true"
               data-nav-icon
               className={cn(
-                // Lebar pill ikon menyempit di 360px supaya keempat kolom
-                // tidak berdesakan; melebar lagi mulai 400px.
-                "relative grid h-7 w-10 place-items-center rounded-full transition-[background-color,transform] duration-200 min-[400px]:w-12",
-                active ? "bg-[var(--wa-green)]/15 scale-100" : "bg-transparent scale-95 group-hover/tab:scale-100",
+                // Pill ikon ringan; tanpa animasi skala supaya bar terasa
+                // tenang dan tidak "berdenyut" saat berpindah tab.
+                "relative grid h-6 w-10 place-items-center rounded-full transition-colors duration-200 min-[400px]:w-12",
+                active ? "bg-[var(--wa-green)]/12" : "bg-transparent",
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[22px] w-[22px]" />
               {badgeLoading ? (
                 <span
                   aria-hidden="true"
@@ -139,7 +128,7 @@ export function ChatBottomNav() {
               aria-hidden="true"
               data-nav-label
               className={cn(
-                "w-full min-w-0 truncate text-center text-ms-2xs leading-ms-tight tracking-ms-tight",
+                "w-full min-w-0 truncate text-center text-ms-xs leading-ms-tight tracking-ms-tight",
                 active ? "font-semibold" : "font-normal",
               )}
             >

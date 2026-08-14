@@ -4,8 +4,7 @@
  * langsung ke HP via `adb install` tanpa menunggu Play Store.
  *
  * Pemakaian:
- *   node scripts/aab-to-apk.mjs                          # varian full, release AAB
- *   node scripts/aab-to-apk.mjs --variant chat
+ *   node scripts/aab-to-apk.mjs                          # MCM Storage release AAB
  *   node scripts/aab-to-apk.mjs --debug                  # dari bundle debug
  *   node scripts/aab-to-apk.mjs --aab path/ke.aab --out out/mcm.apk
  *   node scripts/aab-to-apk.mjs --install                # sekalian adb install
@@ -58,8 +57,6 @@ function flag(name, fallback) {
 }
 
 const ROOT = resolve(process.cwd());
-const variant = flag("--variant", "full");
-if (!["full", "chat"].includes(variant)) fail(`Varian tidak dikenal: ${variant}`);
 const isDebug = args.has("--debug");
 const doInstall = args.has("--install");
 const forceDeviceSpec = args.has("--device-spec");
@@ -67,7 +64,7 @@ const aabOverride = flag("--aab");
 const outOverride = flag("--out");
 
 banner(
-  `AAB → APK · varian ${variant.toUpperCase()} · ${isDebug ? "debug" : "release"}${doInstall ? " + install" : ""}`,
+  `AAB → APK · MCM Storage · ${isDebug ? "debug" : "release"}${doInstall ? " + install" : ""}`,
 );
 
 // ─── 1. Java ──────────────────────────────────────────────────────────
@@ -96,7 +93,7 @@ const aabPath = aabOverride ? resolveHome(aabOverride) : aabDefault;
 if (!existsSync(aabPath)) {
   fail(
     `AAB tidak ditemukan: ${aabPath}\n` +
-      `Build dulu: bun run aab:build${isDebug ? ":debug" : variant === "chat" ? ":chat" : ""}`,
+      `Build dulu: bun run aab:build${isDebug ? ":debug" : ""}`,
   );
 }
 console.log(`  ✓ ${aabPath} (${(statSync(aabPath).size / 1024 / 1024).toFixed(1)} MB)`);
@@ -170,7 +167,7 @@ if (useDeviceSpec) {
   // (bundletool akan pick split yang tepat). Simpan .apks untuk arsip.
   const outApks = outOverride
     ? resolveHome(outOverride)
-    : resolve(ROOT, `dist/mcm-${variant}-${isDebug ? "debug" : "release"}-device.apks`);
+    : resolve(ROOT, `dist/mcm-storage-${isDebug ? "debug" : "release"}-device.apks`);
   mkdirSync(dirname(outApks), { recursive: true });
   writeFileSync(outApks, readFileSync(apksPath));
   finalApk = outApks;
@@ -185,7 +182,7 @@ if (useDeviceSpec) {
   }
   const outApk = outOverride
     ? resolveHome(outOverride)
-    : resolve(ROOT, `dist/mcm-${variant}-${isDebug ? "debug" : "release"}-universal.apk`);
+    : resolve(ROOT, `dist/mcm-storage-${isDebug ? "debug" : "release"}-universal.apk`);
   mkdirSync(dirname(outApk), { recursive: true });
   writeFileSync(outApk, readFileSync(universalApk));
   finalApk = outApk;
@@ -209,9 +206,7 @@ if (doInstall) {
       "node",
       [
         resolve(ROOT, "scripts/install-apk.mjs"),
-        "--variant",
-        variant,
-        "--apk",
+                "--apk",
         finalApk,
         ...(isDebug ? [] : ["--release"]),
       ],
@@ -263,9 +258,9 @@ function readSigning() {
   }
   const out = {
     storeFile: process.env.KEYSTORE_FILE ?? fromFile.storeFile,
-    storePassword: process.env.KEYSTORE_STORE_PASS ?? fromFile.storePassword,
+    storePassword: (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD) ?? fromFile.storePassword,
     keyAlias: process.env.KEYSTORE_ALIAS ?? fromFile.keyAlias,
-    keyPassword: process.env.KEYSTORE_KEY_PASS ?? fromFile.keyPassword,
+    keyPassword: (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD) ?? fromFile.keyPassword,
   };
   if (!out.storeFile || !out.storePassword || !out.keyAlias || !out.keyPassword) return null;
   out.storeFile = resolveHome(out.storeFile);

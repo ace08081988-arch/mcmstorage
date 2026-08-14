@@ -8,7 +8,6 @@
  * Pemakaian:
  *   node scripts/preflight-release.mjs           # pre-build cek konfig
  *   node scripts/preflight-release.mjs --post    # post-build cek artefak
- *   node scripts/preflight-release.mjs --variant chat
  *   node scripts/preflight-release.mjs --strict  # warn → fail
  *
  * Cek pre-build (default):
@@ -55,8 +54,6 @@ function flag(name, fallback) {
 const ROOT = resolve(process.cwd());
 const isPost = args.has("--post");
 const strict = args.has("--strict");
-const variant = flag("--variant", "full");
-
 const warnings = [];
 const errors = [];
 function warn(msg) {
@@ -71,7 +68,7 @@ function ok(msg) {
   console.log(`  ✓ ${msg}`);
 }
 
-banner(`Pre-flight release · ${isPost ? "POST-build" : "PRE-build"} · varian ${variant}`);
+banner(`Pre-flight release · MCM Storage · ${isPost ? "POST-build" : "PRE-build"}`);
 
 if (!isPost) {
   runPreBuild();
@@ -176,10 +173,10 @@ function runPreBuild() {
   step("7  Kredensial signing (env var ATAU keystore.properties)");
   const propsPath = resolve(ROOT, "android/keystore.properties");
   const envSigning =
-    process.env.KEYSTORE_FILE &&
+    process.env.KEYSTORE_FILE && existsSync(resolve(process.env.KEYSTORE_FILE)) &&
     process.env.KEYSTORE_ALIAS &&
-    process.env.KEYSTORE_STORE_PASS &&
-    process.env.KEYSTORE_KEY_PASS;
+    (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD) &&
+    (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD);
   if (envSigning) {
     ok("kredensial dari environment (KEYSTORE_FILE/ALIAS/STORE_PASS/KEY_PASS)");
   } else if (existsSync(propsPath)) {
@@ -187,7 +184,7 @@ function runPreBuild() {
   } else {
     err(
       "Kredensial signing tidak ditemukan.\n" +
-        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS.\n" +
+        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASSWORD, KEYSTORE_KEY_PASSWORD.\n" +
         "      Lokal : jalankan sekali `bun run aab:setup-keystore` (menulis android/keystore.properties).",
     );
   }
@@ -217,6 +214,135 @@ function runPreBuild() {
         "    (VERSION_CODE / VERSION_NAME). Jalankan `bun run version:check`.",
     );
   }
+
+  checkIdentity(src);
+}
+
+/**
+ * Identitas rilis MCM Storage — satu package, satu label, tanpa sisa
+ * flavor chat. Semua cek di sini FATAL: salah identitas = salah app di Play.
+ */
+function checkIdentity(gradleSrc) {
+  step("9  applicationId = mcmstorage.app (tidak ada package chat)");
+  const appId = /applicationId\s+["']([^"']+)["']/.exec(gradleSrc)?.[1];
+  if (appId === "mcmstorage.app") ok(`applicationId ${appId}`);
+  else err(`applicationId Gradle = ${appId ?? "tidak terbaca"} (harus mcmstorage.app).`);
+
+  const capPath = resolve(ROOT, "capacitor.config.ts");
+  if (existsSync(capPath)) {
+    const cap = readFileSync(capPath, "utf8");
+    const capId = /appId:\s*["']([^"']+)["']/.exec(cap)?.[1];
+    if (capId === "mcmstorage.app") ok("capacitor.config.ts appId cocok");
+    else err(`capacitor.config.ts appId = ${capId ?? "tidak terbaca"} (harus mcmstorage.app).`);
+    if (/biz\.mcmstorage\.chat|Ace Chat|APP_VARIANT/.test(cap)) {
+      err("capacitor.config.ts masih memuat sisa varian chat.");
+    }
+  }
+
+  step("10  App label = MCM Storage");
+  const stringsPath = resolve(ROOT, "android/app/src/main/res/values/strings.xml");
+  if (existsSync(stringsPath)) {
+    const xml = readFileSync(stringsPath, "utf8");
+    const label = /<string name="app_name">([^<]*)<\/string>/.exec(xml)?.[1];
+    if (label === "MCM Storage") ok(`app_name = ${label}`);
+    else err(`app_name = ${label ?? "tidak terbaca"} (harus "MCM Storage").`);
+    if (/Ace Chat|Private Connect/i.test(xml)) err("strings.xml memuat label app lain.");
+    const scheme = /<string name="custom_url_scheme">([^<]*)<\/string>/.exec(xml)?.[1];
+    if (scheme === "mcmstorage.app") ok("custom_url_scheme = mcmstorage.app");
+    else err(`custom_url_scheme = ${scheme ?? "tidak terbaca"} (harus mcmstorage.app).`);
+  } else {
+    err(`strings.xml tidak ada: ${stringsPath}`);
+  }
+
+  step("11  Manifest: tanpa komponen chat privat, tanpa cleartext/debuggable");
+  const manifestPath = resolve(ROOT, "android/app/src/main/AndroidManifest.xml");
+  if (existsSync(manifestPath)) {
+    const m = readFileSync(manifestPath, "utf8");
+    const banned = [
+      "IncomingCallActivity",
+      "ChatBubbleActivity",
+      "CallForegroundService",
+      "mcmstorage.chat",
+      "com.mcm.privateconnect",
+    ].filter((b) => m.includes(b));
+    for (const perm of [
+      "USE_FULL_SCREEN_INTENT",
+      "FOREGROUND_SERVICE",
+      "FOREGROUND_SERVICE_MICROPHONE",
+      "FOREGROUND_SERVICE_CAMERA",
+      "FOREGROUND_SERVICE_PHONE_CALL",
+      "MANAGE_OWN_CALLS",
+      "SYSTEM_ALERT_WINDOW",
+    ]) {
+      if (m.includes(`<uses-permission android:name="android.permission.${perm}"`)) {
+        banned.push(`izin ${perm}`);
+      }
+    }
+    if (banned.length) err(`Manifest masih memuat: ${banned.join(", ")}`);
+    else ok("tidak ada komponen/izin milik MCM: Private Connect");
+    if (/android:debuggable="true"/.test(m)) err('Manifest memaksa android:debuggable="true".');
+    else ok("tidak ada debuggable=true");
+    if (/android:usesCleartextTraffic="true"/.test(m)) err("usesCleartextTraffic=true tidak boleh.");
+    else ok("cleartext traffic nonaktif");
+    for (const host of ["mcmstorage.app", "www.mcmstorage.app"]) {
+      if (m.includes(`android:host="${host}"`)) ok(`app link host ${host}`);
+      else warn(`App Link host ${host} tidak ada di manifest.`);
+    }
+  } else {
+    err(`AndroidManifest.xml tidak ada: ${manifestPath}`);
+  }
+
+  step("12  Firebase google-services.json cocok package");
+  const gsPath = resolve(ROOT, "android/app/google-services.json");
+  if (!existsSync(gsPath)) {
+    err(
+      `google-services.json tidak ada (${gsPath}).\n` +
+        "    Push notification native TIDAK akan jalan di AAB ini.\n" +
+        "    Unduh dari Firebase console untuk package mcmstorage.app lalu commit/inject di CI.",
+    );
+  } else {
+    let pkgs = [];
+    try {
+      const gs = JSON.parse(readFileSync(gsPath, "utf8"));
+      pkgs = (gs.client ?? []).map((c) => c?.client_info?.android_client_info?.package_name);
+    } catch {
+      err("google-services.json bukan JSON valid.");
+    }
+    if (pkgs.length !== 1 || pkgs[0] !== "mcmstorage.app") {
+      err(
+        `google-services.json harus tepat satu client mcmstorage.app (ada: ${pkgs.join(", ") || "none"}).`,
+      );
+    } else {
+      ok("client mcmstorage.app tersedia");
+    }
+  }
+
+  step("13  min/target SDK");
+  const varsPath = resolve(ROOT, "android/variables.gradle");
+  if (existsSync(varsPath)) {
+    const v = readFileSync(varsPath, "utf8");
+    const target = Number(/targetSdkVersion\s*=\s*(\d+)/.exec(v)?.[1] ?? 0);
+    const min = Number(/minSdkVersion\s*=\s*(\d+)/.exec(v)?.[1] ?? 0);
+    if (target >= 36) ok(`targetSdkVersion ${target}`);
+    else err(`targetSdkVersion ${target} — rilis MCM Storage mensyaratkan >= 36.`);
+    if (min >= 23) ok(`minSdkVersion ${min}`);
+    else warn(`minSdkVersion ${min} cukup rendah.`);
+  } else {
+    warn("android/variables.gradle tidak ada — min/target SDK tidak diverifikasi.");
+  }
+
+  step("14  assetlinks.json publik");
+  const al = ["public/.well-known/assetlinks.json", "public/well-known/assetlinks.json"]
+    .map((rel) => resolve(ROOT, rel))
+    .find((f) => existsSync(f)) ?? resolve(ROOT, "public/.well-known/assetlinks.json");
+  if (existsSync(al)) {
+    const raw = readFileSync(al, "utf8");
+    if (raw.includes("mcmstorage.app")) ok("assetlinks.json memuat mcmstorage.app");
+    else err("assetlinks.json tidak memuat package mcmstorage.app.");
+    if (/mcmstorage\.chat/.test(raw)) err("assetlinks.json masih memuat package chat.");
+  } else {
+    warn(`assetlinks.json belum ada di ${al} — App Links tidak akan terverifikasi.`);
+  }
 }
 
 // ─── POST-BUILD ───────────────────────────────────────────────────────
@@ -237,19 +363,39 @@ function runPostBuild() {
     const list = unzip.stdout || "";
     const hasSig = /META-INF\/[^\s]+\.(RSA|EC|DSA)/i.test(list);
     if (hasSig) ok("METADATA signing terdeteksi (META-INF/*.RSA/EC/DSA)");
-    else warn("Tidak ditemukan signing artefact di META-INF. AAB mungkin UNSIGNED.");
+    else err("Tidak ditemukan signing artefact di META-INF. AAB tidak boleh dirilis.");
   } else {
-    warn("`unzip` tidak tersedia — lewati cek signature.");
+    err("`unzip` tidak tersedia — signature AAB tidak dapat diverifikasi.");
+  }
+
+  step("b2 Package AAB = mcmstorage.app dan tidak debuggable");
+  const bundletool = process.env.BUNDLETOOL_JAR;
+  if (!bundletool || !existsSync(bundletool)) {
+    err("BUNDLETOOL_JAR tidak tersedia — package/debuggable AAB tidak dapat diverifikasi.");
+  } else {
+    const dump = spawnSync("java", ["-jar", bundletool, "dump", "manifest", "--bundle", aab], {
+      encoding: "utf8",
+    });
+    const manifest = dump.stdout || "";
+    if (dump.status !== 0) err(`bundletool gagal membaca manifest AAB: ${(dump.stderr || "").trim()}`);
+    else {
+      if (/package="mcmstorage\.app"/.test(manifest)) ok("package AAB = mcmstorage.app");
+      else err("package AAB bukan mcmstorage.app.");
+      if (/android:debuggable="true"/.test(manifest)) err("AAB release masih debuggable.");
+      else ok("AAB tidak debuggable");
+      if (/android:label="MCM Storage"/.test(manifest) || /resource=.*app_name/.test(manifest)) {
+        ok("label AAB merujuk MCM Storage");
+      } else {
+        err("label MCM Storage tidak terverifikasi di manifest AAB.");
+      }
+    }
   }
 
   step("c  mapping.txt ter-generate");
   const mapping = resolve(ROOT, "android/app/build/outputs/mapping/release/mapping.txt");
   if (existsSync(mapping)) {
-    const gradlePath = resolve(ROOT, "android/app/build.gradle");
-    const vc = existsSync(gradlePath)
-      ? /versionCode\s+(\d+)/.exec(readFileSync(gradlePath, "utf8"))?.[1]
-      : "unknown";
-    const archive = resolve(ROOT, `dist/mapping/mapping-${variant}-vc${vc}.txt`);
+    const vc = String(readAppVersion()?.versionCode ?? "unknown");
+    const archive = resolve(ROOT, `dist/mapping/mcm-storage-vc${vc}-mapping.txt`);
     mkdirSync(dirname(archive), { recursive: true });
     copyFileSync(mapping, archive);
     ok(`${mapping} → arsip ${archive} (${(statSync(mapping).size / 1024).toFixed(1)} KB)`);
@@ -265,14 +411,23 @@ function runPostBuild() {
   }
 
   step("d  Salin AAB ke dist/ untuk arsip");
-  const gradlePath = resolve(ROOT, "android/app/build.gradle");
-  const vc = existsSync(gradlePath)
-    ? /versionCode\s+(\d+)/.exec(readFileSync(gradlePath, "utf8"))?.[1] ?? "unknown"
-    : "unknown";
-  const distAab = resolve(ROOT, `dist/aab/mcm-${variant}-vc${vc}.aab`);
+  const appVersion = readAppVersion();
+  const vn = appVersion?.versionName ?? "unknown";
+  const vc = String(appVersion?.versionCode ?? "unknown");
+  const distAab = resolve(ROOT, `dist/aab/mcm-storage-${vn}-vc${vc}-release.aab`);
   mkdirSync(dirname(distAab), { recursive: true });
   copyFileSync(aab, distAab);
   ok(`arsip: ${distAab}`);
+  try {
+    const sum = spawnSync("sha256sum", [distAab], { encoding: "utf8" });
+    if (sum.status === 0) {
+      const digest = (sum.stdout || "").trim().split(/\s+/)[0];
+      writeFileSync(`${distAab}.sha256`, `${digest}  ${distAab.split("/").pop()}\n`);
+      ok(`sha256: ${digest}`);
+    }
+  } catch {
+    warn("sha256sum tidak tersedia — checksum dilewati.");
+  }
 }
 
 // ─── util ─────────────────────────────────────────────────────────────

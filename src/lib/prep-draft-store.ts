@@ -51,15 +51,54 @@ async function withStore<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore
   }
 }
 
-export async function saveDraftPhotos(key: string, blobs: Blob[]): Promise<void> {
+/** Satu foto draft + status "sudah lewat editor". */
+export type DraftPhotoEntry = { blob: Blob; edited: boolean };
+
+type DraftRecordV2 = { v: 2; blobs: Blob[]; edited: boolean[] };
+
+function isRecordV2(val: unknown): val is DraftRecordV2 {
+  return (
+    !!val &&
+    typeof val === "object" &&
+    (val as { v?: unknown }).v === 2 &&
+    Array.isArray((val as DraftRecordV2).blobs)
+  );
+}
+
+export async function saveDraftPhotos(
+  key: string,
+  blobs: Blob[],
+  edited?: boolean[],
+): Promise<void> {
   if (blobs.length === 0) { await clearDraftPhotos(key); return; }
-  await withStore("readwrite", (s) => s.put(blobs, key));
+  const rec: DraftRecordV2 = {
+    v: 2,
+    blobs,
+    edited: blobs.map((_, i) => edited?.[i] === true),
+  };
+  await withStore("readwrite", (s) => s.put(rec, key));
+}
+
+/**
+ * Muat draft beserta flag `edited`, supaya foto yang sudah melewati
+ * PhotoEditor tidak diminta diedit ulang setelah refresh/WebView restart.
+ * Format lama (Blob[] polos) tetap didukung → dianggap belum diedit.
+ */
+export async function loadDraftPhotoEntries(key: string): Promise<DraftPhotoEntry[]> {
+  const val = await withStore<unknown>("readonly", (s) => s.get(key));
+  if (isRecordV2(val)) {
+    return val.blobs
+      .map((b, i) => ({ blob: b, edited: val.edited?.[i] === true }))
+      .filter((e) => e.blob instanceof Blob);
+  }
+  if (!Array.isArray(val)) return [];
+  return val
+    .filter((b): b is Blob => b instanceof Blob)
+    .map((blob) => ({ blob, edited: false }));
 }
 
 export async function loadDraftPhotos(key: string): Promise<Blob[]> {
-  const val = await withStore<unknown>("readonly", (s) => s.get(key));
-  if (!Array.isArray(val)) return [];
-  return val.filter((b): b is Blob => b instanceof Blob);
+  return (await loadDraftPhotoEntries(key)).map((e) => e.blob);
 }
 
 export async function clearDraftPhotos(key: string): Promise<void> {
