@@ -175,8 +175,8 @@ function runPreBuild() {
   const envSigning =
     process.env.KEYSTORE_FILE && existsSync(resolve(process.env.KEYSTORE_FILE)) &&
     process.env.KEYSTORE_ALIAS &&
-    process.env.KEYSTORE_STORE_PASS &&
-    process.env.KEYSTORE_KEY_PASS;
+    (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD) &&
+    (process.env.KEYSTORE_KEY_PASSWORD ?? process.env.KEYSTORE_KEY_PASSWORD);
   if (envSigning) {
     ok("kredensial dari environment (KEYSTORE_FILE/ALIAS/STORE_PASS/KEY_PASS)");
   } else if (existsSync(propsPath)) {
@@ -184,7 +184,7 @@ function runPreBuild() {
   } else {
     err(
       "Kredensial signing tidak ditemukan.\n" +
-        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASS, KEYSTORE_KEY_PASS.\n" +
+        "      CI    : set env KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASSWORD, KEYSTORE_KEY_PASSWORD.\n" +
         "      Lokal : jalankan sekali `bun run aab:setup-keystore` (menulis android/keystore.properties).",
     );
   }

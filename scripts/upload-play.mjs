@@ -6,12 +6,12 @@
  *
  * Pemakaian:
  *   node scripts/upload-play.mjs                        # MCM Storage, track internal
- *   node scripts/upload-play.mjs --track production --release-status draft
+ *   node scripts/upload-play.mjs --track internal --release-status draft
  *   node scripts/upload-play.mjs --aab path/ke.aab
  *   node scripts/upload-play.mjs --package mcmstorage.app
  *
  * Flag:
- *   --track            internal (default) | alpha | beta | production
+ *   --track            internal (satu-satunya nilai yang diizinkan saat ini)
  *   --release-status   draft (default) | inProgress | halted | completed
  *   --release-name     Nama release (default: versionCode dari AAB)
  *   --rollout          Fraksi rollout 0..1 untuk track production
@@ -84,8 +84,14 @@ process.on("exit", () => {
   writeSummaryJson(runSummary);
 });
 
-const VALID_TRACKS = ["internal", "alpha", "beta", "production"];
-if (!VALID_TRACKS.includes(track)) fail(`--track harus salah satu: ${VALID_TRACKS.join(", ")}`);
+// Tahap rilis saat ini: HANYA Internal testing. Production/closed/open testing
+// sengaja ditolak agar tidak ada rilis publik yang tidak disengaja.
+const VALID_TRACKS = ["internal"];
+if (!VALID_TRACKS.includes(track))
+  fail(
+    `--track "${track}" ditolak. Tahap ini hanya mengizinkan: ${VALID_TRACKS.join(", ")} ` +
+      "(Internal testing). Production/alpha/beta tidak tersedia dari skrip ini.",
+  );
 const VALID_STATUS = ["draft", "inProgress", "halted", "completed"];
 if (!VALID_STATUS.includes(releaseStatus))
   fail(`--release-status harus salah satu: ${VALID_STATUS.join(", ")}`);

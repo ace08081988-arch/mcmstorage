@@ -57,8 +57,8 @@ Password bisa ditaruh di env var supaya tidak tersimpan di disk:
 ```bash
 export KEYSTORE_FILE=~/keys/mcm-release.keystore   # opsional
 export KEYSTORE_ALIAS=mcm                          # opsional
-export KEYSTORE_STORE_PASS='…'
-export KEYSTORE_KEY_PASS='…'
+export KEYSTORE_STORE_PASSWORD='…'
+export KEYSTORE_KEY_PASSWORD='…'
 ```
 
 Prioritas resolusi (per-field, dari yang paling menang):

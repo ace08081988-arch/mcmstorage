@@ -4,6 +4,11 @@ Dokumen ringkas ini menjelaskan langkah menyiapkan secrets, menjalankan mode **b
 
 **Package name MCM Storage di Play Console: `mcmstorage.app`.**
 `namespace` sumber Android tetap `biz.mcmstorage.app` — itu hanya paket kelas Java, bukan identitas app di Play.
+Activity utama karena itu bernama `biz.mcmstorage.app.MainActivity`, sehingga component adb yang benar adalah
+`mcmstorage.app/biz.mcmstorage.app.MainActivity`. Firebase dan Play harus didaftarkan dengan package `mcmstorage.app`.
+
+Workflow rilis bersifat **manual-only** (`workflow_dispatch`). Validasi pada push dijalankan
+workflow terpisah tanpa kredensial: `MCM Storage Android CI (no credentials)`.
 
 ---
 
@@ -15,8 +20,8 @@ Buka **Settings → Secrets and variables → Actions → New repository secret*
 | --- | --- |
 | `KEYSTORE_BASE64` | `base64 -w0 android/mcm.keystore` |
 | `KEYSTORE_ALIAS` | Alias yang dipakai saat membuat keystore |
-| `KEYSTORE_STORE_PASS` | Password store keystore |
-| `KEYSTORE_KEY_PASS` | Password key keystore |
+| `KEYSTORE_STORE_PASSWORD` | Password store keystore |
+| `KEYSTORE_KEY_PASSWORD` | Password key keystore |
 | `GOOGLE_SERVICES_JSON_B64` | Konfigurasi Firebase Android untuk package `mcmstorage.app` |
 | `PLAY_SERVICE_ACCOUNT_JSON_B64` | *(hanya untuk `dry_run=false`/upload otomatis)* `base64 -w0 service-account.json` dari Google Play Console |
 | `SLACK_WEBHOOK_URL` | *(opsional)* Webhook Slack untuk notifikasi rilis |
@@ -61,13 +66,12 @@ git push
 
 ## 3. Periksa dan sesuaikan versi
 
-Buka `android/app/build.gradle`, pastikan nilai ini benar:
+SSOT versi ada di `android/version.properties` (dibaca Gradle, checklist, metadata artifact,
+dan `scripts/upload-play.mjs`). Jangan mengedit angka versi di tempat lain.
 
-```gradle
-defaultConfig {
-    versionCode 1
-    versionName "1.0"
-}
+```bash
+bun run version:check   # menampilkan versionCode & versionName aktif
+bun run version:bump    # satu-satunya cara menaikkan versi
 ```
 
 Aturan:
@@ -115,7 +119,7 @@ Cek di job summary:
 - ✅ **"job berhasil"**
 - ✅ Tidak ada pesan error di step "Build + release AAB"
 - ✅ `versionCode` yang di-build lebih tinggi dari yang sudah pernah diunggah di Play Console
-  (saat ini `versionCode=2`, `versionName=1.0.0`)
+  (nilai aktif: lihat `bun run version:check`)
 
 Kalau ada error, perbaiki dulu sebelum lanjut ke upload nyata.
 
@@ -128,7 +132,7 @@ Setelah build-only lolos (opsi otomatis; butuh `PLAY_SERVICE_ACCOUNT_JSON_B64`):
 1. Buka workflow **"MCM Storage Play Release"** lagi.
 2. Klik **Run workflow**.
 3. Isi input:
-   - **track**: `internal` (atau `alpha`, `beta`, `production`)
+   - **track**: `internal` (satu-satunya pilihan; production dikunci)
    - **release_status**: `draft` (atau `inProgress`)
    - **dry_run**: ❌ **false**
    - **skip_version_check**: ❌ **false**

@@ -16,7 +16,7 @@
  *   node scripts/print-fingerprints.mjs --copy sha256
  *
  * Prioritas kredensial: CLI flag > env var > android/keystore.properties.
- * Env yang diakui: KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASS.
+ * Env yang diakui: KEYSTORE_FILE, KEYSTORE_ALIAS, KEYSTORE_STORE_PASSWORD.
  *
  * Exit 0 = fingerprint berhasil dicetak.
  * Exit 1 = keytool gagal / keystore/alias/password salah.
@@ -46,7 +46,7 @@ const copyArg = argv.includes("--copy")
 
 let storeFile = flag("--store") ?? process.env.KEYSTORE_FILE;
 let alias = flag("--alias") ?? process.env.KEYSTORE_ALIAS;
-let storePassword = flag("--store-pass") ?? process.env.KEYSTORE_STORE_PASS;
+let storePassword = flag("--store-pass") ?? (process.env.KEYSTORE_STORE_PASSWORD ?? process.env.KEYSTORE_STORE_PASSWORD);
 
 // Isi field yang kosong dari keystore.properties (opsional).
 if ((!storeFile || !alias || !storePassword) && existsSync(propsPath)) {
@@ -69,7 +69,7 @@ if (!storeFile) fail("Store file tidak diketahui. Set KEYSTORE_FILE atau --store
 if (!alias) fail("Alias tidak diketahui. Set KEYSTORE_ALIAS atau --alias <name>.");
 if (!storePassword)
   fail(
-    "Store password tidak diketahui. Set KEYSTORE_STORE_PASS atau --store-pass <pw>,\n" +
+    "Store password tidak diketahui. Set KEYSTORE_STORE_PASSWORD atau --store-pass <pw>,\n" +
       "  atau isi storePassword di android/keystore.properties.",
   );
 

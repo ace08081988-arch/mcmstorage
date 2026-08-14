@@ -1,5 +1,8 @@
 name: MCM Storage Play Release
 
+# MANUAL ONLY. Tidak ada trigger push/PR di sini supaya kredensial signing &
+# Play tidak pernah dipakai oleh event otomatis. Validasi pada push dilakukan
+# workflow tanpa kredensial: .github/workflows/mcm-storage-android-ci.yml
 on:
   workflow_dispatch:
     inputs:
@@ -8,15 +11,15 @@ on:
         type: boolean
         default: true
       track:
-        description: "Google Play testing track (production is intentionally unavailable)"
+        description: "Google Play track (hanya Internal testing pada tahap ini)"
         type: choice
         default: internal
-        options: [internal, alpha, beta]
+        options: [internal]
       release_status:
-        description: "Google Play release status"
+        description: "Google Play release status (Internal testing)"
         type: choice
         default: draft
-        options: [draft, inProgress, halted, completed]
+        options: [draft, completed]
       skip_version_check:
         description: "Skip remote versionCode check when uploading"
         type: boolean
@@ -29,19 +32,6 @@ on:
         description: "Optional expected versionName"
         type: string
         default: ""
-  push:
-    branches: ["Mcmstorage.biz"]
-    paths:
-      - ".github/workflows/mcm-storage-play-release.yml"
-      - "scripts/build-aab.mjs"
-      - "scripts/preflight-release.mjs"
-      - "scripts/sync-native.mjs"
-      - "tests/integration/android-package-separation.test.ts"
-      - "capacitor.config.ts"
-      - "android/**"
-      - "package.json"
-      - "bun.lock"
-
 concurrency:
   group: mcm-storage-play-release-${{ github.ref }}
   cancel-in-progress: false
@@ -54,8 +44,8 @@ jobs:
     env:
       CI: "true"
       KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
-      KEYSTORE_STORE_PASS: ${{ secrets.KEYSTORE_STORE_PASS }}
-      KEYSTORE_KEY_PASS: ${{ secrets.KEYSTORE_KEY_PASS }}
+      KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+      KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
       PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON_B64 }}
       UPLOAD_PLAY_SUMMARY_JSON: ${{ github.workspace }}/dist/upload-play-summary.json
       BUNDLETOOL_JAR: ${{ github.workspace }}/.cache/bundletool.jar
@@ -87,14 +77,19 @@ jobs:
         env:
           KEYSTORE_BASE64_VALUE: ${{ secrets.KEYSTORE_BASE64 }}
           FIREBASE_CONFIG_VALUE: ${{ secrets.GOOGLE_SERVICES_JSON_B64 }}
-          DRY_RUN: ${{ github.event_name == 'push' && 'true' || inputs.dry_run }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          TRACK: ${{ inputs.track }}
         run: |
           set -euo pipefail
+          case "${TRACK:-internal}" in
+            internal) ;;
+            *) echo "::error::Track ${TRACK} tidak diizinkan. Tahap ini hanya Internal testing."; exit 1 ;;
+          esac
           missing=()
           [ -n "${KEYSTORE_BASE64_VALUE:-}" ] || missing+=(KEYSTORE_BASE64)
           [ -n "${KEYSTORE_ALIAS:-}" ] || missing+=(KEYSTORE_ALIAS)
-          [ -n "${KEYSTORE_STORE_PASS:-}" ] || missing+=(KEYSTORE_STORE_PASS)
-          [ -n "${KEYSTORE_KEY_PASS:-}" ] || missing+=(KEYSTORE_KEY_PASS)
+          [ -n "${KEYSTORE_STORE_PASSWORD:-}" ] || missing+=(KEYSTORE_STORE_PASSWORD)
+          [ -n "${KEYSTORE_KEY_PASSWORD:-}" ] || missing+=(KEYSTORE_KEY_PASSWORD)
           [ -n "${FIREBASE_CONFIG_VALUE:-}" ] || missing+=(GOOGLE_SERVICES_JSON_B64)
           if [ "$DRY_RUN" != "true" ]; then
             [ -n "${PLAY_SERVICE_ACCOUNT_JSON_B64:-}" ] || missing+=(PLAY_SERVICE_ACCOUNT_JSON_B64)
@@ -146,28 +141,28 @@ jobs:
           node scripts/validate-keystore.mjs --non-interactive
           node scripts/preflight-release.mjs
 
-      - name: Build signed MCM Storage AAB
+      - name: Build signed MCM Storage AAB (tanpa upload)
         id: release
-        env:
-          DRY_RUN: ${{ github.event_name == 'push' && 'true' || inputs.dry_run }}
-          TRACK: ${{ inputs.track || 'internal' }}
-          RELEASE_STATUS: ${{ inputs.release_status || 'draft' }}
-          SKIP_VERSION_CHECK: ${{ inputs.skip_version_check || 'false' }}
-        run: |
-          set -euo pipefail
-          if [ "$DRY_RUN" = "true" ]; then
-            node scripts/build-aab.mjs
-          else
-            args=(--upload --upload-track "$TRACK" --release-status "$RELEASE_STATUS")
-            [ "$SKIP_VERSION_CHECK" = "true" ] && args+=(--skip-version-check)
-            node scripts/build-aab.mjs "${args[@]}"
-          fi
+        run: node scripts/build-aab.mjs
 
       - name: Verify and checksum release artifact
         run: |
           set -euo pipefail
           node scripts/preflight-release.mjs --post
           sha256sum dist/aab/*.aab | tee dist/aab/SHA256SUMS.txt
+
+      # Upload HANYA setelah build + verifikasi artefak sukses, dan hanya ke
+      # Internal testing. Production tidak pernah tersedia dari workflow ini.
+      - name: Upload ke Google Play Internal testing
+        if: ${{ inputs.dry_run == false }}
+        env:
+          RELEASE_STATUS: ${{ inputs.release_status || 'draft' }}
+          SKIP_VERSION_CHECK: ${{ inputs.skip_version_check || 'false' }}
+        run: |
+          set -euo pipefail
+          args=(--track internal --release-status "$RELEASE_STATUS")
+          [ "$SKIP_VERSION_CHECK" = "true" ] && args+=(--skip-version-check)
+          node scripts/upload-play.mjs "${args[@]}"
 
       - name: Upload MCM Storage artifact
         id: upload_artifact
@@ -185,8 +180,8 @@ jobs:
       - name: Release summary
         if: always()
         env:
-          DRY_RUN: ${{ github.event_name == 'push' && 'true' || inputs.dry_run }}
-          TRACK: ${{ inputs.track || 'internal' }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          TRACK: internal
           STATUS: ${{ inputs.release_status || 'draft' }}
         run: |
           {

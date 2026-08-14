@@ -18,9 +18,9 @@ if (keystorePropsFile.exists()) {
     keystorePropsFile.withInputStream { keystoreProps.load(it) }
 }
 def ksStorePath = System.getenv('KEYSTORE_FILE') ?: keystoreProps['storeFile']
-def ksStorePass = System.getenv('KEYSTORE_STORE_PASS') ?: keystoreProps['storePassword']
+def ksStorePass = System.getenv('KEYSTORE_STORE_PASSWORD') ?: System.getenv('KEYSTORE_STORE_PASS') ?: keystoreProps['storePassword']
 def ksAlias     = System.getenv('KEYSTORE_ALIAS') ?: keystoreProps['keyAlias']
-def ksKeyPass   = System.getenv('KEYSTORE_KEY_PASS') ?: keystoreProps['keyPassword']
+def ksKeyPass   = System.getenv('KEYSTORE_KEY_PASSWORD') ?: System.getenv('KEYSTORE_KEY_PASS') ?: keystoreProps['keyPassword']
 def ksStoreType = System.getenv('KEYSTORE_STORE_TYPE') ?: (keystoreProps['storeType'] ?: 'PKCS12')
 def hasReleaseSigning = ksStorePath && ksStorePass && ksAlias && ksKeyPass && file(ksStorePath).exists()
 if (!hasReleaseSigning) {

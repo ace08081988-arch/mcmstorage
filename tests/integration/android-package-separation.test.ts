@@ -86,4 +86,50 @@ describe("invarian rilis Android tunggal MCM Storage", () => {
     expect(p).toContain("BUNDLETOOL_JAR");
     expect(p).toContain('android:debuggable="true"');
   });
+
+  it("workflow rilis Play manual-only dan terkunci ke Internal testing", () => {
+    expect(workflow).toContain("workflow_dispatch:");
+    // tidak ada trigger otomatis yang bisa memakai kredensial signing/Play
+    expect(workflow).not.toMatch(/^\s{2}push:/m);
+    expect(workflow).not.toMatch(/^\s{2}pull_request:/m);
+    expect(workflow).toMatch(/options:\s*\[internal\]/);
+    expect(workflow).not.toMatch(/production/);
+    // upload hanya lewat langkah terpisah setelah verifikasi artefak
+    expect(workflow).toContain("node scripts/upload-play.mjs");
+  });
+
+  it("kontrak nama secrets seragam di workflow rilis", () => {
+    for (const secret of [
+      "KEYSTORE_BASE64",
+      "KEYSTORE_ALIAS",
+      "KEYSTORE_STORE_PASSWORD",
+      "KEYSTORE_KEY_PASSWORD",
+      "GOOGLE_SERVICES_JSON_B64",
+      "PLAY_SERVICE_ACCOUNT_JSON_B64",
+    ]) {
+      expect(workflow, secret).toContain(secret);
+    }
+    for (const legacy of [
+      "MCM_STORAGE_KEYSTORE_FILE",
+      "MCM_STORAGE_STORE_PASS",
+      "ANDROID_KEYSTORE_BASE64",
+      "ANDROID_KEY_PASSWORD",
+    ]) {
+      expect(workflow, legacy).not.toContain(legacy);
+      expect(read(".github/workflows/android-apk.yml"), legacy).not.toContain(legacy);
+      expect(read("RELEASE_CHECKLIST.md"), legacy).not.toContain(legacy);
+    }
+  });
+
+  it("upload-play hanya mengizinkan track internal", () => {
+    const u = read("scripts/upload-play.mjs");
+    expect(u).toContain('const VALID_TRACKS = ["internal"];');
+    expect(u).toContain('packageName !== "mcmstorage.app"');
+  });
+
+  it("CI push Android tidak memegang kredensial apa pun", () => {
+    const ci = read(".github/workflows/mcm-storage-android-ci.yml");
+    expect(ci).toContain("push:");
+    expect(ci).not.toMatch(/secrets\./);
+  });
 });
