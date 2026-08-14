@@ -293,6 +293,24 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_user_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_user_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       chat_call_hidden: {
         Row: {
           call_id: string
@@ -2522,6 +2540,30 @@ export type Database = {
           },
         ]
       }
+      push_action_nonces: {
+        Row: {
+          action: string
+          expires_at: string
+          nonce: string
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          expires_at: string
+          nonce: string
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          expires_at?: string
+          nonce?: string
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -4319,6 +4361,10 @@ export type Database = {
       chat_clear_conversation_for_me: {
         Args: { _conv: string }
         Returns: string[]
+      }
+      chat_conversation_capabilities: {
+        Args: { _conversation_id: string; _user_id?: string }
+        Returns: Json
       }
       chat_heartbeat: { Args: never; Returns: undefined }
       chat_link_business: {
