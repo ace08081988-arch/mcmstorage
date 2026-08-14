@@ -88,6 +88,41 @@ export const Route = createFileRoute("/api/public/chat-action")({
             .update({ last_read_at: new Date().toISOString() })
             .eq("conversation_id", claims.cid)
             .eq("user_id", claims.uid);
+          // Balasan dari notifikasi harus tetap membangunkan lawan bicara —
+          // jalur ini tidak melewati `sendMessage`, jadi push dikirim di sini.
+          try {
+            const { notifyUsers } = await import("@/lib/push.server");
+            const [{ data: members }, { data: prof }] = await Promise.all([
+              supabaseAdmin
+                .from("conversation_members")
+                .select("user_id")
+                .eq("conversation_id", claims.cid),
+              supabaseAdmin
+                .from("profiles")
+                .select("display_name, avatar_url")
+                .eq("id", claims.uid)
+                .single(),
+            ]);
+            const senderName = prof?.display_name || "Pengguna";
+            await notifyUsers({
+              userIds: (members ?? []).map((m) => m.user_id).filter(Boolean) as string[],
+              excludeUserId: claims.uid,
+              payload: {
+                title: senderName,
+                body: parsed.text.slice(0, 140),
+                url: `/chat/${claims.cid}`,
+                tag: `conv:${claims.cid}`,
+                conversationId: claims.cid,
+                messageId: msg.id,
+                kind: "chat",
+                senderName,
+                senderId: claims.uid,
+                icon: prof?.avatar_url || undefined,
+              },
+            });
+          } catch (e) {
+            console.error("[chat-action] push balasan gagal", e);
+          }
           return json({ ok: true, messageId: msg.id });
         }
 
