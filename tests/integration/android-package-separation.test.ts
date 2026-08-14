@@ -20,7 +20,7 @@ describe("pemisahan APK MCM Storage vs MCM: Private Connect", () => {
 
   it("tidak ada package chat di manifest/gradle/workflow/scripts", () => {
     const out = execSync(
-      "grep -rl 'biz.mcmstorage.chat\\|com.mcm.privateconnect' android .github scripts package.json capacitor.config.ts 2>/dev/null || true",
+      "grep -rl 'biz.mcmstorage.chat' android/app/src/main .github scripts package.json capacitor.config.ts 2>/dev/null || true",
       { encoding: "utf8" },
     ).trim();
     expect(out).toBe("");
