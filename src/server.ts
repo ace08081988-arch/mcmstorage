@@ -1,7 +1,5 @@
 import "./lib/error-capture";
 
-import serverEntry from "@tanstack/react-start/server-entry";
-
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { withBrandCacheHeaders } from "./lib/brand-cache-headers";
@@ -10,13 +8,15 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
-// Impor STATIS. `import()` dinamis membuat bundler menaruh objek namespace
-// server-entry di chunk runtime bersama `createMiddleware`, sehingga chunk
-// runtime dan chunk inti TanStack Start saling impor (melingkar). Worker
-// produksi lalu crash saat boot ("createMiddleware is not a function") dan
-// seluruh route membalas 500.
-function getServerEntry(): ServerEntry {
-  return serverEntry as unknown as ServerEntry;
+let serverEntryPromise: Promise<ServerEntry> | undefined;
+
+async function getServerEntry(): Promise<ServerEntry> {
+  if (!serverEntryPromise) {
+    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
+      (m) => (m.default ?? m) as ServerEntry,
+    );
+  }
+  return serverEntryPromise;
 }
 
 // Klien yang membatalkan request (tutup tab, scroll cepat, WebView reload)
@@ -61,7 +61,7 @@ async function normalizeCatastrophicSsrResponse(
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const handler = getServerEntry();
+      const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response, request);
       // Aset brand (ikon, manifest, kartu OG) selalu no-cache supaya pratinjau
