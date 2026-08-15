@@ -60,9 +60,9 @@ const HARNESS = /* html */ `<!doctype html>
       hintEl.textContent = text;
       hintEl.style.transform = "translate(" + (x + 8) + "px," + (y + 8) + "px)";
       hintEl.classList.add("show");
-      // Auto-hide sengaja DIHILANGKAN di harness — assertion `.toHaveClass(/show/)`
+      // Auto-hide sengaja DIHILANGKAN di harness — assertion toHaveClass(/show/)
       // di test tidak boleh balapan dengan timer real. Kelas dibersihkan hanya
-      // saat hint berikutnya di-`showHint` dengan clear manual di sini juga
+      // saat hint berikutnya di showHint dengan clear manual di sini juga
       // tidak perlu karena classList.add idempotent.
     };
     window.__navs = [];
