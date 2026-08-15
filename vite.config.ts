@@ -115,6 +115,26 @@ export default defineConfig({
         entities: path.resolve(__dirname, "node_modules/entities"),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Runtime TanStack Start (createMiddleware + start-server core +
+          // helper runtime bundler) HARUS berada dalam satu chunk. Bila
+          // terpisah, bundler menghasilkan impor melingkar sehingga worker
+          // produksi crash saat boot dengan
+          // "createMiddleware is not a function" dan semua route balas 500.
+          advancedChunks: {
+            groups: [
+              {
+                name: "tanstack-start-runtime",
+                test: /(rolldown-runtime|createMiddleware|[/\\]server-[^/\\]*\.js$|start-server|react-start)/,
+                priority: 100,
+              },
+            ],
+          },
+        },
+      },
+    },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
