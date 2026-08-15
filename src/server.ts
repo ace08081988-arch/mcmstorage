@@ -1,5 +1,7 @@
 import "./lib/error-capture";
 
+import serverEntry from "@tanstack/react-start/server-entry";
+
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { withBrandCacheHeaders } from "./lib/brand-cache-headers";
@@ -8,15 +10,8 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
-let serverEntryPromise: Promise<ServerEntry> | undefined;
-
-async function getServerEntry(): Promise<ServerEntry> {
-  if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m.default ?? m) as ServerEntry,
-    );
-  }
-  return serverEntryPromise;
+function getServerEntry(): ServerEntry {
+  return serverEntry as unknown as ServerEntry;
 }
 
 // Klien yang membatalkan request (tutup tab, scroll cepat, WebView reload)
@@ -61,7 +56,7 @@ async function normalizeCatastrophicSsrResponse(
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const handler = await getServerEntry();
+      const handler = getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response, request);
       // Aset brand (ikon, manifest, kartu OG) selalu no-cache supaya pratinjau
