@@ -8,6 +8,7 @@ import { toExportRows, exportCallsCsv, exportCallsPdf } from "@/lib/call-export"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
 import {
   listMyCalls,
   formatCallDuration,
@@ -234,32 +235,22 @@ function PanggilanPage() {
   ];
   return (
     <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
-      <header
-        className="wa-header sticky top-0 z-10 flex items-center gap-ms-2 border-b px-ms-3 py-ms-3"
-        style={{ paddingTop: "max(var(--app-safe-top,env(safe-area-inset-top,0px)), 0.75rem)" }}
-      >
-        <Button
-          asChild
-          variant="ghost"
-          size="icon"
-          className="h-11 w-11 rounded-full touch-manipulation"
-          aria-label="Kembali"
-        >
-          <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <h1 className="text-ms-lg font-semibold">Panggilan</h1>
-        {allRows.length > 0 ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-auto h-11 w-11 rounded-full touch-manipulation"
-            aria-label={isFiltered ? "Hapus riwayat panggilan hasil filter" : "Hapus semua riwayat panggilan"}
-            onClick={() => setConfirmClearAll(true)}
-          >
-            <Trash2 className="h-5 w-5" />
-          </Button>
-        ) : null}
-      </header>
+      <ChatSectionHeader
+        title="Panggilan"
+        actions={
+          allRows.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 rounded-full touch-manipulation"
+              aria-label={isFiltered ? "Hapus riwayat panggilan hasil filter" : "Hapus semua riwayat panggilan"}
+              onClick={() => setConfirmClearAll(true)}
+            >
+              <Trash2 className="h-5 w-5" />
+            </Button>
+          ) : null
+        }
+      />
 
       {allRows.length > 0 ? (
         <div className="space-ms-2 border-b bg-background/60 px-ms-3 py-ms-2">
