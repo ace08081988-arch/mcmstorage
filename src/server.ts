@@ -1,5 +1,7 @@
 import "./lib/error-capture";
 
+import serverEntry from "@tanstack/react-start/server-entry";
+
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { withBrandCacheHeaders } from "./lib/brand-cache-headers";
@@ -8,15 +10,12 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
-let serverEntryPromise: Promise<ServerEntry> | undefined;
-
-async function getServerEntry(): Promise<ServerEntry> {
-  if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m.default ?? m) as ServerEntry,
-    );
-  }
-  return serverEntryPromise;
+// Impor STATIS — `import()` dinamis memaksa bundler membuat objek namespace
+// di chunk runtime, yang menghasilkan impor melingkar dengan runtime
+// TanStack Start. Akibatnya worker produksi crash saat boot
+// ("createMiddleware is not a function") dan semua route balas 500.
+function getServerEntry(): ServerEntry {
+  return serverEntry as unknown as ServerEntry;
 }
 
 // Klien yang membatalkan request (tutup tab, scroll cepat, WebView reload)
