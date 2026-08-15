@@ -120,24 +120,5 @@ export default defineConfig({
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
       __MIGRATION_VERSION__: JSON.stringify(MIGRATION_VERSION),
     },
-    build: {
-      rollupOptions: {
-        output: {
-          // Runtime TanStack Start HARUS berada dalam satu chunk. Bila
-          // `createMiddleware` terpisah dari `start-server-core`, bundler
-          // menghasilkan impor melingkar dan worker produksi crash saat boot
-          // dengan "createMiddleware is not a function" (semua route 500).
-          advancedChunks: {
-            groups: [
-              {
-                name: "tanstack-start-runtime",
-                test: /node_modules\/@tanstack\/(react-)?start[^/]*\//,
-                priority: 100,
-              },
-            ],
-          },
-        },
-      },
-    },
   },
 });
