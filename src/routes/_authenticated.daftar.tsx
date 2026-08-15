@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
 import { Plus, Trash2, Loader2, Check, X, Search, Pin, Users2, MailOpen } from "lucide-react";
@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/daftar")({
 });
 
 function DaftarPage() {
-  const navigate = useNavigate();
   const { data: lists, isLoading } = useChatLists();
   const { data: conversations } = useConversations();
   const [createOpen, setCreateOpen] = useState(false);
