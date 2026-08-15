@@ -31,6 +31,7 @@ import {
 } from "@/lib/chat-apk-history";
 import { History, Trash2 } from "lucide-react";
 import {
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 
@@ -163,25 +164,19 @@ function ProfilChatPage() {
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 flex items-center gap-ms-4 bg-background px-ms-4 py-ms-3">
-        <button
-          type="button"
-          aria-label="Kembali"
-          onClick={() => goBackOr(router, { to: "/chat" })}
-          className="grid h-9 w-9 place-items-center rounded-full hover:bg-accent"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <h1 className="flex-1 text-ms-lg font-semibold">Pengaturan</h1>
-        <button
-          type="button"
-          aria-label="Cari"
-          onClick={() => toast.info("Pencarian pengaturan segera hadir.")}
-          className="grid h-9 w-9 place-items-center rounded-full hover:bg-accent"
-        >
-          <Search className="h-5 w-5" />
-        </button>
-      </header>
+      <ChatSectionHeader
+        title="Pengaturan"
+        actions={
+          <button
+            type="button"
+            aria-label="Cari"
+            onClick={() => toast.info("Pencarian pengaturan segera hadir.")}
+            className="grid h-11 w-11 place-items-center rounded-full hover:bg-accent"
+          >
+            <Search className="h-5 w-5" />
+          </button>
+        }
+      />
 
       {/* Profile card */}
       <section className="flex items-center gap-ms-4 px-ms-4 py-ms-4">
