@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
+  Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
   Copy, Check, Palette, QrCode as QrCodeIcon,
