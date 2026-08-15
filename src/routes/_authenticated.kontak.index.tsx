@@ -207,8 +207,8 @@ function KontakPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+    <div className="min-h-screen wa-surface">
+      <header className="sticky top-0 z-10 border-b wa-header backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
           <Link
             to="/"

@@ -137,7 +137,7 @@ function SesiPage() {
           </Button>
         }
       />
-      <div className="mx-auto max-w-2xl space-ms-4 p-ms-4">
+      <div className="mx-auto min-h-dvh max-w-2xl space-ms-4 wa-surface p-ms-4">
         <p className="text-ms-sm text-muted-foreground">
           Daftar perangkat tempat akun Anda login. Cabut akses kapan saja.
         </p>

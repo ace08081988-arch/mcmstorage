@@ -107,7 +107,7 @@ function FiturPage() {
   ];
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
+    <div className="flex min-h-dvh flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
       <ChatSectionHeader
         title="Fitur"
         actions={

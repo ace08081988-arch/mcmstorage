@@ -253,7 +253,7 @@ function PanggilanPage() {
       />
 
       {allRows.length > 0 ? (
-        <div className="space-ms-2 border-b bg-background/60 px-ms-3 py-ms-2">
+        <div className="space-ms-2 border-b border-[var(--wa-border)] bg-[var(--wa-surface-2)]/40 px-ms-3 py-ms-2">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -284,7 +284,7 @@ function PanggilanPage() {
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-ms-xs font-medium transition-colors touch-manipulation ${
                   filter === f.key
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "bg-background text-muted-foreground hover:bg-muted"
+                    : "border-[var(--wa-border)] bg-[var(--wa-surface)] text-[var(--wa-text-muted)] hover:bg-[var(--wa-surface-2)]"
                 }`}
               >
                 {f.label}
@@ -294,7 +294,7 @@ function PanggilanPage() {
               type="button"
               onClick={() => setSort((s) => (s === "newest" ? "oldest" : "newest"))}
               aria-label={sort === "newest" ? "Urutkan: terbaru dulu (ketuk untuk terlama)" : "Urutkan: terlama dulu (ketuk untuk terbaru)"}
-              className="ml-auto flex shrink-0 items-center gap-1 rounded-full border bg-background px-3 py-1.5 text-ms-xs font-medium text-muted-foreground transition-colors hover:bg-muted touch-manipulation"
+              className="ml-auto flex shrink-0 items-center gap-1 rounded-full border border-[var(--wa-border)] bg-[var(--wa-surface)] px-3 py-1.5 text-ms-xs font-medium text-[var(--wa-text-muted)] transition-colors hover:bg-[var(--wa-surface-2)] touch-manipulation"
             >
               {sort === "newest" ? (
                 <ArrowDownWideNarrow className="h-3.5 w-3.5" />

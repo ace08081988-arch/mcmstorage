@@ -513,7 +513,7 @@ function ChatListPage() {
           dikunci langsung di puncak layar + safe-area notch supaya judul,
           pencarian, dan filter tidak terpotong maupun naik-turun saat
           daftar digulir. */}
-      <div className="app-safe-top sticky top-0 z-20 wa-surface border-b border-[var(--wa-border)]">
+      <div className="app-safe-top sticky top-0 z-20 wa-header border-b border-[var(--wa-border)]">
         {selecting ? (
           <header
             className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"

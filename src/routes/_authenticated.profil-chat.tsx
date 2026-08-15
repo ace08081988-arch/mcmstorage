@@ -162,7 +162,7 @@ function ProfilChatPage() {
   const latestKey = chatReleases[0]?.name ?? null;
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl bg-background">
+    <main className="mx-auto min-h-screen max-w-2xl wa-surface">
       {/* Top bar */}
       <ChatSectionHeader
         title="Pengaturan"
