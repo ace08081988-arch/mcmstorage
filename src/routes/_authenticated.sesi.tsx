@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateDeviceId } from "@/lib/device-sessions";
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
 
 type DeviceSession = {
   id: string;
@@ -249,6 +250,7 @@ function SesiPage() {
       </p>
       {/* hindari unused warning untuk router */}
       {router ? null : null}
-    </div>
+      </div>
+    </>
   );
 }
