@@ -115,6 +115,25 @@ export default defineConfig({
         entities: path.resolve(__dirname, "node_modules/entities"),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Runtime TanStack Start + helper runtime bundler HARUS satu chunk.
+          // Bila terpisah, bundler menghasilkan impor melingkar dan worker
+          // produksi crash saat boot ("createMiddleware is not a function")
+          // sehingga seluruh route membalas 500.
+          advancedChunks: {
+            groups: [
+              {
+                name: "tanstack-start-runtime",
+                test: /(node_modules\/@tanstack\/(react-)?start|rolldown-runtime)/,
+                priority: 100,
+              },
+            ],
+          },
+        },
+      },
+    },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
