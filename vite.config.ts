@@ -58,9 +58,6 @@ export default defineConfig({
   // memancarkan output statis ke `.output/public` yang dipakai Capacitor.
   ...(CAPACITOR_BUILD ? ({ nitro: false } as const) : {}),
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
-    server: { entry: "server" },
     ...(CAPACITOR_BUILD
       ? {
           spa: {
