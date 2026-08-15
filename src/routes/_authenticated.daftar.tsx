@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Plus, Trash2, Loader2, Check, X, Search, Pin, Users2, MailOpen } from "lucide-react";
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
+import { Plus, Trash2, Loader2, Check, X, Search, Pin, Users2, MailOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,7 +22,6 @@ export const Route = createFileRoute("/_authenticated/daftar")({
 });
 
 function DaftarPage() {
-  const navigate = useNavigate();
   const { data: lists, isLoading } = useChatLists();
   const { data: conversations } = useConversations();
   const [createOpen, setCreateOpen] = useState(false);
@@ -42,18 +42,7 @@ function DaftarPage() {
 
   return (
     <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col bg-background">
-      <header className="sticky top-0 z-10 flex items-center gap-ms-2 border-b bg-background px-ms-2 py-ms-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-10 rounded-full"
-          onClick={() => navigate({ to: "/chat" })}
-          aria-label="Kembali"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-ms-xl font-semibold">Daftar</h1>
-      </header>
+      <ChatSectionHeader title="Daftar" />
 
       <div className="px-ms-4 py-ms-3">
         <p className="text-ms-sm text-muted-foreground">
