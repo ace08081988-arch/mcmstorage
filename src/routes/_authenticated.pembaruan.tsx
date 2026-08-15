@@ -17,6 +17,7 @@ import {
   Heart,
 } from "lucide-react";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -317,10 +318,10 @@ function PembaruanPage() {
         Lompat ke konten
       </a>
       {/* Header */}
-      <header className="sticky top-0 z-20 flex items-center gap-ms-2 bg-background/95 px-ms-4 pb-2 pt-4 backdrop-blur">
-        <h1 id="pembaruan-title" className="mr-auto text-ms-2xl font-semibold tracking-tight">
-          Pembaruan
-        </h1>
+      <ChatSectionHeader
+        title="Pembaruan"
+        actions={
+          <>
         <Link
           to="/status/baru"
           aria-label="Buat status baru"
@@ -358,45 +359,48 @@ function PembaruanPage() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </header>
+          </>
+        }
+      >
+        <nav
+          aria-label="Bagian di halaman Pembaruan"
+          className="flex shrink-0 gap-ms-2 border-b bg-background/95 px-ms-4 pb-2 backdrop-blur"
+        >
+          {(
+            [
+              { id: "status", label: "Status" },
+              { id: "saluran", label: "Saluran" },
+              { id: "temukan", label: "Temukan" },
+            ] as { id: SectionId; label: string }[]
+          ).map((s) => {
+            const active = activeSection === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-current={active ? "true" : undefined}
+                aria-controls={`pembaruan-sec-${s.id}`}
+                onPointerDown={onPressStart("selection")}
+                onClick={() => scrollToSection(s.id)}
+                className={
+                  `rounded-full px-ms-3 py-1.5 text-ms-xs font-medium transition-[background-color,color,transform] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${PRESS_CHIP} ` +
+                  (active
+                    ? "bg-primary/15 text-primary"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80")
+                }
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </nav>
+      </ChatSectionHeader>
 
       {/*
        * Chip nav: highlight biru mengikuti section yang sedang terlihat.
        * Sticky di dalam <main> supaya ikut header tapi tetap terlihat saat
        * scroll.
        */}
-      <nav
-        aria-label="Bagian di halaman Pembaruan"
-        className="flex shrink-0 gap-ms-2 border-b bg-background/95 px-ms-4 pb-2 backdrop-blur"
-      >
-        {(
-          [
-            { id: "status", label: "Status" },
-            { id: "saluran", label: "Saluran" },
-            { id: "temukan", label: "Temukan" },
-          ] as { id: SectionId; label: string }[]
-        ).map((s) => {
-          const active = activeSection === s.id;
-          return (
-            <button
-              key={s.id}
-              type="button"
-              aria-current={active ? "true" : undefined}
-              aria-controls={`pembaruan-sec-${s.id}`}
-              onPointerDown={onPressStart("selection")}
-              onClick={() => scrollToSection(s.id)}
-              className={
-                `rounded-full px-ms-3 py-1.5 text-ms-xs font-medium transition-[background-color,color,transform] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${PRESS_CHIP} ` +
-                (active
-                  ? "bg-primary/15 text-primary"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80")
-              }
-            >
-              {s.label}
-            </button>
-          );
-        })}
-      </nav>
       {/*
        * Live region: mengumumkan perubahan section aktif ke pembaca layar
        * tanpa memindahkan fokus keyboard (jadi tab order tetap stabil saat
