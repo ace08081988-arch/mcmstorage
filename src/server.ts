@@ -60,7 +60,7 @@ async function normalizeCatastrophicSsrResponse(
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const handler = await getServerEntry();
+      const handler = getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response, request);
       // Aset brand (ikon, manifest, kartu OG) selalu no-cache supaya pratinjau
