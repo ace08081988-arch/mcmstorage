@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
+import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
 import { useConversations } from "@/lib/chat";
 import { toast } from "sonner";
 
