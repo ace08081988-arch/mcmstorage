@@ -364,7 +364,7 @@ function PembaruanPage() {
       >
         <nav
           aria-label="Bagian di halaman Pembaruan"
-          className="flex shrink-0 gap-ms-2 border-b bg-background/95 px-ms-4 pb-2 backdrop-blur"
+          className="flex shrink-0 gap-ms-2 px-ms-4 pb-2"
         >
           {(
             [
@@ -396,11 +396,6 @@ function PembaruanPage() {
         </nav>
       </ChatSectionHeader>
 
-      {/*
-       * Chip nav: highlight biru mengikuti section yang sedang terlihat.
-       * Sticky di dalam <main> supaya ikut header tapi tetap terlihat saat
-       * scroll.
-       */}
       {/*
        * Live region: mengumumkan perubahan section aktif ke pembaca layar
        * tanpa memindahkan fokus keyboard (jadi tab order tetap stabil saat

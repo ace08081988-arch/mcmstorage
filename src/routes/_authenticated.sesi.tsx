@@ -121,24 +121,25 @@ function SesiPage() {
   const revoked = sessions.filter((s) => s.revoked_at);
 
   return (
-    <div className="mx-auto max-w-2xl space-ms-4 p-ms-4">
-      <header className="flex items-center justify-between gap-ms-2">
-        <div>
-          <h1 className="text-ms-xl font-semibold">Sesi & Perangkat</h1>
-          <p className="text-ms-xs text-muted-foreground">
-            Daftar perangkat tempat akun Anda login. Cabut akses kapan saja.
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => sessionsQ.refetch()}
-          disabled={sessionsQ.isFetching}
-        >
-          <RefreshCw className={`mr-1 h-3.5 w-3.5 ${sessionsQ.isFetching ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-      </header>
+    <>
+      <ChatSectionHeader
+        title="Sesi & Perangkat"
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sessionsQ.refetch()}
+            disabled={sessionsQ.isFetching}
+          >
+            <RefreshCw className={`mr-1 h-3.5 w-3.5 ${sessionsQ.isFetching ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        }
+      />
+      <div className="mx-auto max-w-2xl space-ms-4 p-ms-4">
+        <p className="text-ms-sm text-muted-foreground">
+          Daftar perangkat tempat akun Anda login. Cabut akses kapan saja.
+        </p>
 
       {active.length > 1 ? (
         <Card className="border-warning/40 bg-warning/5">
