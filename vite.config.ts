@@ -53,6 +53,63 @@ const ANALYZE = process.env.ANALYZE === "1" || process.env.ANALYZE === "true";
 const CAPACITOR_BUILD =
   process.env.CAPACITOR_BUILD === "1" || process.env.CAPACITOR_BUILD === "true";
 
+/**
+ * Perbaikan bug chunking bundler (rolldown) pada build SSR.
+ *
+ * Chunk hasil build kadang mengekspor objek namespace (`*_exports`) yang
+ * TIDAK pernah dideklarasikan di chunk itu — mis.
+ * `export { server_default as default, ssr_exports as n, ... }` padahal
+ * `ssr_exports` tidak ada. Modul seperti itu gagal di-link di worker
+ * produksi sehingga seluruh route membalas 500.
+ *
+ * Plugin ini mendeklarasikan ulang namespace tersebut dari ekspor yang
+ * memang ada di chunk yang sama (memakai helper `__exportAll` bawaan
+ * bundler yang sudah tersedia di chunk).
+ */
+function repairMissingNamespaceExports() {
+  const DECL = (name: string) =>
+    new RegExp(`(?:var|let|const|function|class)\\s+${name}\\b`);
+  return {
+    name: "lovable:repair-missing-namespace-exports",
+    generateBundle(_options: unknown, bundle: Record<string, any>) {
+      for (const file of Object.values(bundle)) {
+        if (file.type !== "chunk" || typeof file.code !== "string") continue;
+        const code: string = file.code;
+        if (!code.includes("__exportAll")) continue;
+        const match = code.match(/export \{([^}]*)\};?\s*$/);
+        if (!match) continue;
+        const specs = match[1]
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((s) => {
+            const [local, exported = local] = s.split(/\s+as\s+/);
+            return { local: local.trim(), exported: exported.trim() };
+          });
+        const missing = specs.filter(
+          (s) =>
+            /_exports$/.test(s.local) &&
+            !DECL(s.local).test(code) &&
+            !new RegExp(`as\\s+${s.local}\\b`).test(
+              code.slice(0, code.indexOf("//#region") + 1 || 2000),
+            ),
+        );
+        if (missing.length === 0) continue;
+        const members = specs
+          .filter((s) => !/_exports$/.test(s.local) && s.local !== "__exportAll")
+          .map((s) => `${JSON.stringify(s.exported)}: () => ${s.local}`);
+        const patch = missing
+          .map(
+            (s) =>
+              `\nvar ${s.local} = /* @__PURE__ */ __exportAll({ ${members.join(", ")} });\n`,
+          )
+          .join("");
+        file.code = code.replace(/export \{([^}]*)\};?\s*$/, patch + match[0]);
+      }
+    },
+  };
+}
+
 export default defineConfig({
   // Build mobile tidak butuh bundle SSR Cloudflare/Nitro — TanStack Start
   // memancarkan output statis ke `.output/public` yang dipakai Capacitor.
@@ -89,6 +146,7 @@ export default defineConfig({
   vite: {
     plugins: [
       mcpPlugin(),
+      repairMissingNamespaceExports(),
       ...(ANALYZE
         ? [
             visualizer({
@@ -113,6 +171,26 @@ export default defineConfig({
           "node_modules/entities/lib/encode.js",
         ),
         entities: path.resolve(__dirname, "node_modules/entities"),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          // Runtime TanStack Start (createMiddleware + start-server core +
+          // helper runtime bundler) HARUS berada dalam satu chunk. Bila
+          // terpisah, bundler menghasilkan impor melingkar sehingga worker
+          // produksi crash saat boot dengan
+          // "createMiddleware is not a function" dan semua route balas 500.
+          advancedChunks: {
+            groups: [
+              {
+                name: "tanstack-start-runtime",
+                test: /(rolldown-runtime|createMiddleware|[/\\]server-[^/\\]*\.js$|start-server|react-start)/,
+                priority: 100,
+              },
+            ],
+          },
+        },
       },
     },
     define: {
