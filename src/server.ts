@@ -1,6 +1,6 @@
 import "./lib/error-capture";
 
-import serverEntry from "@tanstack/react-start/server-entry";
+import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -10,8 +10,14 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+// Handler dibangun langsung (bukan `import()` dinamis ke server-entry):
+// impor dinamis memaksa bundler membuat objek namespace di chunk runtime,
+// menghasilkan impor melingkar sehingga worker produksi crash saat boot
+// ("createMiddleware is not a function") dan semua route membalas 500.
+const startHandler = { fetch: createStartHandler(defaultStreamHandler) } as unknown as ServerEntry;
+
 function getServerEntry(): ServerEntry {
-  return serverEntry as unknown as ServerEntry;
+  return startHandler;
 }
 
 // Klien yang membatalkan request (tutup tab, scroll cepat, WebView reload)
