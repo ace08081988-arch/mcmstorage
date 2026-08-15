@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ChatSectionHeader } from "@/components/chat/ChatSectionHeader";
-import { ArrowLeft, Plus, Trash2, Loader2, Check, X, Search, Pin, Users2, MailOpen } from "lucide-react";
+import { Plus, Trash2, Loader2, Check, X, Search, Pin, Users2, MailOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {

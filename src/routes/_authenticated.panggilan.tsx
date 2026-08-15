@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { Phone, PhoneMissed, Video as VideoIcon, Loader2, Trash2, Search, X, ArrowDownWideNarrow, ArrowUpWideNarrow, FileSpreadsheet, FileText, ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { CallDetailSheet } from "@/components/chat/CallDetailSheet";
 import { toExportRows, exportCallsCsv, exportCallsPdf } from "@/lib/call-export";
 import { Button } from "@/components/ui/button";
