@@ -320,6 +320,7 @@ function PembaruanPage() {
       {/* Header */}
       <ChatSectionHeader
         title="Pembaruan"
+        showBack={false}
         actions={
           <>
         <Link

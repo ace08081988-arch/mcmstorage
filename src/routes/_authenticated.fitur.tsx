@@ -110,6 +110,7 @@ function FiturPage() {
     <div className="flex min-h-dvh flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
       <ChatSectionHeader
         title="Fitur"
+        showBack={false}
         actions={
           <div className="flex items-center gap-ms-1 text-muted-foreground">
           <Link
