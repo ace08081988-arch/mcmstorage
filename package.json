@@ -269,7 +269,7 @@
     "eslint-plugin-react-refresh": "^0.5.4",
     "fake-indexeddb": "^6.2.5",
     "fast-check": "^4.9.0",
-    "globals": "^15.15.0",
+    "globals": "^17.11.0",
     "happy-dom": "^20.11.2",
     "nitro": "3.0.260603-beta",
     "pixelmatch": "^7.2.0",
