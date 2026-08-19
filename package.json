@@ -235,7 +235,7 @@
     "react-hook-form": "^7.85.0",
     "react-konva": "^19.2.5",
     "react-resizable-panels": "^4.12.3",
-    "recharts": "^2.15.4",
+    "recharts": "^3.10.1",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.3.3",
