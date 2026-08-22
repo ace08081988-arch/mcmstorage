@@ -2554,7 +2554,13 @@ const StokItemRow = memo(function StokItemRow({
             packageSize={i.package_size}
             testId="stok-konversi-trigger"
           >
-            ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <Info className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+              </span>
+            </span>
+
           </KartonRumusPopover>
         </div>
       )}
