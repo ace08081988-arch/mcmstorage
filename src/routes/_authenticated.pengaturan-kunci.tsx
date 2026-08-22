@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PatternPad, patternToString } from "@/components/PatternPad";
+import { KeyRound, Grid3x3 } from "lucide-react";
+
 import {
   APP_LOCK_EVENT,
   getLockConfig,
