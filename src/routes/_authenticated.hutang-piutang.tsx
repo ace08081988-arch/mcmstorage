@@ -1406,12 +1406,14 @@ function PaymentsReport({
   inPeriod,
   onSendWA,
   onRemovePayment,
+  onAddDebt,
 }: {
   debts: Debt[];
   payments: Payment[];
   inPeriod: (iso: string) => boolean;
   onSendWA: () => void;
   onRemovePayment: (id: string) => void | Promise<void>;
+  onAddDebt: () => void;
 }) {
   const debtById = useMemo(
     () => new Map(debts.map((d) => [d.id, d])),
