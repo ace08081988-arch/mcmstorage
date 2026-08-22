@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T09:20:54.289Z",
+  "generatedAt": "2026-08-22T09:22:57.816Z",
   "gitAvailable": true,
   "weeks": [
     {
@@ -1074,7 +1074,7 @@
     {
       "week": "2026-W34",
       "start": "2026-08-17",
-      "tanstack": 3,
+      "tanstack": 6,
       "router-plugin": 1,
       "lainnya": 64,
       "changes": [
@@ -1517,16 +1517,14 @@
   ],
   "audits": {
     "routerVersions": {
-      "ok": false,
+      "ok": true,
       "versions": {
-        "@tanstack/react-router": "1.170.31",
-        "@tanstack/react-start": "1.168.48",
+        "@tanstack/react-router": "1.170.29",
+        "@tanstack/react-start": "1.168.46",
         "@tanstack/router-plugin": "1.168.32",
-        "@tanstack/router-core": "1.171.26, 1.171.24"
+        "@tanstack/router-core": "1.171.24"
       },
-      "errors": [
-        "Terdeteksi 2 versi @tanstack/router-core (1.171.26, 1.171.24). Dua salinan router-core memecah konteks router. Samakan versi router/start/plugin lalu `bun install`."
-      ],
+      "errors": [],
       "warnings": []
     },
     "dependencies": {
