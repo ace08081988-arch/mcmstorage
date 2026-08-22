@@ -44,7 +44,7 @@ export async function buildEmailQueueStatus(context: any): Promise<EmailQueueSta
   })
   const now = new Date().toISOString()
   if (!isAdmin) {
-    void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'email-queue:getEmailQueueStatus', userId })
+    void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'email-queue:getEmailQueueStatus', userId })))
     return {
       isAdmin: false,
       fetchedAt: now,
@@ -133,7 +133,7 @@ export const resendDeviceOtpByMessage = createServerFn({ method: 'POST' })
       _role: 'admin',
     })
     if (!isAdmin) {
-      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'email-queue:resendDeviceOtpByMessage', userId })
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'email-queue:resendDeviceOtpByMessage', userId })))
       return { ok: false, error: 'Bukan admin' }
     }
 

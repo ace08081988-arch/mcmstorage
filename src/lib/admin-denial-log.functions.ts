@@ -52,7 +52,7 @@ export const listAdminDenialEvents = createServerFn({ method: "GET" })
     });
     const now = new Date().toISOString();
     if (!isAdmin) {
-      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: "admin-denial-log:listAdminDenialEvents", userId });
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: "admin-denial-log:listAdminDenialEvents", userId })));
       return {
         isAdmin: false,
         fetchedAt: now,

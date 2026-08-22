@@ -69,7 +69,7 @@ export const listSignupAttempts = createServerFn({ method: "GET" })
       void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({
         fn: "signup-attempts:listSignupAttempts",
         userId,
-      });
+      })));
       return { isAdmin: false, fetchedAt: now, rows: [] };
     }
 
