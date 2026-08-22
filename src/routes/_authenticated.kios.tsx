@@ -256,36 +256,37 @@ function KiosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground" data-press-scope="on">
-      <header className="app-sticky-header">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
-          <Link
-            to="/"
-            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
-          >
-            ← Beranda
-          </Link>
-          <h1 className="text-base font-bold">🏪 Kios Terpadu</h1>
+    <div data-press-scope="on">
+      <PageHeader
+        icon={Store}
+        title="Kios Terpadu"
+        subtitle="Terima stok · jual langsung"
+      />
+
+      <PageContainer ariaLabel="Kios Terpadu">
+        {/* Aksi cepat — konsisten dengan halaman lain: pill, bukan tombol
+            kotak kecil yang menempel di header. */}
+        <div className="flex flex-wrap items-center gap-ms-2">
           <Link
             to="/kios/riwayat"
-            className="ml-auto rounded-md border px-2 py-1 text-xs hover:bg-accent"
+            className="inline-flex min-h-9 items-center gap-ms-1.5 rounded-full border border-border/70 bg-card px-ms-3 text-ms-xs font-medium text-foreground hover:border-primary/50"
           >
+            <History className="h-4 w-4 text-primary" />
             Riwayat
           </Link>
           <Link
             to="/hutang-piutang"
-            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
+            className="inline-flex min-h-9 items-center gap-ms-1.5 rounded-full border border-border/70 bg-card px-ms-3 text-ms-xs font-medium text-foreground hover:border-primary/50"
           >
-            Piutang →
+            <Wallet className="h-4 w-4 text-primary" />
+            Piutang
           </Link>
         </div>
-      </header>
 
-      <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
         {loading ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : items.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
             Belum ada barang di gudang.{" "}
             <Link to="/gudang" className="text-primary underline">
               Tambah barang dulu
@@ -295,13 +296,19 @@ function KiosPage() {
         ) : (
           <>
             {/* ================ TERIMA DARI PEGAWAI ================ */}
-            <section className="rounded-lg border bg-card p-3 space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">📥 Terima dari Pegawai</h2>
-                <p className="text-xs text-muted-foreground">
-                  Barang yang diserahkan pegawai langsung masuk stok.
-                </p>
+            <section className="rounded-2xl border border-border/70 bg-card p-ms-4 space-ms-3 shadow-sm">
+              <div className="flex min-w-0 items-start gap-ms-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
+                  <PackagePlus className="h-[18px] w-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-ms-sm font-semibold text-foreground">Terima dari Pegawai</h2>
+                  <p className="text-ms-xs text-muted-foreground">
+                    Barang yang diserahkan pegawai langsung masuk stok.
+                  </p>
+                </div>
               </div>
+
 
               <label className="block space-y-1">
                 <span className="text-xs font-medium">Barang</span>
