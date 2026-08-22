@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VirtualizedList } from "@/components/VirtualizedList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shell/EmptyState";
 import {
   Popover,
   PopoverContent,
