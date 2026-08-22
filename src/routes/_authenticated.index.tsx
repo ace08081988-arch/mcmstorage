@@ -1475,34 +1475,65 @@ function Index() {
               </span>
             </summary>
             <div className="space-ms-4 border-t border-primary/10 p-ms-4">
-              <div className="grid grid-cols-2 items-stretch gap-ms-2.5 sm:grid-cols-3 lg:grid-cols-4">
-                {filterHiddenMenuItems([
-                  { url: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                  { url: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
-                  { url: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
-                  { url: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
-                  { url: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
-                  { url: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
-                  { url: "/download", label: "Unduh Aplikasi", emoji: "⬇️", desc: "APK Ace Storage" },
-                  { url: "/profil", label: "Profil & Akun", emoji: "🙍", desc: "Data akun & keluar" },
-                ]).map((s) => (
-                  <Link
-                    key={s.url}
-                    to={s.url}
-                    preload="intent"
-                    className="surface-quiet flex h-full w-full min-w-0 flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
-                  >
-                    <span className="text-ms-base leading-none">{s.emoji}</span>
-                    <span className="text-premium-heading mt-1 break-words text-ms-xs font-semibold leading-tight text-foreground">
-                      {s.label}
-                    </span>
-                    <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
-                      {s.desc}
-                    </span>
-                  </Link>
+              {[
+                {
+                  group: "Unduh",
+                  items: [
+                    { url: "/download", label: "Unduh Aplikasi", emoji: "⬇️", desc: "APK Ace Storage" },
+                  ],
+                },
+                {
+                  group: "Profil",
+                  items: [
+                    { url: "/profil", label: "Profil & Akun", emoji: "🙍", desc: "Data akun & keluar" },
+                    { url: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+                    { url: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
+                  ],
+                },
+                {
+                  group: "Riwayat",
+                  items: [
+                    { url: "/kios/riwayat", label: "Riwayat Kios", emoji: "🧾", desc: "Terima & jual" },
+                    { url: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                  ],
+                },
+                {
+                  group: "Lainnya",
+                  items: [
+                    { url: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
+                    { url: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
+                    { url: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
+                  ],
+                },
+              ]
+                .map((g) => ({ ...g, items: filterHiddenMenuItems(g.items) }))
+                .filter((g) => g.items.length > 0)
+                .map((g) => (
+                  <section key={g.group} className="space-y-ms-2">
+                    <h3 className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      {g.group}
+                    </h3>
+                    <div className="grid grid-cols-2 items-stretch gap-ms-2.5 sm:grid-cols-3 lg:grid-cols-4">
+                      {g.items.map((s) => (
+                        <Link
+                          key={s.url}
+                          to={s.url}
+                          preload="intent"
+                          className="surface-quiet flex h-full w-full min-w-0 flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
+                        >
+                          <span className="text-ms-base leading-none">{s.emoji}</span>
+                          <span className="text-premium-heading mt-1 break-words text-ms-xs font-semibold leading-tight text-foreground">
+                            {s.label}
+                          </span>
+                          <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
+                            {s.desc}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </section>
                 ))}
 
-              </div>
 
 
               {lainnyaMounted && (
