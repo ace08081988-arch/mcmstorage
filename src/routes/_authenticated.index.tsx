@@ -2293,33 +2293,66 @@ function Index() {
         </ul>
 
         {filtered.length === 0 && (
-          <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-ms-sm text-muted-foreground">
-              {scopedItems.length === 0
-                ? `Belum ada pesanan di kategori "${activeCat}".`
-                : "Tidak ada pesanan untuk filter ini."}
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
-              <button
-                onClick={addProduk}
-                className="rounded-md bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
-              >
-                + Tambah produk
-              </button>
-              <button
-                onClick={() => {
-                  setActiveCat(null);
-                  setSelectMode(false);
-                  setSelected(new Set());
-                  setOpenId(null);
-                }}
-                className="rounded-md border px-ms-3 py-1.5 text-ms-xs font-medium hover:bg-accent"
-              >
-                Kelola kategori
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            icon={
+              scopedItems.length === 0
+                ? PackagePlus
+                : filter === "Sudah Dikirim"
+                  ? Send
+                  : filter === "Belum Dikirim"
+                    ? CheckCircle2
+                    : Search
+            }
+            title={
+              scopedItems.length === 0
+                ? `Belum ada pesanan di "${activeCat}"`
+                : filter === "Sudah Dikirim"
+                  ? "Belum ada pesanan terkirim"
+                  : filter === "Belum Dikirim"
+                    ? "Semua pesanan sudah dikirim"
+                    : "Tidak ada pesanan untuk filter ini"
+            }
+            description={
+              scopedItems.length === 0
+                ? "Tambah produk pertama untuk kategori ini, lalu kirim ke pelanggan lewat WA."
+                : filter === "Sudah Dikirim"
+                  ? "Pesanan akan muncul di sini setelah kamu menandainya Sudah Dikirim."
+                  : filter === "Belum Dikirim"
+                    ? "Tidak ada yang menunggu dikirim. Kerja bagus!"
+                    : "Coba ubah filter status kirim untuk melihat pesanan lain."
+            }
+            actions={
+              <>
+                {scopedItems.length > 0 && filter !== "semua" && (
+                  <button
+                    onClick={() => setFilter("semua")}
+                    className="inline-flex min-h-9 items-center rounded-full border px-ms-3 text-ms-xs font-medium hover:bg-accent"
+                  >
+                    Lihat semua status
+                  </button>
+                )}
+                <button
+                  onClick={addProduk}
+                  className="inline-flex min-h-9 items-center rounded-full bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  Tambah produk
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveCat(null);
+                    setSelectMode(false);
+                    setSelected(new Set());
+                    setOpenId(null);
+                  }}
+                  className="inline-flex min-h-9 items-center rounded-full border px-ms-3 text-ms-xs font-medium hover:bg-accent"
+                >
+                  Kelola kategori
+                </button>
+              </>
+            }
+          />
         )}
+
         {selectMode && <div className="h-20" />}
       </main>
       </div>
