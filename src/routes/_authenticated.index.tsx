@@ -94,15 +94,6 @@ const ReadyRequestSection = lazy(() =>
 const ReadySelfPrepSection = lazy(() =>
   import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
 );
-const DownloadStorageApkShortcut = lazy(() =>
-  import("@/components/DownloadStorageApkShortcut").then((m) => ({ default: m.DownloadStorageApkShortcut })),
-);
-const DownloadChatApkShortcut = lazy(() =>
-  import("@/components/DownloadChatApkShortcut").then((m) => ({ default: m.DownloadChatApkShortcut })),
-);
-const CopyChatApkLinksButton = lazy(() =>
-  import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
-);
 
 // Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
 // Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
@@ -1348,31 +1339,36 @@ function Index() {
               <span className="hairline w-6" />
               {categories.length === 0 ? "Mulai" : "Kategori"}
             </span>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                addCategory(newCatName);
-              }}
-              className="surface-editorial p-ms-4"
-            >
-              <label className="text-premium-heading mb-2.5 block text-[1.0625rem] text-foreground">
-                {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori"}
-              </label>
-              <div className="flex gap-ms-2">
-                <input
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Sembako, Pakaian, 1 gram…"
-                  className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
-                />
-                <button
-                  type="submit"
-                  className="h-11 shrink-0 rounded-xl bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--primary)_75%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
-                >
-                  Buat
-                </button>
-              </div>
-            </form>
+            {/* Form tambah kategori hanya muncul saat belum ada kategori sama
+                sekali (onboarding). Setelah ada, Beranda cuma jadi pemilih. */}
+            {categories.length === 0 && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  addCategory(newCatName);
+                }}
+                className="surface-editorial p-ms-4"
+              >
+                <label className="text-premium-heading mb-2.5 block text-[1.0625rem] text-foreground">
+                  Buat kategori pertama
+                </label>
+                <div className="flex gap-ms-2">
+                  <input
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Sembako, Pakaian, 1 gram…"
+                    className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  />
+                  <button
+                    type="submit"
+                    className="h-11 shrink-0 rounded-xl bg-primary px-ms-4 text-[0.78125rem] font-semibold tracking-tight text-primary-foreground shadow-[0_10px_24px_-10px_color-mix(in_oklab,var(--primary)_75%,transparent)] transition-transform hover:bg-primary/90 active:scale-[0.98]"
+                  >
+                    Buat
+                  </button>
+                </div>
+              </form>
+            )}
+
 
             {categories.length > 0 && (
               <DndContext
@@ -1501,14 +1497,8 @@ function Index() {
                     </span>
                   </Link>
                 ))}
-                {lainnyaMounted && (
-                  <Suspense fallback={null}>
-                    <DownloadStorageApkShortcut />
-                    <DownloadChatApkShortcut />
-                    <CopyChatApkLinksButton />
-                  </Suspense>
-                )}
               </div>
+
 
               {lainnyaMounted && (
                 <Suspense
