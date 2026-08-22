@@ -107,12 +107,16 @@ function TargetButton({
 
 /**
  * Panel "Tidak tersedia" + tombol menuju halaman yang benar.
- * Target tombol bisa dikonfigurasi lewat props `targets` (satu atau lebih),
- * atau lewat props ringkas lama (`actionLabel` + `to`/`onAction`).
+ * Judul, pesan, ikon, catatan kecil, dan tujuan tombol semuanya bisa
+ * dikustomisasi per halaman lewat props.
  */
 export function UnavailableNotice({
-  title = "Tidak tersedia",
+  badgeLabel,
+  title,
+  icon,
   description,
+  message,
+  hint,
   actionLabel,
   to,
   search,
@@ -121,10 +125,20 @@ export function UnavailableNotice({
   href,
   onAction,
   targets,
+  children,
   className = "",
 }: {
-  title?: string;
+  /** Teks lencana kecil di atas. Default "Tidak tersedia". */
+  badgeLabel?: string;
+  /** Judul utama panel (opsional, tampil di bawah lencana). */
+  title?: ReactNode;
+  /** Ikon lencana (default AlertCircle). */
+  icon?: ComponentType<{ className?: string }>;
+  /** Pesan penjelas. `message` alias dari `description`. */
   description?: ReactNode;
+  message?: ReactNode;
+  /** Catatan kecil di bawah tombol, mis. syarat atau langkah berikutnya. */
+  hint?: ReactNode;
   /** Bentuk ringkas: satu tombol. Diabaikan kalau `targets` diisi. */
   actionLabel?: string;
   to?: string;
@@ -135,8 +149,11 @@ export function UnavailableNotice({
   onAction?: () => void;
   /** Bentuk fleksibel: daftar tujuan (tombol pertama = primary). */
   targets?: UnavailableTarget[];
+  /** Konten tambahan bebas di bawah tombol. */
+  children?: ReactNode;
   className?: string;
 }) {
+  const body = message ?? description;
   const list: UnavailableTarget[] =
     targets && targets.length > 0
       ? targets
@@ -149,10 +166,18 @@ export function UnavailableNotice({
       role="status"
       className={`rounded-2xl border border-dashed border-border/70 bg-card/40 p-ms-4 text-center ${className}`}
     >
-      <UnavailableBadge label={title} />
-      {description && (
+      <UnavailableBadge
+        label={badgeLabel ?? (typeof title === "string" && !badgeLabel ? undefined : undefined) ?? "Tidak tersedia"}
+        {...(icon ? { icon } : {})}
+      />
+      {title && (
+        <h3 className="text-premium-heading mt-ms-2 text-ms-sm font-semibold leading-tight text-foreground">
+          {title}
+        </h3>
+      )}
+      {body && (
         <p className="mx-auto mt-ms-2 max-w-sm text-ms-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
-          {description}
+          {body}
         </p>
       )}
       {list.length > 0 && (
@@ -166,7 +191,14 @@ export function UnavailableNotice({
           ))}
         </div>
       )}
+      {hint && (
+        <p className="mx-auto mt-ms-2 max-w-sm text-ms-2xs leading-relaxed text-muted-foreground/80">
+          {hint}
+        </p>
+      )}
+      {children}
     </div>
   );
+
 }
 
