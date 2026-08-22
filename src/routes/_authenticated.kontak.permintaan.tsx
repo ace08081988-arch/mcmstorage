@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -272,9 +273,10 @@ function FriendRequestsPage() {
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
             ) : incomingVisible.length === 0 ? (
-              <EmptyState
-                title="Belum ada permintaan masuk"
-                subtitle="Bagikan PIN kamu di menu Undang supaya teman bisa mengirim permintaan."
+              <UnavailableNotice
+                description="Belum ada permintaan masuk. Bagikan PIN kamu supaya teman bisa mengirim permintaan."
+                actionLabel="Buka menu Undang"
+                to="/undang"
               />
             ) : (
               incomingVisible.map((r) => {
@@ -347,9 +349,10 @@ function FriendRequestsPage() {
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
             ) : outgoingVisible.length === 0 ? (
-              <EmptyState
-                title="Belum ada permintaan terkirim"
-                subtitle="Masukkan PIN teman di menu Undang untuk mengirim permintaan pertemanan."
+              <UnavailableNotice
+                description="Belum ada permintaan terkirim. Masukkan PIN teman untuk mengirim permintaan pertemanan."
+                actionLabel="Buka menu Undang"
+                to="/undang"
               />
             ) : (
               outgoingVisible.map((r) => {

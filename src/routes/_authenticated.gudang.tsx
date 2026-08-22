@@ -24,6 +24,7 @@ import {
   Search,
 } from "lucide-react";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 
 
 import { notifyError } from "@/lib/friendly-error";
