@@ -40,7 +40,6 @@ import {
   Check,
   Loader2,
   X,
-  ChevronDown,
   ChevronRight,
 
 } from "lucide-react";
