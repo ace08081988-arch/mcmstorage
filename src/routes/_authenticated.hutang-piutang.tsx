@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VirtualizedList } from "@/components/VirtualizedList";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/shell/EmptyState";
 import {
   Popover,
   PopoverContent,
@@ -886,31 +887,54 @@ function HutangPiutangPage() {
                   ))}
                 </ul>
               ) : filtered.length === 0 ? (
-                <div className="flex flex-col items-center gap-ms-3 rounded-2xl border border-dashed bg-card/40 py-12 text-center text-ms-sm text-muted-foreground">
-                  <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary">
-                    {k === "hutang" ? (
-                      <ArrowUpCircle className="h-6 w-6" />
-                    ) : (
-                      <ArrowDownCircle className="h-6 w-6" />
-                    )}
-                  </div>
-                  <p className="font-semibold text-foreground">Belum ada catatan {k}</p>
-                  <p className="mx-auto max-w-xs text-ms-xs leading-relaxed">
-                    Catat {k} secara manual atau tunggu {k === "hutang" ? "pembelian" : "penjualan"}{" "}
-                    masuk otomatis.
-                  </p>
-                  <Button
-                    size="sm"
-                    className="mt-1 rounded-xl"
-                    onClick={() => {
-                      setAddPrefill(null);
-                      setAddOpen(true);
-                    }}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    {k === "hutang" ? "Tambah hutang" : "Tambah piutang"}
-                  </Button>
-                </div>
+                (() => {
+                  // Bedakan "belum punya catatan sama sekali" dengan
+                  // "ada catatan tapi tersaring periode" supaya tombolnya tepat.
+                  const hasAnyKind = debts.some((d) => d.kind === k);
+                  const label = k === "hutang" ? "hutang" : "piutang";
+                  return (
+                    <EmptyState
+                      icon={k === "hutang" ? ArrowUpCircle : ArrowDownCircle}
+                      title={
+                        hasAnyKind
+                          ? `Tidak ada ${label} pada periode ini`
+                          : `Belum ada catatan ${label}`
+                      }
+                      description={
+                        hasAnyKind
+                          ? `Catatan ${label} ada di periode lain. Ubah filter periode ke "Semua" atau tambah transaksi baru.`
+                          : `Catat ${label} secara manual, atau biarkan terisi otomatis dari ${
+                              k === "hutang" ? "pembelian" : "penjualan"
+                            } yang belum lunas.`
+                      }
+                      actions={
+                        <>
+                          <Button
+                            size="sm"
+                            className="rounded-xl"
+                            onClick={() => {
+                              setAddPrefill(null);
+                              setAddOpen(true);
+                            }}
+                          >
+                            <Plus className="mr-1 h-4 w-4" />
+                            {k === "hutang" ? "Tambah hutang" : "Tambah piutang"}
+                          </Button>
+                          {hasAnyKind && period !== "all" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl"
+                              onClick={() => setPeriod("all")}
+                            >
+                              Lihat semua periode
+                            </Button>
+                          )}
+                        </>
+                      }
+                    />
+                  );
+                })()
               ) : (
                 <>
                   {/* Header kolom ala tabel — sticky di bawah header halaman
@@ -1218,6 +1242,10 @@ function HutangPiutangPage() {
               payments={payments}
               inPeriod={inPeriod}
               onSendWA={() => void sendFullReportWA()}
+              onAddDebt={() => {
+                setAddPrefill(null);
+                setAddOpen(true);
+              }}
               onRemovePayment={async (id: string) => {
                 if (
                   !(await confirm({
@@ -1382,12 +1410,14 @@ function PaymentsReport({
   inPeriod,
   onSendWA,
   onRemovePayment,
+  onAddDebt,
 }: {
   debts: Debt[];
   payments: Payment[];
   inPeriod: (iso: string) => boolean;
   onSendWA: () => void;
   onRemovePayment: (id: string) => void | Promise<void>;
+  onAddDebt: () => void;
 }) {
   const debtById = useMemo(
     () => new Map(debts.map((d) => [d.id, d])),
@@ -1471,9 +1501,16 @@ function PaymentsReport({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center text-ms-sm text-muted-foreground">
-          Belum ada pembayaran pada periode ini.
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title="Belum ada pembayaran"
+          description="Tidak ada pembayaran tercatat pada periode ini. Tambah transaksi hutang/piutang lebih dulu, lalu catat pembayarannya."
+          actions={
+            <Button size="sm" className="rounded-xl" onClick={onAddDebt}>
+              <Plus className="mr-1 h-4 w-4" /> Tambah transaksi
+            </Button>
+          }
+        />
       ) : (
         <VirtualizedList
           cacheKey="hutang-days"
