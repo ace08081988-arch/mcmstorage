@@ -560,21 +560,11 @@ function ChatListPage() {
             </div>
           </header>
         ) : (
-          <header className="wa-header flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
+          <header className="flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
             <div className="flex min-w-0 items-center gap-ms-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 shrink-0 rounded-full sm:h-9 sm:w-9"
-                aria-label="Kembali ke Beranda"
-                title="Beranda"
-                onClick={() => goBackOr(router, { to: "/" })}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
+              <h1 className="truncate text-ms-base font-semibold tracking-tight">Percakapan</h1>
             </div>
+
             <div className="flex items-center gap-ms-1">
               <NewDmDialog />
               <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
