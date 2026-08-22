@@ -18,6 +18,7 @@ import {
   Package,
   AlertTriangle,
   PackageX,
+  Sparkles,
 } from "lucide-react";
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
