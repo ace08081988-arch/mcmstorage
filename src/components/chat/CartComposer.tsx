@@ -168,7 +168,7 @@ export function CartComposer({
 
         <div className="max-h-[55vh] space-ms-2 overflow-y-auto pr-1">
           {lines.map((line, i) => (
-            <div key={i} className="rounded-md border p-ms-2">
+            <div key={line.id} className="rounded-md border p-ms-2">
               <div className="flex items-center justify-between">
                 <span className="text-ms-xs font-medium text-muted-foreground">
                   Barang #{i + 1}

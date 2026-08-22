@@ -822,7 +822,7 @@ function PackageForm({
               <div className="mt-2 flex flex-wrap gap-ms-1.5">
                 {presets.map((p, i) => (
                   <button
-                    key={i}
+                    key={`${p.label}:${p.grams}:${i}`}
                     type="button"
                     onClick={() => pickPreset(p)}
                     className="rounded-full border bg-card px-ms-2.5 py-1 text-ms-2xs hover:bg-accent"
@@ -870,7 +870,7 @@ function PackageForm({
                 {presets.length > 0 && (
                   <ul className="space-y-1">
                     {presets.map((p, i) => (
-                      <li key={i} className="flex items-center gap-ms-2 rounded-md border bg-card px-ms-2 py-1 text-ms-2xs">
+                      <li key={`${p.label}:${p.grams}:${i}`} className="flex items-center gap-ms-2 rounded-md border bg-card px-ms-2 py-1 text-ms-2xs">
                         <span className="min-w-12 font-semibold">{p.label}</span>
                         <span className="text-muted-foreground">{p.grams} {item.base_unit === "g" ? ecerUnit : item.base_unit}</span>
                         <button
