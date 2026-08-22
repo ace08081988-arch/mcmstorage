@@ -6,6 +6,7 @@ import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { PackagePlus, Send, CheckCircle2, Search } from "lucide-react";
 import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { filterHiddenMenuItems } from "@/lib/hidden-menu-routes";
 
 
@@ -1475,7 +1476,8 @@ function Index() {
               </span>
             </summary>
             <div className="space-ms-4 border-t border-primary/10 p-ms-4">
-              {[
+              {(() => {
+                const groups = [
                 {
                   group: "Unduh",
                   items: [
@@ -1505,10 +1507,32 @@ function Index() {
                     { url: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
                   ],
                 },
-              ]
-                .map((g) => ({ ...g, items: filterHiddenMenuItems(g.items) }))
-                .filter((g) => g.items.length > 0)
-                .map((g) => (
+                ]
+                  .map((g) => ({ ...g, items: filterHiddenMenuItems(g.items) }))
+                  .filter((g) => g.items.length > 0);
+
+                if (groups.length === 0) {
+                  return (
+                    <div className="space-ms-3">
+                      <UnavailableNotice
+                        description="Semua menu tambahan sedang tidak tersedia untuk akun ini. Kamu tetap bisa mengunduh aplikasi atau membuka profil."
+                        actionLabel="Unduh Aplikasi"
+                        to="/download"
+                      />
+                      <div className="flex justify-center">
+                        <Link
+                          to="/profil"
+                          preload="intent"
+                          className="inline-flex min-h-11 items-center rounded-xl border border-border px-ms-4 text-ms-xs font-semibold text-foreground transition-colors hover:bg-muted/60"
+                        >
+                          Buka Profil & Akun
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return groups.map((g) => (
                   <section key={g.group} className="space-y-ms-2">
                     <h3 className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {g.group}
@@ -1532,7 +1556,9 @@ function Index() {
                       ))}
                     </div>
                   </section>
-                ))}
+                ));
+              })()}
+
 
 
 
