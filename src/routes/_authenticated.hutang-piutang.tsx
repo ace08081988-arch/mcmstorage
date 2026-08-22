@@ -40,7 +40,7 @@ import {
   Check,
   Loader2,
   X,
-  ChevronDown,
+  ChevronRight,
 
 } from "lucide-react";
 import { assertDebtSource } from "@/lib/debt-source";
@@ -54,6 +54,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated/hutang-piutang")({
   head: () => ({
@@ -205,50 +212,38 @@ function HutangPiutangPage() {
    * membaca SSOT, bukan hasil penjumlahan daftar manual.
    */
   const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
-  // Rincian per-kontak disembunyikan sampai kartunya ditekan supaya daftar
-  // ringkas: hanya nama + sisa hutang yang terlihat saat tertutup.
-  // Status buka/tutup disimpan per akun supaya bertahan saat pindah halaman
-  // atau muat ulang.
-  const [openParties, setOpenParties] = useState<Set<string>>(() => new Set());
-  const togglePartyOpen = useCallback((key: string) => {
-    setOpenParties((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-
+  // Rincian per-kontak dibuka di drawer terpisah supaya daftar tetap ringkas:
+  // kartu hanya menampilkan nama + sisa. Kontak yang sedang dibuka disimpan
+  // per akun supaya bertahan saat pindah halaman atau muat ulang.
+  const [detailKey, setDetailKey] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
 
-  // Muat status kartu terbuka milik akun ini (per-akun, tahan reload).
-  const openPartiesKey = scopedKey("mcm:hutangPiutang:openParties", uid);
-  const openPartiesHydrated = useRef(false);
+  const detailStoreKey = scopedKey("mcm:hutangPiutang:detailParty", uid);
+  const detailHydrated = useRef(false);
   useEffect(() => {
-    openPartiesHydrated.current = false;
+    detailHydrated.current = false;
     try {
-      const raw = localStorage.getItem(openPartiesKey);
-      const arr = raw ? (JSON.parse(raw) as unknown) : null;
-      setOpenParties(new Set(Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : []));
+      const raw = localStorage.getItem(detailStoreKey);
+      setDetailKey(raw && raw.length > 0 ? raw : null);
     } catch {
-      setOpenParties(new Set());
+      setDetailKey(null);
     }
-    openPartiesHydrated.current = true;
-  }, [openPartiesKey]);
+    detailHydrated.current = true;
+  }, [detailStoreKey]);
 
-  // Simpan setiap perubahan buka/tutup.
   useEffect(() => {
-    if (!openPartiesHydrated.current) return;
+    if (!detailHydrated.current) return;
     try {
-      localStorage.setItem(openPartiesKey, JSON.stringify([...openParties]));
+      if (detailKey) localStorage.setItem(detailStoreKey, detailKey);
+      else localStorage.removeItem(detailStoreKey);
     } catch {
       /* private mode — abaikan */
     }
-  }, [openParties, openPartiesKey]);
+  }, [detailKey, detailStoreKey]);
+
 
   const refreshSsot = useCallback(async () => {
     const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
@@ -962,22 +957,24 @@ function HutangPiutangPage() {
                         : ssotEntry.piutang
                       : null;
                     const displaySisa = ssotSisa ?? gSisa;
-                    const expanded = openParties.has(group.key);
+                    const detailId = `${k}:${group.key}`;
+                    const expanded = detailKey === detailId;
                     return (
                       <section
                         key={group.key}
                         data-testid={`party-card-${normalizeParty(group.name)}`}
                         className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        {/* Baris ringkas: hanya nama + sisa. Rincian catatan
-                            baru muncul setelah kartu ditekan. */}
+                        {/* Baris ringkas: hanya nama + sisa. Rincian lengkap
+                            (bayar, tagih, laporan) tampil di drawer terpisah. */}
                         <button
                           type="button"
+                          aria-haspopup="dialog"
                           aria-expanded={expanded}
-                          onClick={() => togglePartyOpen(group.key)}
+                          onClick={() => setDetailKey(expanded ? null : detailId)}
                           className={
                             "grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-ms-2 px-ms-3.5 py-ms-3 text-left transition-colors hover:bg-muted/40 " +
-                            (expanded ? "border-b bg-muted/40" : "")
+                            (expanded ? "bg-muted/40" : "")
                           }
                         >
                           <span className="min-w-0">
@@ -994,16 +991,28 @@ function HutangPiutangPage() {
                           >
                             {rupiah(displaySisa)}
                           </span>
-                          <ChevronDown
-                            className={
-                              "h-4 w-4 shrink-0 text-muted-foreground transition-transform " +
-                              (expanded ? "rotate-180" : "")
-                            }
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-muted-foreground"
                             aria-hidden="true"
                           />
                         </button>
-                        {expanded && (
-                        <div className="origin-top animate-fade-in overflow-hidden motion-reduce:animate-none">
+                        <Sheet
+                          open={expanded}
+                          onOpenChange={(o) => setDetailKey(o ? detailId : null)}
+                        >
+                          <SheetContent
+                            side="bottom"
+                            className="flex max-h-[88vh] flex-col gap-0 rounded-t-2xl p-0"
+                          >
+                            <SheetHeader className="border-b px-ms-3.5 py-ms-3 text-left">
+                              <SheetTitle className="truncate text-ms-base">
+                                {group.name}
+                              </SheetTitle>
+                              <SheetDescription className="text-ms-2xs">
+                                Rincian {k} · {group.items.length} catatan
+                              </SheetDescription>
+                            </SheetHeader>
+                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/20 px-ms-3.5 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
                           <div className="min-w-0 sm:flex-1">
                             <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
@@ -1180,9 +1189,10 @@ function HutangPiutangPage() {
                       </li>
                     );
                           })}
-                        </ul>
-                        </div>
-                        )}
+                         </ul>
+                            </div>
+                          </SheetContent>
+                        </Sheet>
                       </section>
 
                     );
