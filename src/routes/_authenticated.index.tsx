@@ -1230,11 +1230,15 @@ function Index() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-ms-sm text-muted-foreground">
-        Memuat…
+      <div className="min-h-screen bg-background px-ms-3 py-ms-4 sm:px-ms-6">
+        <div className="mx-auto w-full max-w-6xl space-ms-3">
+          <div className="h-8 w-40 animate-pulse rounded-full bg-muted/60" />
+          <ListSkeleton rows={5} label="Memuat daftar pesanan…" />
+        </div>
       </div>
     );
   }
+
 
   if (!activeCat) {
     return (
