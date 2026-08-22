@@ -4,7 +4,7 @@ import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
 import { prefetchRouteAssets } from "@/lib/prefetch-route-assets";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
-import { filterHiddenMenuItems } from "@/lib/hidden-menu-routes";
+import { filterSidebarMenuItems } from "@/lib/hidden-menu-routes";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -460,7 +460,7 @@ export function AppSidebar() {
       ...g,
       // Rute teknis (diagnostik/debug/internal) tidak pernah tampil di menu,
       // bahkan untuk admin. Tetap bisa dibuka lewat URL langsung.
-      items: filterHiddenMenuItems(filterSidebarItemsForAdmin(g.items, adminVisible)),
+      items: filterSidebarMenuItems(filterSidebarItemsForAdmin(g.items, adminVisible)),
     }))
     .filter((g) => g.items.length > 0);
   void modeTick;
