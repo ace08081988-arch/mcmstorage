@@ -627,7 +627,7 @@ function KiosPage() {
                     : "Simpan (Lunas)"}
               </button>
             </section>
-          </>
+          </div>
         )}
       </PageContainer>
     </div>
