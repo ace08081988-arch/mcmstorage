@@ -15,10 +15,16 @@ import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
 import type { Json } from "@/integrations/supabase/types";
 
-type Line = { name: string; qty: string; price: string };
+type Line = { id: string; name: string; qty: string; price: string };
+
+let __lineSeq = 0;
+function nextLineId(): string {
+  __lineSeq = (__lineSeq + 1) | 0;
+  return `l${__lineSeq}`;
+}
 
 function emptyLine(): Line {
-  return { name: "", qty: "1", price: "" };
+  return { id: nextLineId(), name: "", qty: "1", price: "" };
 }
 
 function fmtRp(n: number) {
@@ -162,7 +168,7 @@ export function CartComposer({
 
         <div className="max-h-[55vh] space-ms-2 overflow-y-auto pr-1">
           {lines.map((line, i) => (
-            <div key={i} className="rounded-md border p-ms-2">
+            <div key={line.id} className="rounded-md border p-ms-2">
               <div className="flex items-center justify-between">
                 <span className="text-ms-xs font-medium text-muted-foreground">
                   Barang #{i + 1}

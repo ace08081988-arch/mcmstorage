@@ -1360,12 +1360,6 @@ function PublicPrepPage() {
       // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
       // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
       writeSession(p);
-      // eslint-disable-next-line no-console
-      console.log("[t.$token] PIN ok", {
-        taskId: normalizedTask.id,
-        itemsCount: normalizedItems.length,
-        status: normalizedTask.status,
-      });
       setAuthed(true);
       setSuccessFlash(false);
       toast.success("Masuk pegawai berhasil", { duration: 1500 });
