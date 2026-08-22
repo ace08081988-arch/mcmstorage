@@ -1,27 +1,22 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Phone, Home, Warehouse, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
+import { BOTTOM_NAV_ITEMS, activeBottomNavTo } from "@/lib/bottom-nav-items";
 import { useUnreadStatus } from "@/lib/chat";
 import { useBottomNavHeightSync } from "@/lib/use-bottom-nav-height";
 import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
-type Item = {
-  to: "/chat" | "/panggilan" | "/" | "/gudang";
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
+type Item = (typeof BOTTOM_NAV_ITEMS)[number] & {
   badge?: number;
   badgeLoading?: boolean;
 };
 
 /**
  * Bottom navigation ala WhatsApp untuk area chat.
- * Chat / Panggilan / Pembaruan / Fitur — sticky di bawah, hormati safe-area iOS.
- *
- * Layout pakai grid 4 kolom sama rata supaya label panjang seperti
- * "Panggilan" dan "Pembaruan" tidak saling tumpang tindih di 390/411px.
- * Setiap label di-truncate dan setiap tab memiliki min tap target 44px.
+ * Urutan & label sama persis dengan bar bawah aplikasi:
+ * Beranda / Gudang / Ecer / Chat / Menu — sticky di bawah, hormati safe-area.
  */
 export function ChatBottomNav() {
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
@@ -39,26 +34,13 @@ export function ChatBottomNav() {
   const navRef = useRef<HTMLElement | null>(null);
   // Keyboard terbuka -> bar hilang, spacer harus 0 (tanpa dead-space).
   useBottomNavHeightSync(navRef, !keyboardOpen);
-  // Baris bawah berisi tujuan yang paling sering dipakai harian: chat,
-  // panggilan, lalu jalan pintas keluar dari area chat (Beranda & Gudang)
-  // supaya tidak perlu bolak-balik lewat drawer. "Pembaruan" dan "Fitur"
-  // tetap tersedia lewat tombol Menu.
-  const items: Item[] = [
-    { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
-    { to: "/panggilan", label: "Panggilan", Icon: Phone },
-    { to: "/", label: "Beranda", Icon: Home },
-    { to: "/gudang", label: "Gudang", Icon: Warehouse },
-  ];
-  // Hitung item aktif sekali per perubahan path. Menghindari kondisi di mana
-  // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
-  // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
-  const activeTo = useMemo(() => {
-    const match = items.find((it) =>
-      it.to === "/" ? path === "/" : path === it.to || path.startsWith(`${it.to}/`),
-    );
-    return match?.to;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
+  // Urutan & label identik dengan bar bawah aplikasi (satu sumber:
+  // `BOTTOM_NAV_ITEMS`): Beranda → Gudang → Ecer → Chat → Menu.
+  // "Panggilan" tetap dapat dibuka lewat tombol Menu (grup Komunikasi).
+  const items: Item[] = BOTTOM_NAV_ITEMS.map((it) =>
+    it.to === "/chat" ? { ...it, badge: unread, badgeLoading: unreadLoading } : { ...it },
+  );
+  const activeTo = useMemo(() => activeBottomNavTo(path), [path]);
 
   return (
     <nav

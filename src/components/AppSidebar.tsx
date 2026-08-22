@@ -138,7 +138,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Bot, Home, Package, PackageSearch, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge, Store, History, FileSpreadsheet, Link2, UserPlus, Palette, Accessibility, Languages, ShieldCheck, HardDrive, Share2, Globe, SlidersHorizontal, ListChecks, Smartphone, Scroll, CalendarClock, GitCompareArrows, Receipt } from "lucide-react";
+import { Bot, Phone, Home, Package, PackageSearch, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator, BarChart3, LayoutDashboard, ChevronDown, MoreHorizontal, Settings, Gauge, Store, History, FileSpreadsheet, Link2, UserPlus, Palette, Accessibility, Languages, ShieldCheck, HardDrive, Share2, Globe, SlidersHorizontal, ListChecks, Smartphone, Scroll, CalendarClock, GitCompareArrows, Receipt } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -329,6 +329,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     mobilePrimary: true,
     items: [
       { title: "Chat", url: "/chat", icon: MessageCircle, desc: "Pesan dengan pelanggan & pegawai" },
+      { title: "Panggilan", url: "/panggilan", icon: Phone, desc: "Riwayat & mulai panggilan" },
       { title: "Catatan", url: "/catatan", icon: NotebookPen, desc: "Catatan pribadi & memo kerja" },
       { title: "Balas Cepat", url: "/balas-cepat", icon: MessageSquarePlus, desc: "Template jawaban siap pakai" },
       { title: "Buku Alamat", url: "/buku-alamat", icon: ContactRound, desc: "Data alamat kirim pelanggan" },
