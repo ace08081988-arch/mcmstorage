@@ -1757,7 +1757,7 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
         {info.stamp ? (
           <>
             <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
-            <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
+            <span className="text-muted-foreground" aria-hidden="true">({info.ago})</span>
             <span
               className={`rounded-sm px-1.5 py-px text-ms-2xs font-medium transition-colors duration-300 motion-reduce:transition-none ${info.meta.cls}`}
               aria-hidden="true"
@@ -2016,7 +2016,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
               {" "}
               · {savedStamp}
             </span>
-            <span className="text-muted-foreground/70"> ({info.ago})</span>
+            <span className="text-muted-foreground"> ({info.ago})</span>
           </>
         ) : (
           <span className="ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">

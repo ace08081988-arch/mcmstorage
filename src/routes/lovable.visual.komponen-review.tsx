@@ -85,7 +85,7 @@ function VariantTable() {
               c.rows.map((r, i) => (
                 <tr key={`${c.name}-${i}`} className="border-t align-top">
                   <td className="px-ms-3 py-ms-2 font-semibold text-foreground">
-                    {i === 0 ? c.name : <span className="text-muted-foreground/60">↳</span>}
+                    {i === 0 ? c.name : <span className="text-muted-foreground">↳</span>}
                   </td>
                   <td className="px-ms-3 py-ms-2 text-foreground">{r.label}</td>
                   <td className="px-ms-3 py-ms-2 font-mono text-ms-2xs text-muted-foreground">{r.props}</td>

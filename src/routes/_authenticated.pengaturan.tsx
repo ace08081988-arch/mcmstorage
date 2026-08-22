@@ -358,7 +358,7 @@ function PengaturanHub() {
                     {cat.label}
                   </h2>
                   {cat.hint && !q.trim() ? (
-                    <span className="hidden text-ms-2xs text-muted-foreground/70 sm:inline">
+                    <span className="hidden text-ms-2xs text-muted-foreground sm:inline">
                       {cat.hint}
                     </span>
                   ) : null}

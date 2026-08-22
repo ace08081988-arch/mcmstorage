@@ -236,7 +236,7 @@ export function AppHeader() {
           const isLast = i === crumbs.length - 1;
           return (
             <div key={i} className="flex min-w-0 items-center gap-ms-1">
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/50" />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               {c.group && !isLast ? (
                 <span className="hidden text-ms-2xs font-medium uppercase tracking-wider text-muted-foreground md:inline">
                   {c.group}

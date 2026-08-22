@@ -104,7 +104,7 @@ export function CallDiagnosticsSheet({
                     <span className={`rounded px-1.5 py-0.5 text-[10px] ${KIND_CLASS[e.kind]}`}>
                       {e.kind}
                     </span>
-                    <span className="text-muted-foreground/70">{e.callId.slice(0, 8)}</span>
+                    <span className="text-muted-foreground">{e.callId.slice(0, 8)}</span>
                   </div>
                   <div className="mt-0.5 break-words">{e.msg}</div>
                   {e.data && Object.keys(e.data).length ? (

@@ -1946,7 +1946,7 @@ function PublicPrepPage() {
                   <div
                     className={
                       "mt-0.5 text-ms-xl font-bold tabular-nums " +
-                      (isLocked ? "text-destructive" : "text-muted-foreground/60")
+                      (isLocked ? "text-destructive" : "text-muted-foreground")
                     }
                   >
                     {isLocked
@@ -1994,7 +1994,7 @@ function PublicPrepPage() {
               }}
               placeholder="••••••"
               disabled={isLocked}
-              className="mb-3 h-14 w-full rounded-lg border bg-background px-ms-3 text-center text-ms-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+              className="mb-3 h-14 w-full rounded-lg border bg-background px-ms-3 text-center text-ms-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
             />
             <button
               type="button"

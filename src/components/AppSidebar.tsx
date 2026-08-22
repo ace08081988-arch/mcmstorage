@@ -698,7 +698,7 @@ export function AppSidebar() {
                     <MoreHorizontal className="h-3.5 w-3.5 text-primary" />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-left tracking-[-0.005em]">Lainnya</span>
-                  <span className="shrink-0 text-ms-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+                  <span className="shrink-0 text-ms-2xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     {showMore ? "Tutup" : "Buka"}
                   </span>
                   <ChevronDown

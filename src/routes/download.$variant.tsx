@@ -215,7 +215,7 @@ function HeaderCard({
                 <span className="font-mono">
                   {latest.versionName ?? "?"}
                   {latest.versionCode !== null && (
-                    <span className="ml-1 text-muted-foreground/70">
+                    <span className="ml-1 text-muted-foreground">
                       (build {latest.versionCode})
                     </span>
                   )}
@@ -295,7 +295,7 @@ function ReleaseHistoryCard({
                   {r.versionName ?? "?"}
                 </span>
                 {r.versionCode !== null && (
-                  <span className="text-muted-foreground/70">
+                  <span className="text-muted-foreground">
                     build {r.versionCode}
                   </span>
                 )}
