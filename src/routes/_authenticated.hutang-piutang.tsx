@@ -594,13 +594,15 @@ function HutangPiutangPage() {
     >
       <header className="app-sticky-header" ref={pageHeaderRef}>
         <div className="mx-auto grid max-w-3xl grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-ms-3 px-ms-3 py-ms-3 sm:px-ms-6">
-          <Link
-            to="/"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-background/60 hover:bg-accent"
-            aria-label="Kembali"
+          {/* Tanpa tombol "kembali" — Beranda sudah ada di bottom nav & brand
+              mark header utama; ikon ini hanya penanda peran halaman. */}
+          <span
+            aria-hidden
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/10 text-primary"
           >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+            <Wallet className="h-[18px] w-[18px]" />
+          </span>
+
           <div className="min-w-0">
             <h1 className="truncate text-ms-base font-semibold leading-tight">
               Hutang &amp; Piutang
