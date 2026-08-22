@@ -2556,15 +2556,29 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
   );
 }
 
+/* Gutter halaman + inset cutout dalam SATU deklarasi.
+   Penting: `app-safe-x` menulis padding-inline, jadi kalau dipasang bersama
+   `px-*` di elemen yang sama, padding halaman ikut hilang (konten menempel
+   ke tepi layar). Karena itu gutter dinyatakan lewat `--app-gutter-x`
+   (utility `app-gutter` / `app-gutter-lg`), bukan `px-*`. */
 @utility app-safe-x {
   padding-left: max(
     var(--app-safe-left, env(safe-area-inset-left, 0px)),
-    0px
+    var(--app-gutter-x, 0px)
   );
   padding-right: max(
     var(--app-safe-right, env(safe-area-inset-right, 0px)),
-    0px
+    var(--app-gutter-x, 0px)
   );
+}
+
+/* Gutter horizontal halaman — aman dipakai bersama `app-safe-x`. */
+@utility app-gutter {
+  --app-gutter-x: var(--ms-space-4);
+}
+
+@utility app-gutter-lg {
+  --app-gutter-x: var(--ms-space-6);
 }
 
 /* Header sticky: tinggi konten tetap, hanya ruang notch yang ditambahkan,

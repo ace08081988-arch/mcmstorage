@@ -242,7 +242,7 @@ function PublicKatalogPage() {
   const shop = data.shop;
 
   return (
-    <main className="app-safe-x mx-auto w-full max-w-5xl px-4 py-6 pb-28">
+    <main className="app-safe-x app-gutter sm:app-gutter-lg mx-auto w-full max-w-5xl py-6 pb-28">
       <header className="lux-plate mb-5 rounded-2xl p-5">
         <p className="lux-eyebrow">Katalog produk</p>
         <h1 className="text-2xl font-semibold tracking-tight">
@@ -460,7 +460,7 @@ function PublicKatalogPage() {
       )}
 
       {shop.wa && cartLines.length > 0 ? (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 py-3 backdrop-blur app-safe-bottom">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 app-safe-x app-gutter pt-3 backdrop-blur [padding-bottom:max(var(--app-safe-bottom,env(safe-area-inset-bottom,0px)),0.75rem)]">
           <div className="mx-auto flex max-w-5xl items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">
