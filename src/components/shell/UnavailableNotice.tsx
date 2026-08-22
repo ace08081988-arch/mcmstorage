@@ -1,27 +1,31 @@
 import { Link } from "@tanstack/react-router";
 import { AlertCircle, ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 
 /**
  * Lencana kecil "Tidak tersedia" — dipakai menempel di judul kartu/menu yang
  * belum punya data supaya jelas bukan error, hanya belum ada isinya.
+ * Label dan ikonnya bisa diganti per halaman.
  */
 export function UnavailableBadge({
   label = "Tidak tersedia",
+  icon: Icon = AlertCircle,
   className = "",
 }: {
   label?: string;
+  icon?: ComponentType<{ className?: string }>;
   className?: string;
 }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-ms-2xs font-medium text-muted-foreground ${className}`}
     >
-      <AlertCircle className="h-3 w-3" aria-hidden />
+      <Icon className="h-3 w-3" aria-hidden />
       {label}
     </span>
   );
 }
+
 
 /**
  * Konfigurasi satu tombol tujuan. Fleksibel: rute internal (`to` + search/
