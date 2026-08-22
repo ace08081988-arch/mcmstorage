@@ -37,7 +37,7 @@ jobs:
       # sehingga retry tidak menyembunyikan regresi format payload.
       PWTEST_RETRIES: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-appearance-import-migrator
           path: playwright-report
@@ -87,7 +87,7 @@ jobs:
       # via CI=true di playwright.config supaya bisa direplay.
       - name: Upload Playwright traces, videos & debug dumps (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces-appearance-import-migrator
           path: |
