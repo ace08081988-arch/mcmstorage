@@ -2207,10 +2207,18 @@ function StokTab({
   // saat data pertama kali masuk.
   if (items.length === 0)
     return (
-      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
-        Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
-      </div>
+      <EmptyState
+        icon={PackageX}
+        title="Belum ada barang di gudang"
+        description={
+          <>
+            Barang muncul otomatis begitu kamu mencatat pembelian pertama di tab{" "}
+            <b>Beli</b>.
+          </>
+        }
+      />
     );
+
 
   return (
     <>
