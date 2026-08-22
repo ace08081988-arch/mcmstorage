@@ -94,15 +94,6 @@ const ReadyRequestSection = lazy(() =>
 const ReadySelfPrepSection = lazy(() =>
   import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
 );
-const DownloadStorageApkShortcut = lazy(() =>
-  import("@/components/DownloadStorageApkShortcut").then((m) => ({ default: m.DownloadStorageApkShortcut })),
-);
-const DownloadChatApkShortcut = lazy(() =>
-  import("@/components/DownloadChatApkShortcut").then((m) => ({ default: m.DownloadChatApkShortcut })),
-);
-const CopyChatApkLinksButton = lazy(() =>
-  import("@/components/CopyChatApkLinksButton").then((m) => ({ default: m.CopyChatApkLinksButton })),
-);
 
 // Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
 // Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
