@@ -468,7 +468,9 @@ function PengaturanKunci() {
               setResetKey((k) => k + 1);
             }}
           >
-            ⬣ {cfg?.method === "pattern" ? "Ubah Pola" : "Atur Pola"}
+            <Grid3x3 className="mr-2 h-4 w-4" />
+            {cfg?.method === "pattern" ? "Ubah Pola" : "Atur Pola"}
+
           </Button>
         </div>
 
