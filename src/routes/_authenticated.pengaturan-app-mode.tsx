@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AppMode, getAppMode, setAppModeOverride } from "@/lib/app-mode";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,12 +28,30 @@ function AppModePage() {
 
   const envMode = (import.meta.env.VITE_APP_MODE as string | undefined) ?? "(tidak di-set)";
 
+  // Aturan tampilan disimpan di AKUN (`profiles.chat_only`) supaya sama
+  // rata di semua perangkat dan tidak tertukar antar akun di satu HP.
+  const persistToAccount = async (chatOnly: boolean) => {
+    try {
+      const { getCurrentUser } = await import("@/lib/current-user");
+      const user = await getCurrentUser();
+      if (!user?.id) return;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ chat_only: chatOnly })
+        .eq("id", user.id);
+      if (error) throw error;
+    } catch {
+      toast.error("Mode tersimpan di perangkat ini saja — gagal simpan ke akun");
+    }
+  };
+
   const apply = (next: AppMode) => {
     setAppModeOverride(next);
+    void persistToAccount(next === "chat");
     toast.success(
       next === "chat"
-        ? "Mode Chat-only aktif — sidebar disederhanakan"
-        : "Mode Lengkap aktif — semua menu tampil",
+        ? "Mode Chat-only aktif — berlaku di semua perangkat akun ini"
+        : "Mode Lengkap aktif — berlaku di semua perangkat akun ini",
     );
     if (next === "chat") {
       void navigate({ to: "/chat" });
@@ -41,7 +60,8 @@ function AppModePage() {
 
   const clear = () => {
     setAppModeOverride(null);
-    toast.success("Override lokal dihapus — mengikuti VITE_APP_MODE build");
+    void persistToAccount(false);
+    toast.success("Kembali ke aturan bawaan build (VITE_APP_MODE)");
   };
 
   return (
