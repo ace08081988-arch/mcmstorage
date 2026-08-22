@@ -460,7 +460,7 @@ function KiosPage() {
                 </select>
               </label>
 
-              <div className="grid grid-cols-2 gap-ms-2">
+              <div className="grid grid-cols-1 gap-ms-2 min-[360px]:grid-cols-2">
                 <label className="block space-ms-1.5">
                   <span className={FIELD_LABEL}>
                     Jumlah {sxItem ? `(${sxItem.base_unit})` : ""}
