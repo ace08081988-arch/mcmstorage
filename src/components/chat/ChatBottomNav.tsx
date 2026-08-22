@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Phone, Bell, LayoutGrid, Menu } from "lucide-react";
+import { MessageCircle, Phone, Home, Warehouse, Menu } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUnreadStatus } from "@/lib/chat";
@@ -8,7 +8,7 @@ import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
 type Item = {
-  to: "/chat" | "/panggilan" | "/pembaruan" | "/fitur";
+  to: "/chat" | "/panggilan" | "/" | "/gudang";
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
   badge?: number;
@@ -39,17 +39,23 @@ export function ChatBottomNav() {
   const navRef = useRef<HTMLElement | null>(null);
   // Keyboard terbuka -> bar hilang, spacer harus 0 (tanpa dead-space).
   useBottomNavHeightSync(navRef, !keyboardOpen);
+  // Baris bawah berisi tujuan yang paling sering dipakai harian: chat,
+  // panggilan, lalu jalan pintas keluar dari area chat (Beranda & Gudang)
+  // supaya tidak perlu bolak-balik lewat drawer. "Pembaruan" dan "Fitur"
+  // tetap tersedia lewat tombol Menu.
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
-    { to: "/pembaruan", label: "Pembaruan", Icon: Bell },
-    { to: "/fitur", label: "Fitur", Icon: LayoutGrid },
+    { to: "/", label: "Beranda", Icon: Home },
+    { to: "/gudang", label: "Gudang", Icon: Warehouse },
   ];
   // Hitung item aktif sekali per perubahan path. Menghindari kondisi di mana
   // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
   // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
   const activeTo = useMemo(() => {
-    const match = items.find((it) => path === it.to || path.startsWith(`${it.to}/`));
+    const match = items.find((it) =>
+      it.to === "/" ? path === "/" : path === it.to || path.startsWith(`${it.to}/`),
+    );
     return match?.to;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
