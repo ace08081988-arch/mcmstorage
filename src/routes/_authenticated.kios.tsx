@@ -323,11 +323,11 @@ function KiosPage() {
 
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Barang</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Barang</span>
                 <select
                   value={rxItemId}
                   onChange={(e) => setRxItemId(e.target.value)}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                 >
                   <option value="">— pilih barang —</option>
                   {items.map((it) => (
@@ -340,7 +340,7 @@ function KiosPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">
+                  <span className="text-ms-xs font-medium text-muted-foreground">
                     Jumlah {rxItem ? `(${rxItem.base_unit})` : ""}
                   </span>
                   <NumericDraftInput
@@ -349,19 +349,19 @@ function KiosPage() {
                     max={9_999_999}
                     step={rxItem?.base_unit === "g" ? 0.1 : 1}
                     onCommit={setRxQty}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Jumlah diterima"
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Harga beli / satuan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Harga beli / satuan</span>
                   <NumericDraftInput
                     value={rxCost}
                     min={0}
                     max={999_999_999}
                     step={1}
                     onCommit={setRxCost}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Harga beli per satuan"
                     placeholder="0 (opsional)"
                   />
@@ -369,12 +369,12 @@ function KiosPage() {
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Catatan</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Catatan</span>
                 <input
                   type="text"
                   value={rxNote}
                   onChange={(e) => setRxNote(e.target.value.slice(0, 200))}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                   placeholder="opsional (mis. nama pegawai)"
                 />
               </label>
@@ -416,7 +416,7 @@ function KiosPage() {
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Barang</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Barang</span>
                 <select
                   value={sxItemId}
                   onChange={(e) => {
@@ -427,7 +427,7 @@ function KiosPage() {
                       setSxPrice(Math.round(it.avg_cost_per_base));
                     }
                   }}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                 >
                   <option value="">— pilih barang —</option>
                   {items.map((it) => (
@@ -441,7 +441,7 @@ function KiosPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">
+                  <span className="text-ms-xs font-medium text-muted-foreground">
                     Jumlah {sxItem ? `(${sxItem.base_unit})` : ""}
                   </span>
                   <NumericDraftInput
@@ -450,19 +450,19 @@ function KiosPage() {
                     max={sxItem?.stock_base ?? 9_999_999}
                     step={sxItem?.base_unit === "g" ? 0.1 : 1}
                     onCommit={setSxQty}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Jumlah jual"
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Harga jual / satuan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Harga jual / satuan</span>
                   <NumericDraftInput
                     value={sxPrice}
                     min={0}
                     max={999_999_999}
                     step={1}
                     onCommit={setSxPrice}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Harga jual per satuan"
                   />
                 </label>
@@ -476,12 +476,12 @@ function KiosPage() {
 
               <div className="relative space-y-1">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Nama pelanggan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Nama pelanggan</span>
                   <input
                     type="text"
                     value={sxCustName}
                     onChange={(e) => setSxCustName(e.target.value.slice(0, 100))}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     placeholder="ketik nama, pilih dari daftar atau buat baru"
                     autoComplete="off"
                   />
@@ -514,12 +514,12 @@ function KiosPage() {
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Kontak / no. HP</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Kontak / no. HP</span>
                 <input
                   type="text"
                   value={sxCustContact}
                   onChange={(e) => setSxCustContact(e.target.value.slice(0, 60))}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                   placeholder="opsional"
                   inputMode="tel"
                   autoComplete="off"
