@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f dist/index.html || { echo "::error::dist/index.html tidak ada"; exit 1; }
-          grep -qi 'name="viewport"' dist/index.html || { echo "::error::meta viewport hilang — WebView akan blank/zoom"; exit 1; }
+          grep -qia 'name="viewport"' dist/index.html || { echo "::error::meta viewport hilang — WebView akan blank/zoom"; exit 1; }
           echo "dist OK"
 
       - name: Sinkron native (cap sync android)
