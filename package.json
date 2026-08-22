@@ -152,7 +152,9 @@
     "version:print": "node scripts/bump-version.mjs --print",
     "release:aab": "node scripts/build-aab.mjs",
     "build:e2e": "cross-env-shell CAPACITOR_BUILD=1 vite build",
-    "serve:e2e": "node scripts/serve-e2e.mjs"
+    "serve:e2e": "node scripts/serve-e2e.mjs",
+    "smoke:post-deploy": "node scripts/smoke-post-deploy.mjs",
+    "smoke:local": "node scripts/smoke-post-deploy.mjs --base http://localhost:8080 --attempts 2 --delay 2000"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
