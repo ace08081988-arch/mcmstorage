@@ -630,11 +630,23 @@ export function AppSidebar() {
                           >
                             <item.icon className="h-[17px] w-[17px]" />
                           </span>
-                          <span
-                            className={sidebarNavLabelClass(active)}
-                            style={{ fontFamily: "var(--font-body)" }}
-                          >
-                            {item.title}
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span
+                              className={sidebarNavLabelClass(active)}
+                              style={{ fontFamily: "var(--font-body)" }}
+                            >
+                              {item.title}
+                            </span>
+                            {/* Baris peran: satu kalimat pendek yang menjelaskan
+                                fungsi menu supaya tidak perlu ditebak. */}
+                            {item.desc ? (
+                              <span
+                                className="truncate text-ms-2xs leading-ms-tight text-muted-foreground group-data-[collapsible=icon]:hidden"
+                                style={{ fontFamily: "var(--font-body)" }}
+                              >
+                                {item.desc}
+                              </span>
+                            ) : null}
                           </span>
                           {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
                             <span className="ml-auto flex items-center gap-ms-1 group-data-[collapsible=icon]:hidden">
