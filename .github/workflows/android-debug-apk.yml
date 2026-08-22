@@ -104,6 +104,7 @@ jobs:
             echo "| Package | \`mcmstorage.app\` |"
             echo "| versionName | \`$VN\` |"
             echo "| versionCode | \`$VC\` |"
+            echo "| Commit | \`${GITHUB_SHA:0:7}\` |"
             echo "| File | \`$OUT\` |"
             echo "| Ukuran | $SIZE |"
             echo ""
