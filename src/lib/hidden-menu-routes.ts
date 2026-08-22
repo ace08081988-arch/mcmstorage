@@ -35,30 +35,13 @@ export function isHiddenMenuUrl(url: string): boolean {
 }
 
 /**
- * Halaman yang TETAP tampil di hub Pengaturan, tetapi tidak lagi diulang di
- * sidebar. Tujuannya supaya sidebar hanya berisi pekerjaan harian, bukan
- * daftar panjang setelan yang jarang dibuka.
+ * Dulu dipakai untuk menyembunyikan halaman setelan dari sidebar. Atas
+ * permintaan pengguna, semua menu pilihan itu DIKEMBALIKAN ke sidebar,
+ * jadi daftar ini sengaja dibiarkan kosong (jangan diisi lagi tanpa
+ * permintaan eksplisit).
  */
-export const SIDEBAR_ONLY_HIDDEN_URLS: ReadonlySet<string> = new Set<string>([
-  "/pengaturan-tampilan",
-  "/pengaturan-aksesibilitas",
-  "/pengaturan-bahasa",
-  "/pengaturan-privasi",
-  "/pengaturan-penyimpanan",
-  "/pengaturan-notifikasi-wa",
-  "/pengaturan-integrasi-sosial",
-  "/pengaturan-domain",
-  "/pengaturan-app-mode",
-  "/pengaturan-kunci",
-  "/pengaturan-pesan-wa",
-  "/pengaturan-oauth-google",
-  "/pengaturan-apk",
-  "/email-queue",
-  "/admin/email-status",
-  "/admin/portal-error-log",
-  "/admin/signup-attempts",
-  "/admin-denial-log",
-]);
+export const SIDEBAR_ONLY_HIDDEN_URLS: ReadonlySet<string> = new Set<string>([]);
+
 
 /** Buang entri menu yang tersembunyi khusus untuk sidebar. */
 export function filterSidebarMenuItems<T extends { url: string }>(
