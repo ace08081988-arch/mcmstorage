@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
+import { MessageCircle, Phone, Bell, LayoutGrid, Menu } from "lucide-react";
 import { useMemo, useRef } from "react";
+import { useSidebar } from "@/components/ui/sidebar";
 import { useUnreadStatus } from "@/lib/chat";
 import { useBottomNavHeightSync } from "@/lib/use-bottom-nav-height";
 import { useViewportAnchor } from "@/lib/use-viewport-anchor";
@@ -24,6 +25,7 @@ type Item = {
  */
 export function ChatBottomNav() {
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
+  const { toggleSidebar } = useSidebar();
   // Ambil pathname saja lewat selector; scroll / hash / state lain tidak
   // memicu re-render, sehingga highlight tidak "berkedip" saat konten digulir.
   const path = useRouterState({ select: (s) => s.location.pathname });
@@ -155,7 +157,6 @@ export function ChatBottomNav() {
           data-nav-icon
           className="relative grid h-6 w-10 place-items-center rounded-full transition-colors duration-200 min-[400px]:w-12"
         >
-          <LayoutGrid className="hidden" />
           <Menu className="h-[22px] w-[22px]" />
         </span>
         <span
