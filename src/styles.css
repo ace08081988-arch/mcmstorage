@@ -5154,7 +5154,7 @@ textarea::placeholder {
   }
   /* Tautan di dalam paragraf tidak boleh melebar — merusak alur teks
      dan menabrak baris di atas/bawahnya. */
-  :where(p, li, label, .prose) a[href]::after,
+  :where(p, .prose) a[href]::after,
   a[href].tap-inline::after {
     content: none;
   }
