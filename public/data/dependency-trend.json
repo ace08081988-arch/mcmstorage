@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T03:41:12.413Z",
+  "generatedAt": "2026-08-22T09:11:11.365Z",
   "gitAvailable": true,
   "weeks": [
     {
@@ -1070,6 +1070,435 @@
           "date": "2026-08-14T18:34:48.000Z"
         }
       ]
+    },
+    {
+      "week": "2026-W34",
+      "start": "2026-08-17",
+      "tanstack": 2,
+      "router-plugin": 1,
+      "lainnya": 64,
+      "changes": [
+        {
+          "name": "@capacitor/android",
+          "from": "^8.4.0",
+          "to": "^8.5.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/app",
+          "from": "^8.1.0",
+          "to": "^8.1.1",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/camera",
+          "from": "^8.2.0",
+          "to": "^8.2.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/core",
+          "from": "^8.4.0",
+          "to": "^8.5.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/geolocation",
+          "from": "^8.2.0",
+          "to": "^8.2.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/push-notifications",
+          "from": "^8.1.1",
+          "to": "^8.1.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@hookform/resolvers",
+          "from": "^5.2.2",
+          "to": "^5.8.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@lovable.dev/email-js",
+          "from": "^0.0.4",
+          "to": "^0.1.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@lovable.dev/mcp-js",
+          "from": "^0.24.0",
+          "to": "^0.26.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@lovable.dev/webhooks-js",
+          "from": "^0.0.1",
+          "to": "^0.0.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-accordion",
+          "from": "^1.2.12",
+          "to": "^1.2.20",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-alert-dialog",
+          "from": "^1.1.15",
+          "to": "^1.1.23",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-aspect-ratio",
+          "from": "^1.1.8",
+          "to": "^1.1.15",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-avatar",
+          "from": "^1.1.11",
+          "to": "^1.2.6",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-checkbox",
+          "from": "^1.3.3",
+          "to": "^1.3.11",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-collapsible",
+          "from": "^1.1.12",
+          "to": "^1.1.20",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-context-menu",
+          "from": "^2.2.16",
+          "to": "^2.3.7",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-dialog",
+          "from": "^1.1.15",
+          "to": "^1.1.23",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-dropdown-menu",
+          "from": "^2.1.16",
+          "to": "^2.1.24",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-hover-card",
+          "from": "^1.1.15",
+          "to": "^1.1.23",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-label",
+          "from": "^2.1.8",
+          "to": "^2.1.15",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-menubar",
+          "from": "^1.1.16",
+          "to": "^1.1.24",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-navigation-menu",
+          "from": "^1.2.14",
+          "to": "^1.2.22",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-popover",
+          "from": "^1.1.15",
+          "to": "^1.1.23",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-progress",
+          "from": "^1.1.8",
+          "to": "^1.1.16",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-radio-group",
+          "from": "^1.3.8",
+          "to": "^1.4.7",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-scroll-area",
+          "from": "^1.2.10",
+          "to": "^1.2.18",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-select",
+          "from": "^2.2.6",
+          "to": "^2.3.7",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-separator",
+          "from": "^1.1.8",
+          "to": "^1.1.15",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-slider",
+          "from": "^1.3.6",
+          "to": "^1.4.7",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-slot",
+          "from": "^1.2.4",
+          "to": "^1.3.3",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-switch",
+          "from": "^1.2.6",
+          "to": "^1.3.7",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-tabs",
+          "from": "^1.1.13",
+          "to": "^1.1.21",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-toggle",
+          "from": "^1.1.10",
+          "to": "^1.1.18",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-toggle-group",
+          "from": "^1.1.11",
+          "to": "^1.1.19",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@radix-ui/react-tooltip",
+          "from": "^1.2.8",
+          "to": "^1.2.16",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@supabase/supabase-js",
+          "from": "^2.108.2",
+          "to": "^2.112.3",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@tailwindcss/vite",
+          "from": "^4.2.1",
+          "to": "^4.3.3",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "jose",
+          "from": "^6.2.3",
+          "to": "^6.2.8",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "react",
+          "from": "^19.2.0",
+          "to": "^19.2.8",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "react-dom",
+          "from": "^19.2.0",
+          "to": "^19.2.8",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "react-hook-form",
+          "from": "^7.71.2",
+          "to": "^7.85.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "react-resizable-panels",
+          "from": "^4.6.5",
+          "to": "^4.12.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "sonner",
+          "from": "^2.0.7",
+          "to": "^2.0.8",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "tailwindcss",
+          "from": "^4.2.1",
+          "to": "^4.3.3",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "web-vitals",
+          "from": "^6.0.1",
+          "to": "^6.1.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@capacitor/cli",
+          "from": "^8.4.0",
+          "to": "^8.5.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@playwright/test",
+          "from": "^1.61.0",
+          "to": "^1.62.1",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@types/react",
+          "from": "^19.2.0",
+          "to": "^19.2.18",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@types/react-dom",
+          "from": "^19.2.0",
+          "to": "^19.2.4",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "eslint-plugin-react-refresh",
+          "from": "^0.4.20",
+          "to": "^0.5.4",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "happy-dom",
+          "from": "^20.10.6",
+          "to": "^20.11.2",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "prettier",
+          "from": "^3.7.3",
+          "to": "^3.9.6",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "rollup-plugin-visualizer",
+          "from": "^7.0.1",
+          "to": "^7.1.1",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "typescript-eslint",
+          "from": "^8.56.1",
+          "to": "^8.67.0",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "vite",
+          "from": "^8.0.16",
+          "to": "^8.2.1",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "vitest",
+          "from": "^4.1.9",
+          "to": "^4.1.10",
+          "group": "lainnya",
+          "date": "2026-08-17T19:34:49.000Z"
+        },
+        {
+          "name": "@tanstack/react-router",
+          "from": "1.170.27",
+          "to": "1.170.29",
+          "group": "tanstack",
+          "date": "2026-08-18T19:06:08.000Z"
+        },
+        {
+          "name": "@tanstack/react-start",
+          "from": "1.168.44",
+          "to": "1.168.46",
+          "group": "tanstack",
+          "date": "2026-08-18T19:06:08.000Z"
+        },
+        {
+          "name": "@tanstack/router-plugin",
+          "from": "1.168.30",
+          "to": "1.168.32",
+          "group": "router-plugin",
+          "date": "2026-08-18T19:06:08.000Z"
+        }
+      ]
     }
   ],
   "groups": [
@@ -1090,10 +1519,10 @@
     "routerVersions": {
       "ok": true,
       "versions": {
-        "@tanstack/react-router": "1.170.27",
-        "@tanstack/react-start": "1.168.44",
-        "@tanstack/router-plugin": "1.168.30",
-        "@tanstack/router-core": "1.171.22"
+        "@tanstack/react-router": "1.170.29",
+        "@tanstack/react-start": "1.168.46",
+        "@tanstack/router-plugin": "1.168.32",
+        "@tanstack/router-core": "1.171.24"
       },
       "errors": [],
       "warnings": []
@@ -1101,7 +1530,7 @@
     "dependencies": {
       "ok": true,
       "skipped": true,
-      "output": "⚠️  Lewati audit dependensi: `bun audit --json` tidak mengembalikan JSON.\n[0.17ms] \".env\"\n\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.3 (274e01c7)\u001b[0m\nerror: audit request failed (status 404)"
+      "output": "⚠️  Lewati audit dependensi: `bun audit --json` tidak mengembalikan JSON.\n[0.04ms] \".env\"\n\u001b[0m\u001b[1mbun audit \u001b[0m\u001b[2mv1.3.3 (274e01c7)\u001b[0m\nerror: audit request failed (status 404)"
     }
   }
 }
