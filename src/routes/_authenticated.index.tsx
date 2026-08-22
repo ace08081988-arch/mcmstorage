@@ -4,7 +4,22 @@ import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } fro
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
-import { PackagePlus, Send, CheckCircle2, Search } from "lucide-react";
+import {
+  PackagePlus,
+  Send,
+  CheckCircle2,
+  Search,
+  ChevronRight,
+  Download,
+  UserCircle,
+  Lock,
+  Palette,
+  ReceiptText,
+  CreditCard,
+  Users,
+  Boxes,
+  Tags,
+} from "lucide-react";
 import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
 import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { filterHiddenMenuItems } from "@/lib/hidden-menu-routes";
@@ -1481,30 +1496,30 @@ function Index() {
                 {
                   group: "Unduh",
                   items: [
-                    { url: "/download", label: "Unduh Aplikasi", emoji: "⬇️", desc: "APK Ace Storage" },
+                    { url: "/download", label: "Unduh Aplikasi", Icon: Download, desc: "APK Ace Storage" },
                   ],
                 },
                 {
                   group: "Profil",
                   items: [
-                    { url: "/profil", label: "Profil & Akun", emoji: "🙍", desc: "Data akun & keluar" },
-                    { url: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
-                    { url: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
+                    { url: "/profil", label: "Profil & Akun", Icon: UserCircle, desc: "Data akun & keluar" },
+                    { url: "/pengaturan-kunci", label: "Pengaturan Kunci", Icon: Lock, desc: "PIN, pola, sidik jari" },
+                    { url: "/pengaturan-tampilan", label: "Tampilan", Icon: Palette, desc: "Tema, aksen, font" },
                   ],
                 },
                 {
                   group: "Riwayat",
                   items: [
-                    { url: "/kios/riwayat", label: "Riwayat Kios", emoji: "🧾", desc: "Terima & jual" },
-                    { url: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                    { url: "/kios/riwayat", label: "Riwayat Kios", Icon: ReceiptText, desc: "Terima & jual" },
+                    { url: "/hutang-piutang", label: "Hutang & Piutang", Icon: CreditCard, desc: "Pelanggan & supplier" },
                   ],
                 },
                 {
                   group: "Lainnya",
                   items: [
-                    { url: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
-                    { url: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
-                    { url: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
+                    { url: "/kontak", label: "Pelanggan & Supplier", Icon: Users, desc: "Tautkan akun pengguna" },
+                    { url: "/request", label: "Penyiapan Request", Icon: Boxes, desc: "Paket multi-produk" },
+                    { url: "/katalog", label: "Katalog Produk", Icon: Tags, desc: "Daftar & harga produk" },
                   ],
                 },
                 ]
@@ -1537,26 +1552,39 @@ function Index() {
                     <h3 className="text-ms-2xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       {g.group}
                     </h3>
-                    <div className="grid grid-cols-2 items-stretch gap-ms-2.5 sm:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 items-stretch gap-ms-2.5 sm:grid-cols-2 lg:grid-cols-3">
                       {g.items.map((s) => (
                         <Link
                           key={s.url}
                           to={s.url}
                           preload="intent"
-                          className="surface-quiet flex h-full w-full min-w-0 flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
+                          aria-label={s.label}
+                          className="surface-quiet group/tile flex h-full min-h-14 w-full min-w-0 items-center gap-ms-3 px-ms-3 py-ms-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
-                          <span className="text-ms-base leading-none">{s.emoji}</span>
-                          <span className="text-premium-heading mt-1 break-words text-ms-xs font-semibold leading-tight text-foreground">
-                            {s.label}
+                          <span
+                            aria-hidden
+                            className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-primary/15 bg-primary/5 text-primary"
+                          >
+                            <s.Icon className="size-4" strokeWidth={1.75} />
                           </span>
-                          <span className="break-words text-ms-2xs leading-tight text-muted-foreground">
-                            {s.desc}
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="text-premium-heading truncate text-ms-xs font-semibold leading-tight text-foreground">
+                              {s.label}
+                            </span>
+                            <span className="truncate text-ms-2xs leading-tight text-muted-foreground">
+                              {s.desc}
+                            </span>
                           </span>
+                          <ChevronRight
+                            aria-hidden
+                            className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/tile:translate-x-0.5"
+                          />
                         </Link>
                       ))}
                     </div>
                   </section>
                 ));
+
               })()}
 
 
