@@ -5,6 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
 import { NumericDraftInput } from "@/components/NumericDraftInput";
 import { notifyError } from "@/lib/friendly-error";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { PageContainer } from "@/components/shell/PageContainer";
+import {
+  Store,
+  History,
+  Wallet,
+  PackagePlus,
+  HandCoins,
+  AlertTriangle,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 
 /**
  * Kios Terpadu — satu layar untuk:
@@ -256,36 +268,37 @@ function KiosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground" data-press-scope="on">
-      <header className="app-sticky-header">
-        <div className="mx-auto flex w-full max-w-3xl items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
-          <Link
-            to="/"
-            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
-          >
-            ← Beranda
-          </Link>
-          <h1 className="text-base font-bold">🏪 Kios Terpadu</h1>
+    <div data-press-scope="on">
+      <PageHeader
+        icon={Store}
+        title="Kios Terpadu"
+        subtitle="Terima stok · jual langsung"
+      />
+
+      <PageContainer ariaLabel="Kios Terpadu">
+        {/* Aksi cepat — konsisten dengan halaman lain: pill, bukan tombol
+            kotak kecil yang menempel di header. */}
+        <div className="flex flex-wrap items-center gap-ms-2">
           <Link
             to="/kios/riwayat"
-            className="ml-auto rounded-md border px-2 py-1 text-xs hover:bg-accent"
+            className="inline-flex min-h-9 items-center gap-ms-1.5 rounded-full border border-border/70 bg-card px-ms-3 text-ms-xs font-medium text-foreground hover:border-primary/50"
           >
+            <History className="h-4 w-4 text-primary" />
             Riwayat
           </Link>
           <Link
             to="/hutang-piutang"
-            className="rounded-md border px-2 py-1 text-xs hover:bg-accent"
+            className="inline-flex min-h-9 items-center gap-ms-1.5 rounded-full border border-border/70 bg-card px-ms-3 text-ms-xs font-medium text-foreground hover:border-primary/50"
           >
-            Piutang →
+            <Wallet className="h-4 w-4 text-primary" />
+            Piutang
           </Link>
         </div>
-      </header>
 
-      <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5 pb-24">
         {loading ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : items.length === 0 ? (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
             Belum ada barang di gudang.{" "}
             <Link to="/gudang" className="text-primary underline">
               Tambah barang dulu
@@ -295,20 +308,26 @@ function KiosPage() {
         ) : (
           <>
             {/* ================ TERIMA DARI PEGAWAI ================ */}
-            <section className="rounded-lg border bg-card p-3 space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">📥 Terima dari Pegawai</h2>
-                <p className="text-xs text-muted-foreground">
-                  Barang yang diserahkan pegawai langsung masuk stok.
-                </p>
+            <section className="rounded-2xl border border-border/70 bg-card p-ms-4 space-ms-3 shadow-sm">
+              <div className="flex min-w-0 items-start gap-ms-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
+                  <PackagePlus className="h-[18px] w-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-ms-sm font-semibold text-foreground">Terima dari Pegawai</h2>
+                  <p className="text-ms-xs text-muted-foreground">
+                    Barang yang diserahkan pegawai langsung masuk stok.
+                  </p>
+                </div>
               </div>
 
+
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Barang</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Barang</span>
                 <select
                   value={rxItemId}
                   onChange={(e) => setRxItemId(e.target.value)}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                 >
                   <option value="">— pilih barang —</option>
                   {items.map((it) => (
@@ -321,7 +340,7 @@ function KiosPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">
+                  <span className="text-ms-xs font-medium text-muted-foreground">
                     Jumlah {rxItem ? `(${rxItem.base_unit})` : ""}
                   </span>
                   <NumericDraftInput
@@ -330,19 +349,19 @@ function KiosPage() {
                     max={9_999_999}
                     step={rxItem?.base_unit === "g" ? 0.1 : 1}
                     onCommit={setRxQty}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Jumlah diterima"
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Harga beli / satuan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Harga beli / satuan</span>
                   <NumericDraftInput
                     value={rxCost}
                     min={0}
                     max={999_999_999}
                     step={1}
                     onCommit={setRxCost}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Harga beli per satuan"
                     placeholder="0 (opsional)"
                   />
@@ -350,12 +369,12 @@ function KiosPage() {
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Catatan</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Catatan</span>
                 <input
                   type="text"
                   value={rxNote}
                   onChange={(e) => setRxNote(e.target.value.slice(0, 200))}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                   placeholder="opsional (mis. nama pegawai)"
                 />
               </label>
@@ -376,23 +395,28 @@ function KiosPage() {
                 type="button"
                 onClick={submitTerima}
                 disabled={rxBusy || !rxItem || rxQty <= 0}
-                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-50"
               >
-                {rxBusy ? "Menyimpan…" : "📥 Terima & Tambah Stok"}
+                {rxBusy ? "Menyimpan…" : "Terima & Tambah Stok"}
               </button>
             </section>
 
             {/* ================ JUAL KE PELANGGAN ================ */}
-            <section className="rounded-lg border bg-card p-3 space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">💰 Jual ke Pelanggan</h2>
-                <p className="text-xs text-muted-foreground">
-                  Stok berkurang otomatis. Sisa yang belum dibayar otomatis jadi piutang.
-                </p>
+            <section className="rounded-2xl border border-border/70 bg-card p-ms-4 space-ms-3 shadow-sm">
+              <div className="flex min-w-0 items-start gap-ms-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
+                  <HandCoins className="h-[18px] w-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-ms-sm font-semibold text-foreground">Jual ke Pelanggan</h2>
+                  <p className="text-ms-xs text-muted-foreground">
+                    Stok berkurang otomatis. Sisa yang belum dibayar otomatis jadi piutang.
+                  </p>
+                </div>
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Barang</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Barang</span>
                 <select
                   value={sxItemId}
                   onChange={(e) => {
@@ -403,7 +427,7 @@ function KiosPage() {
                       setSxPrice(Math.round(it.avg_cost_per_base));
                     }
                   }}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                 >
                   <option value="">— pilih barang —</option>
                   {items.map((it) => (
@@ -417,7 +441,7 @@ function KiosPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">
+                  <span className="text-ms-xs font-medium text-muted-foreground">
                     Jumlah {sxItem ? `(${sxItem.base_unit})` : ""}
                   </span>
                   <NumericDraftInput
@@ -426,38 +450,38 @@ function KiosPage() {
                     max={sxItem?.stock_base ?? 9_999_999}
                     step={sxItem?.base_unit === "g" ? 0.1 : 1}
                     onCommit={setSxQty}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Jumlah jual"
                   />
                 </label>
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Harga jual / satuan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Harga jual / satuan</span>
                   <NumericDraftInput
                     value={sxPrice}
                     min={0}
                     max={999_999_999}
                     step={1}
                     onCommit={setSxPrice}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     ariaLabel="Harga jual per satuan"
                   />
                 </label>
               </div>
 
               {sxItem && sxQty > sxItem.stock_base && (
-                <div className="rounded bg-destructive/10 p-2 text-xs text-destructive">
-                  ⚠️ Stok kurang. Tersedia {fmtQty(sxItem.stock_base, sxItem.base_unit)}.
+                <div className="flex items-center gap-ms-1.5 rounded-xl bg-destructive/10 p-ms-2 text-ms-xs text-destructive">
+                  <AlertTriangle className="h-4 w-4 shrink-0" /> Stok kurang. Tersedia {fmtQty(sxItem.stock_base, sxItem.base_unit)}.
                 </div>
               )}
 
               <div className="relative space-y-1">
                 <label className="block space-y-1">
-                  <span className="text-xs font-medium">Nama pelanggan</span>
+                  <span className="text-ms-xs font-medium text-muted-foreground">Nama pelanggan</span>
                   <input
                     type="text"
                     value={sxCustName}
                     onChange={(e) => setSxCustName(e.target.value.slice(0, 100))}
-                    className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                    className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                     placeholder="ketik nama, pilih dari daftar atau buat baru"
                     autoComplete="off"
                   />
@@ -476,26 +500,26 @@ function KiosPage() {
                       >
                         <div className="font-medium">{c.name}</div>
                         {c.contact && (
-                          <div className="text-[10px] text-muted-foreground">📞 {c.contact}</div>
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Phone className="h-3 w-3" />{c.contact}</div>
                         )}
                       </button>
                     ))}
                   </div>
                 )}
                 {sxCustName.trim() && !matchedCustomer && (
-                  <div className="text-[10px] text-muted-foreground">
-                    ✨ Pelanggan baru — akan disimpan otomatis ke buku alamat.
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" /> Pelanggan baru — akan disimpan otomatis ke buku alamat.
                   </div>
                 )}
               </div>
 
               <label className="block space-y-1">
-                <span className="text-xs font-medium">Kontak / no. HP</span>
+                <span className="text-ms-xs font-medium text-muted-foreground">Kontak / no. HP</span>
                 <input
                   type="text"
                   value={sxCustContact}
                   onChange={(e) => setSxCustContact(e.target.value.slice(0, 60))}
-                  className="w-full rounded-md border bg-background px-2 py-2 text-sm"
+                  className="min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60"
                   placeholder="opsional"
                   inputMode="tel"
                   autoComplete="off"
@@ -572,18 +596,18 @@ function KiosPage() {
                   overpay ||
                   (sxItem ? sxQty > sxItem.stock_base : false)
                 }
-                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-50"
               >
                 {sxBusy
                   ? "Menyimpan…"
                   : remaining > 0
-                    ? `💰 Simpan (Piutang ${rupiah(remaining)})`
-                    : "💰 Simpan (Lunas)"}
+                    ? `Simpan (Piutang ${rupiah(remaining)})`
+                    : "Simpan (Lunas)"}
               </button>
             </section>
           </>
         )}
-      </main>
+      </PageContainer>
     </div>
   );
 }
