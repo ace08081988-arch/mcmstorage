@@ -2,7 +2,6 @@ import {
   createFileRoute,
   Link,
   useNavigate,
-  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
 import * as React from "react";
@@ -17,7 +16,6 @@ import {
   Archive,
   BellOff,
   UserPlus,
-  ArrowLeft,
   Search,
   MoreVertical,
   ArchiveRestore,
@@ -74,7 +72,6 @@ import {
 } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
 import { DebtSyncBadge } from "@/components/chat/DebtSyncBadge";
-import { goBackOr } from "@/lib/back-nav";
 import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
@@ -175,7 +172,6 @@ function ChatListPage() {
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
-  const router = useRouter();
   const routeSearch = Route.useSearch();
   const pin = usePinConversation();
   const archive = useArchiveConversation();
@@ -499,7 +495,7 @@ function ChatListPage() {
       // 200ms mendekati kurva animasi keyboard Android/iOS tanpa
       // membuatnya terasa lambat. `motion-reduce:transition-none`
       // menghormati preferensi pengguna.
-      className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex min-h-[70vh] max-w-2xl flex-col bg-background pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? {
@@ -509,11 +505,11 @@ function ChatListPage() {
           : undefined
       }
     >
-      {/* AppHeader disembunyikan pada rute ini (layar penuh), jadi blok atas
-          dikunci langsung di puncak layar + safe-area notch supaya judul,
-          pencarian, dan filter tidak terpotong maupun naik-turun saat
-          daftar digulir. */}
-      <div className="app-safe-top sticky top-0 z-20 wa-header border-b border-[var(--wa-border)]">
+      {/* AppHeader global sudah tampil di atas rute ini (sama seperti halaman
+          lain), jadi blok ini hanya berisi toolbar aksi + pencarian dan
+          menempel di bawah header aplikasi. */}
+      <div className="sticky top-0 z-20 border-b bg-card">
+
         {selecting ? (
           <header
             className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
@@ -560,21 +556,11 @@ function ChatListPage() {
             </div>
           </header>
         ) : (
-          <header className="wa-header flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
+          <header className="flex items-center justify-between gap-ms-2 px-ms-3 py-ms-2">
             <div className="flex min-w-0 items-center gap-ms-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-11 w-11 shrink-0 rounded-full sm:h-9 sm:w-9"
-                aria-label="Kembali ke Beranda"
-                title="Beranda"
-                onClick={() => goBackOr(router, { to: "/" })}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <h1 className="truncate text-ms-lg font-semibold tracking-tight">Ace Chat</h1>
+              <h1 className="truncate text-ms-base font-semibold tracking-tight">Percakapan</h1>
             </div>
+
             <div className="flex items-center gap-ms-1">
               <NewDmDialog />
               <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
