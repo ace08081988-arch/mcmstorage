@@ -19,7 +19,10 @@ import {
   AlertTriangle,
   PackageX,
   Sparkles,
+  ImageIcon,
+  Info,
 } from "lucide-react";
+
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
 import { assertStorageAccess } from "@/lib/storage-access";
@@ -2487,22 +2490,24 @@ const StokItemRow = memo(function StokItemRow({
       data-index={dataIndex}
       className="p-ms-3 transition-colors hover:bg-muted/30"
     >
-      <div className="flex items-start justify-between gap-ms-2">
-        <div className="flex min-w-0 flex-1 gap-ms-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2">
+        <div className="flex min-w-0 gap-ms-2">
           {i.image_path ? (
             <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
           ) : (
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[0.6875rem] text-muted-foreground">📷</div>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-muted-foreground">
+              <ImageIcon className="h-4 w-4" aria-hidden />
+            </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="line-clamp-2 break-words text-ms-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
-            <div className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground">
+            <div className="mt-0.5 text-[0.6875rem] leading-snug text-muted-foreground [overflow-wrap:anywhere]">
               per {i.package_type}
               {i.package_type !== "pcs" && ` (${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}/kemasan)`}
             </div>
           </div>
         </div>
-        <div className="flex shrink-0 gap-ms-1">
+        <div className="flex shrink-0 flex-col gap-ms-1 min-[360px]:flex-row">
           <button
             onClick={() => onEdit(i)}
             className="rounded border px-ms-2 py-1 text-[0.6875rem] hover:bg-accent"
@@ -2517,7 +2522,8 @@ const StokItemRow = memo(function StokItemRow({
           </button>
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-ms-2 text-[0.6875rem] leading-snug">
+      <div className="mt-2 grid grid-cols-2 gap-ms-2 text-[0.6875rem] leading-snug min-[380px]:grid-cols-3">
+
         <div className="min-w-0 rounded bg-muted/50 p-ms-2">
           <div className="truncate text-muted-foreground">Stok</div>
           {i.package_type === "botol" ? (
@@ -2548,7 +2554,13 @@ const StokItemRow = memo(function StokItemRow({
             packageSize={i.package_size}
             testId="stok-konversi-trigger"
           >
-            ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+            <span className="inline-flex min-w-0 items-center gap-1">
+              <Info className="h-3 w-3 shrink-0" aria-hidden />
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+              </span>
+            </span>
+
           </KartonRumusPopover>
         </div>
       )}

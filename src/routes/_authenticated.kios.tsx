@@ -320,9 +320,10 @@ function KiosPage() {
             .
           </div>
         ) : (
-          <>
+          <div className="grid items-start gap-ms-4 lg:grid-cols-2">
             {/* ================ TERIMA DARI PEGAWAI ================ */}
             <section className={SECTION_CARD}>
+
               <div className="flex min-w-0 items-start gap-ms-2">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
                   <PackagePlus className="h-[18px] w-[18px]" />
@@ -351,7 +352,8 @@ function KiosPage() {
                 </select>
               </label>
 
-              <div className="grid grid-cols-2 gap-ms-2">
+              <div className="grid grid-cols-1 gap-ms-2 min-[360px]:grid-cols-2">
+
                 <label className="block space-ms-1.5">
                   <span className={FIELD_LABEL}>
                     Jumlah {rxItem ? `(${rxItem.base_unit})` : ""}
@@ -394,20 +396,21 @@ function KiosPage() {
 
               {rxItem && rxQty > 0 && (
                 <div className={SUMMARY_BOX}>
-                  <div className="flex items-center justify-between gap-ms-2">
-                    <span className="text-muted-foreground">Stok setelah</span>
-                    <b className="tabular-nums">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                    <span className="min-w-0 truncate text-muted-foreground">Stok setelah</span>
+                    <b className="tabular-nums [overflow-wrap:anywhere]">
                       {fmtQty(rxItem.stock_base + rxQty, rxItem.base_unit)}
                     </b>
                   </div>
                   {rxCost > 0 && (
-                    <div className="flex items-center justify-between gap-ms-2">
-                      <span className="text-muted-foreground">Total nilai</span>
-                      <b className="tabular-nums">{rupiah(rxQty * rxCost)}</b>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                      <span className="min-w-0 truncate text-muted-foreground">Total nilai</span>
+                      <b className="tabular-nums [overflow-wrap:anywhere]">{rupiah(rxQty * rxCost)}</b>
                     </div>
                   )}
                 </div>
               )}
+
 
               <button
                 type="button"
@@ -457,7 +460,7 @@ function KiosPage() {
                 </select>
               </label>
 
-              <div className="grid grid-cols-2 gap-ms-2">
+              <div className="grid grid-cols-1 gap-ms-2 min-[360px]:grid-cols-2">
                 <label className="block space-ms-1.5">
                   <span className={FIELD_LABEL}>
                     Jumlah {sxItem ? `(${sxItem.base_unit})` : ""}
@@ -548,13 +551,13 @@ function KiosPage() {
               </label>
 
               <div className={SUMMARY_BOX}>
-                <div className="flex items-center justify-between gap-ms-2">
-                  <span className="text-muted-foreground">Total</span>
-                  <b className="tabular-nums">{rupiah(subtotal)}</b>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                  <span className="min-w-0 truncate text-muted-foreground">Total</span>
+                  <b className="tabular-nums [overflow-wrap:anywhere]">{rupiah(subtotal)}</b>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-ms-2">
-                  <span className="text-muted-foreground">Dibayar sekarang</span>
-                  <div className="flex items-center gap-ms-1.5">
+                <div className="grid gap-ms-1.5 min-[400px]:grid-cols-[minmax(0,1fr)_auto] min-[400px]:items-center min-[400px]:gap-ms-2">
+                  <span className="min-w-0 truncate text-muted-foreground">Dibayar sekarang</span>
+                  <div className="flex min-w-0 items-center gap-ms-1.5">
                     <NumericDraftInput
                       value={sxPaid}
                       min={0}
@@ -565,7 +568,7 @@ function KiosPage() {
                         setPaidTouched(true);
                       }}
                       onFocus={() => setPaidTouched(true)}
-                      className="min-h-9 w-28 rounded-lg border border-border/70 bg-background px-ms-2 text-right text-ms-xs tabular-nums outline-none focus-visible:border-primary/60"
+                      className="min-h-9 w-full min-w-0 rounded-lg border border-border/70 bg-background px-ms-2 text-right text-ms-xs tabular-nums outline-none focus-visible:border-primary/60 min-[400px]:w-28"
                       ariaLabel="Jumlah dibayar sekarang"
                     />
                     <button
@@ -574,7 +577,7 @@ function KiosPage() {
                         setSxPaid(subtotal);
                         setPaidTouched(true);
                       }}
-                      className={BTN_TERTIARY}
+                      className={`${BTN_TERTIARY} shrink-0`}
                     >
                       Lunas
                     </button>
@@ -584,20 +587,21 @@ function KiosPage() {
                         setSxPaid(0);
                         setPaidTouched(true);
                       }}
-                      className={BTN_TERTIARY}
+                      className={`${BTN_TERTIARY} shrink-0`}
                     >
                       0
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-ms-2">
-                  <span className="text-muted-foreground">Sisa piutang</span>
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                  <span className="min-w-0 truncate text-muted-foreground">Sisa piutang</span>
                   <b
-                    className={`tabular-nums ${remaining > 0 ? "text-warning" : "text-success"}`}
+                    className={`tabular-nums [overflow-wrap:anywhere] ${remaining > 0 ? "text-warning" : "text-success"}`}
                   >
                     {rupiah(remaining)}
                   </b>
                 </div>
+
                 {overpay && (
                   <div className="text-ms-2xs text-destructive">
                     Dibayar melebihi total — kurangi dulu.
@@ -626,7 +630,7 @@ function KiosPage() {
                     : "Simpan (Lunas)"}
               </button>
             </section>
-          </>
+          </div>
         )}
       </PageContainer>
     </div>
