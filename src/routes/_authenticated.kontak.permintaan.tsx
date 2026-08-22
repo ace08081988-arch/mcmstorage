@@ -477,15 +477,6 @@ function ErrorRetry({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed p-8 text-center">
-      <UserPlus className="mb-2 h-6 w-6 text-muted-foreground" />
-      <div className="text-ms-sm font-medium">{title}</div>
-      <p className="mt-1 text-ms-xs text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
 
 function StatusChip({
   status,
