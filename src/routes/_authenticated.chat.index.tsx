@@ -2,7 +2,6 @@ import {
   createFileRoute,
   Link,
   useNavigate,
-  useRouter,
   useRouterState,
 } from "@tanstack/react-router";
 import * as React from "react";
@@ -173,7 +172,6 @@ function ChatListPage() {
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
-  const router = useRouter();
   const routeSearch = Route.useSearch();
   const pin = usePinConversation();
   const archive = useArchiveConversation();
