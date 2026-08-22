@@ -17,7 +17,6 @@ import {
   Archive,
   BellOff,
   UserPlus,
-  ArrowLeft,
   Search,
   MoreVertical,
   ArchiveRestore,
@@ -74,7 +73,6 @@ import {
 } from "@/components/ui/accordion";
 import { previewText } from "@/lib/chat-cards";
 import { DebtSyncBadge } from "@/components/chat/DebtSyncBadge";
-import { goBackOr } from "@/lib/back-nav";
 import { ChatListSkeleton } from "@/components/chat/ChatSkeletons";
 import { useVisualViewportKeyboardInset } from "@/hooks/use-visual-viewport-inset";
 import { DomRaceBoundary } from "@/components/DomRaceBoundary";
@@ -499,7 +497,7 @@ function ChatListPage() {
       // 200ms mendekati kurva animasi keyboard Android/iOS tanpa
       // membuatnya terasa lambat. `motion-reduce:transition-none`
       // menghormati preferensi pengguna.
-      className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="mx-auto flex min-h-[70vh] max-w-2xl flex-col bg-background pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? {
