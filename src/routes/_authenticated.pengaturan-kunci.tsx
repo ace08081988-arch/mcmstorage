@@ -455,7 +455,9 @@ function PengaturanKunci() {
               setPin2("");
             }}
           >
-            🔢 {cfg?.method === "pin" ? "Ubah PIN" : "Atur PIN"}
+            <KeyRound className="mr-2 h-4 w-4" />
+            {cfg?.method === "pin" ? "Ubah PIN" : "Atur PIN"}
+
           </Button>
           <Button
             variant={editor === "pattern" ? "default" : "outline"}
