@@ -60,7 +60,7 @@ export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
-    // TEST: default entry
+    server: { entry: "ssr-entry" },
     ...(CAPACITOR_BUILD
       ? {
           spa: {
@@ -114,6 +114,12 @@ export default defineConfig({
         ),
         entities: path.resolve(__dirname, "node_modules/entities"),
       },
+    },
+    build: {
+      // Rolldown (Vite 8) memecah bundel SSR jadi dua chunk yang saling impor
+      // sehingga `createMiddleware` undefined saat init worker (500 di semua rute).
+      // Mematikan tree-shaking mencegah pemecahan/deconflict yang salah itu.
+      rollupOptions: { treeshake: false },
     },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
