@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
+import { ArrowLeft, Check, X, Clock, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
