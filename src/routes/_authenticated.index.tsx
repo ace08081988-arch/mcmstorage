@@ -6,6 +6,8 @@ import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { PackagePlus, Send, CheckCircle2, Search } from "lucide-react";
 import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
+import { filterHiddenMenuItems } from "@/lib/hidden-menu-routes";
+
 
 import { MidnightScope } from "@/lib/midnight-preview";
 const LiveProductGallery = lazy(() =>
