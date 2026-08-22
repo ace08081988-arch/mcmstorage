@@ -209,7 +209,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "1.170.29",
-    "@tanstack/react-start": "1.168.46",
+    "@tanstack/react-start": "1.168.48",
     "@tanstack/react-virtual": "^3.14.6",
     "@tanstack/router-plugin": "1.168.32",
     "class-variance-authority": "^0.7.1",
