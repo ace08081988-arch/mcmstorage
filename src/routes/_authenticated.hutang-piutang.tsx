@@ -203,6 +203,18 @@ function HutangPiutangPage() {
    * membaca SSOT, bukan hasil penjumlahan daftar manual.
    */
   const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
+  // Rincian per-kontak disembunyikan sampai kartunya ditekan supaya daftar
+  // ringkas: hanya nama + sisa hutang yang terlihat saat tertutup.
+  const [openParties, setOpenParties] = useState<Set<string>>(() => new Set());
+  const togglePartyOpen = useCallback((key: string) => {
+    setOpenParties((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
