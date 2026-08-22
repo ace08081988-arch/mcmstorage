@@ -934,23 +934,53 @@ function HutangPiutangPage() {
                         : ssotEntry.piutang
                       : null;
                     const displaySisa = ssotSisa ?? gSisa;
+                    const expanded = openParties.has(group.key);
                     return (
                       <section
                         key={group.key}
                         data-testid={`party-card-${normalizeParty(group.name)}`}
                         className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/40 px-ms-3.5 py-ms-3 sm:flex sm:flex-wrap sm:items-center">
-                          <div className="min-w-0 sm:flex-1">
-                            <div className="truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
+                        {/* Baris ringkas: hanya nama + sisa. Rincian catatan
+                            baru muncul setelah kartu ditekan. */}
+                        <button
+                          type="button"
+                          aria-expanded={expanded}
+                          onClick={() => togglePartyOpen(group.key)}
+                          className={
+                            "grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-ms-2 px-ms-3.5 py-ms-3 text-left transition-colors hover:bg-muted/40 " +
+                            (expanded ? "border-b bg-muted/40" : "")
+                          }
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-ms-base font-semibold leading-tight tracking-tight text-foreground">
                               {group.name}
-                            </div>
-                            <div className="mt-0.5 text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
-                              {group.items.length} catatan · sisa{" "}
-                              <span
-                                data-testid="party-card-sisa"
-                                className="font-semibold tabular-nums text-warning"
-                              >
+                            </span>
+                            <span className="mt-0.5 block text-ms-2xs leading-snug text-muted-foreground">
+                              {group.items.length} catatan
+                            </span>
+                          </span>
+                          <span
+                            data-testid="party-card-sisa"
+                            className="shrink-0 text-right text-ms-sm font-semibold tabular-nums text-warning"
+                          >
+                            {rupiah(displaySisa)}
+                          </span>
+                          <ChevronDown
+                            className={
+                              "h-4 w-4 shrink-0 text-muted-foreground transition-transform " +
+                              (expanded ? "rotate-180" : "")
+                            }
+                            aria-hidden="true"
+                          />
+                        </button>
+                        {expanded && (
+                        <>
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/20 px-ms-3.5 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
+                          <div className="min-w-0 sm:flex-1">
+                            <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
+                              sisa{" "}
+                              <span className="font-semibold tabular-nums text-warning">
                                 {rupiah(displaySisa)}
                               </span>{" "}
                               dari <span className="tabular-nums">{rupiah(gTotal)}</span>
@@ -961,7 +991,7 @@ function HutangPiutangPage() {
                               )}
                             </div>
                           </div>
-                          <div className="col-start-2 row-span-2 flex shrink-0 flex-wrap items-center justify-end gap-ms-2 sm:contents">
+                          <div className="col-start-2 flex shrink-0 flex-wrap items-center justify-end gap-ms-2 sm:contents">
                           <Button
                             size="sm"
                             variant="outline"
@@ -989,8 +1019,9 @@ function HutangPiutangPage() {
                             Kirim laporan
                           </Button>
                           </div>
-                        </header>
+                        </div>
                         <ul className="divide-y">
+
                           {group.items.map((d) => {
                     const paid = paidByDebt.get(d.id) ?? 0;
                     const sisa = Number(d.amount) - paid;
