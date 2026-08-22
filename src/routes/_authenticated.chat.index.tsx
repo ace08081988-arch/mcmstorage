@@ -509,11 +509,11 @@ function ChatListPage() {
           : undefined
       }
     >
-      {/* AppHeader disembunyikan pada rute ini (layar penuh), jadi blok atas
-          dikunci langsung di puncak layar + safe-area notch supaya judul,
-          pencarian, dan filter tidak terpotong maupun naik-turun saat
-          daftar digulir. */}
-      <div className="app-safe-top sticky top-0 z-20 wa-header border-b border-[var(--wa-border)]">
+      {/* AppHeader global sudah tampil di atas rute ini (sama seperti halaman
+          lain), jadi blok ini hanya berisi toolbar aksi + pencarian dan
+          menempel di bawah header aplikasi. */}
+      <div className="sticky top-0 z-20 border-b bg-card">
+
         {selecting ? (
           <header
             className="flex items-center justify-between gap-ms-2 bg-primary px-ms-3 py-ms-3 text-primary-foreground shadow-sm"
