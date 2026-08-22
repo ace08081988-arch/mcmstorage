@@ -135,7 +135,9 @@ function AiPingButton() {
         className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 font-medium hover:bg-muted disabled:opacity-60"
         aria-label="Uji koneksi AI"
       >
-        {busy ? "Menguji AI…" : "🤖 Uji AI"}
+        <Sparkles className="h-3.5 w-3.5" aria-hidden />
+        {busy ? "Menguji AI…" : "Uji AI"}
+
       </button>
       {result && (
         <span
