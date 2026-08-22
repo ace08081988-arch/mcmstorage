@@ -1,6 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
-import { logAdminDenial } from './admin-denial-telemetry'
 
 export type SecurityFinding = {
   id: string
@@ -23,7 +22,7 @@ export const listSecurityFindings = createServerFn({ method: 'GET' })
       _role: 'admin',
     })
     if (!isAdmin) {
-      logAdminDenial({ fn: 'security-scan:listSecurityFindings', userId })
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'security-scan:listSecurityFindings', userId }))
       return { isAdmin: false, findings: [] as SecurityFinding[], openCount: 0, lastRun: null }
     }
     const { data: findings } = await supabase
@@ -69,7 +68,7 @@ export const runSecurityScanNow = createServerFn({ method: 'POST' })
       _role: 'admin',
     })
     if (!isAdmin) {
-      logAdminDenial({ fn: 'security-scan:runSecurityScanNow', userId })
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: 'security-scan:runSecurityScanNow', userId }))
       throw new Error('Forbidden')
     }
     const { data, error } = await supabase.rpc('run_internal_security_scan')

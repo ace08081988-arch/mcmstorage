@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { logAdminDenial } from "./admin-denial-telemetry";
 
 // C9: admin-only server function. Sebelumnya `/admin/signup-attempts`
 // query `supabase.from("signup_attempts")` langsung dari client — bergantung
@@ -67,10 +66,10 @@ export const listSignupAttempts = createServerFn({ method: "GET" })
     });
     const now = new Date().toISOString();
     if (!isAdmin) {
-      logAdminDenial({
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({
         fn: "signup-attempts:listSignupAttempts",
         userId,
-      });
+      }));
       return { isAdmin: false, fetchedAt: now, rows: [] };
     }
 

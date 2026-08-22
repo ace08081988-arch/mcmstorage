@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T09:25:58.742Z",
+  "generatedAt": "2026-08-22T09:39:26.012Z",
   "gitAvailable": true,
   "weeks": [
     {
@@ -1074,7 +1074,7 @@
     {
       "week": "2026-W34",
       "start": "2026-08-17",
-      "tanstack": 6,
+      "tanstack": 2,
       "router-plugin": 1,
       "lainnya": 64,
       "changes": [

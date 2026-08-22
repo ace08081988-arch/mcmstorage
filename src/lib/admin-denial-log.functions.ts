@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { logAdminDenial } from "./admin-denial-telemetry";
 
 export type AdminDenialEventRow = {
   id: string;
@@ -53,7 +52,7 @@ export const listAdminDenialEvents = createServerFn({ method: "GET" })
     });
     const now = new Date().toISOString();
     if (!isAdmin) {
-      logAdminDenial({ fn: "admin-denial-log:listAdminDenialEvents", userId });
+      void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({ fn: "admin-denial-log:listAdminDenialEvents", userId }));
       return {
         isAdmin: false,
         fetchedAt: now,
