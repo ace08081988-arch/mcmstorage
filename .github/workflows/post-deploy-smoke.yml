@@ -1,0 +1,89 @@
+name: Post-Deploy Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Base URL yang dites (default https://mcmstorage.app)"
+        required: false
+        type: string
+        default: "https://mcmstorage.app"
+  repository_dispatch:
+    types: [lovable-published, smoke-requested]
+  workflow_run:
+    workflows: ["Post-Publish Health Check"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  smoke:
+    name: Smoke endpoint utama
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Resolve base URL
+        id: cfg
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const payload = context.eventName === 'repository_dispatch' ? (context.payload.client_payload || {}) : {};
+            const inputs = context.payload.inputs || {};
+            const url = (payload.url || inputs.url || 'https://mcmstorage.app').trim().replace(/\/+$/, '');
+            core.setOutput('url', url);
+
+      - name: Run smoke test
+        id: smoke
+        run: node scripts/smoke-post-deploy.mjs --base "${{ steps.cfg.outputs.url }}" --json /tmp/smoke.json
+
+      - name: Upload hasil smoke
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-post-deploy
+          path: /tmp/smoke.json
+          if-no-files-found: ignore
+
+      - name: Buka issue bila gagal
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const url = '${{ steps.cfg.outputs.url }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            let table = '(hasil tidak tersedia)';
+            try {
+              const s = JSON.parse(fs.readFileSync('/tmp/smoke.json', 'utf8'));
+              table = [
+                '| Endpoint | Status | Catatan |',
+                '| --- | --- | --- |',
+                ...s.results.map((r) => `| \`${r.path}\` | ${r.ok ? '✅' : '❌'} ${r.status || '-'} | ${r.problem || '-'} |`),
+              ].join('\n');
+            } catch {}
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `❌ Smoke test pasca deploy gagal: ${url.replace(/^https?:\/\//, '')}`,
+              body: [
+                `Endpoint utama tidak semuanya 200 setelah deploy.`,
+                ``,
+                `- URL: [${url}](${url})`,
+                `- Waktu: ${new Date().toISOString()}`,
+                ``,
+                table,
+                ``,
+                `Log: ${runUrl}`,
+              ].join('\n'),
+              labels: ['health-check-failure'],
+            });
