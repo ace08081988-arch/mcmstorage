@@ -24,9 +24,87 @@ export function UnavailableBadge({
 }
 
 /**
- * Panel "Tidak tersedia" + satu tombol menuju halaman yang benar.
- * Dipakai ketika sebuah fitur/tautan belum punya data, supaya pengguna tidak
- * berhenti di jalan buntu tetapi langsung diarahkan ke tempat mengisinya.
+ * Konfigurasi satu tombol tujuan. Fleksibel: rute internal (`to` + search/
+ * params/hash), tautan luar (`href`), atau aksi lokal (`onClick`).
+ */
+export type UnavailableTarget = {
+  label: string;
+  /** Rute internal TanStack Router. */
+  to?: string;
+  search?: Record<string, unknown>;
+  params?: Record<string, unknown>;
+  hash?: string;
+  replace?: boolean;
+  /** Tautan luar / non-router (mis. WhatsApp, unduhan langsung). */
+  href?: string;
+  /** Aksi lokal kalau tidak ada tujuan halaman. */
+  onClick?: () => void;
+  /** Tampilan tombol. Default: tombol pertama = primary. */
+  variant?: "primary" | "secondary";
+};
+
+const BTN_BASE =
+  "inline-flex min-h-11 items-center gap-2 rounded-xl px-ms-4 text-ms-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const BTN_VARIANT = {
+  primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+  secondary: "border border-border text-foreground hover:bg-muted/60",
+} as const;
+
+function TargetButton({
+  target,
+  fallbackVariant,
+}: {
+  target: UnavailableTarget;
+  fallbackVariant: "primary" | "secondary";
+}) {
+  const cls = `${BTN_BASE} ${BTN_VARIANT[target.variant ?? fallbackVariant]}`;
+  const inner = (
+    <>
+      {target.label}
+      <ArrowRight className="h-4 w-4" aria-hidden />
+    </>
+  );
+
+  if (target.to) {
+    return (
+      <Link
+        to={target.to}
+        preload="intent"
+        {...(target.search ? { search: target.search } : {})}
+        {...(target.params ? { params: target.params } : {})}
+        {...(target.hash ? { hash: target.hash } : {})}
+        {...(target.replace ? { replace: true } : {})}
+        className={cls}
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  if (target.href) {
+    const external = /^https?:/i.test(target.href);
+    return (
+      <a
+        href={target.href}
+        className={cls}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" onClick={target.onClick} className={cls}>
+      {inner}
+    </button>
+  );
+}
+
+/**
+ * Panel "Tidak tersedia" + tombol menuju halaman yang benar.
+ * Target tombol bisa dikonfigurasi lewat props `targets` (satu atau lebih),
+ * atau lewat props ringkas lama (`actionLabel` + `to`/`onAction`).
  */
 export function UnavailableNotice({
   title = "Tidak tersedia",
@@ -35,21 +113,32 @@ export function UnavailableNotice({
   to,
   search,
   params,
+  hash,
+  href,
   onAction,
+  targets,
   className = "",
 }: {
   title?: string;
   description?: ReactNode;
-  actionLabel: string;
-  /** Rute tujuan. Kalau kosong, pakai `onAction`. */
+  /** Bentuk ringkas: satu tombol. Diabaikan kalau `targets` diisi. */
+  actionLabel?: string;
   to?: string;
   search?: Record<string, unknown>;
   params?: Record<string, unknown>;
+  hash?: string;
+  href?: string;
   onAction?: () => void;
+  /** Bentuk fleksibel: daftar tujuan (tombol pertama = primary). */
+  targets?: UnavailableTarget[];
   className?: string;
 }) {
-  const actionCls =
-    "inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-ms-4 text-ms-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  const list: UnavailableTarget[] =
+    targets && targets.length > 0
+      ? targets
+      : actionLabel
+        ? [{ label: actionLabel, to, search, params, hash, href, onClick: onAction }]
+        : [];
 
   return (
     <div
@@ -62,24 +151,18 @@ export function UnavailableNotice({
           {description}
         </p>
       )}
-      <div className="mt-ms-3 flex justify-center">
-        {to ? (
-          <Link
-            to={to}
-            {...(search ? { search } : {})}
-            {...(params ? { params } : {})}
-            className={actionCls}
-          >
-            {actionLabel}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        ) : (
-          <button type="button" onClick={onAction} className={actionCls}>
-            {actionLabel}
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
-        )}
-      </div>
+      {list.length > 0 && (
+        <div className="mt-ms-3 flex flex-wrap items-center justify-center gap-ms-2">
+          {list.map((t, i) => (
+            <TargetButton
+              key={`${t.label}-${i}`}
+              target={t}
+              fallbackVariant={i === 0 ? "primary" : "secondary"}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+

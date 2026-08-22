@@ -1528,23 +1528,15 @@ function Index() {
 
                 if (groups.length === 0) {
                   return (
-                    <div className="space-ms-3">
-                      <UnavailableNotice
-                        description="Semua menu tambahan sedang tidak tersedia untuk akun ini. Kamu tetap bisa mengunduh aplikasi atau membuka profil."
-                        actionLabel="Unduh Aplikasi"
-                        to="/download"
-                      />
-                      <div className="flex justify-center">
-                        <Link
-                          to="/profil"
-                          preload="intent"
-                          className="inline-flex min-h-11 items-center rounded-xl border border-border px-ms-4 text-ms-xs font-semibold text-foreground transition-colors hover:bg-muted/60"
-                        >
-                          Buka Profil & Akun
-                        </Link>
-                      </div>
-                    </div>
+                    <UnavailableNotice
+                      description="Semua menu tambahan sedang tidak tersedia untuk akun ini. Kamu tetap bisa mengunduh aplikasi atau membuka profil."
+                      targets={[
+                        { label: "Unduh Aplikasi", to: "/download" },
+                        { label: "Buka Profil & Akun", to: "/profil" },
+                      ]}
+                    />
                   );
+
                 }
 
                 return groups.map((g) => (
