@@ -47,8 +47,6 @@ import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { AccessStatusCard } from "@/components/AccessStatusCard";
 import { AccessDiagnostics } from "@/components/AccessDiagnostics";
 import { EmailVerificationStatus } from "@/components/EmailVerificationStatus";
-import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
-import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
 import { Link } from "@tanstack/react-router";
 import { Palette } from "lucide-react";
 
@@ -500,20 +498,6 @@ function ProfilPage() {
 
       <Separator />
 
-      <section className="space-ms-2">
-        <div>
-          <h2 className="text-ms-sm font-semibold">Pintasan unduhan</h2>
-          <p className="text-ms-2xs text-muted-foreground">
-            Unduh APK Ace Chat versi terbaru tanpa membuka halaman /download.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-ms-2 sm:max-w-sm">
-          <DownloadChatApkShortcut />
-          <CopyChatApkLinksButton />
-        </div>
-      </section>
-
-      <Separator />
 
       <section className="space-ms-2">
         <div>
