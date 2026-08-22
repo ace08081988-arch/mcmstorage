@@ -164,7 +164,7 @@ import {
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
-import { isChatOnly, CHAT_ONLY_GROUP_LABELS } from "@/lib/app-mode";
+import { isChatOnly, applyAccountAppMode, CHAT_ONLY_GROUP_LABELS } from "@/lib/app-mode";
 
 /**
  * Tap-safe navigation link. On mobile WebViews (411px APK) a plain
@@ -434,7 +434,12 @@ export function AppSidebar() {
           .select("chat_only")
           .eq("id", uid)
           .maybeSingle();
-        if (!cancelled) setDbChatOnly(Boolean(data?.chat_only));
+        if (!cancelled) {
+          const flag = Boolean(data?.chat_only);
+          setDbChatOnly(flag);
+          // Ratakan aturan tampilan: cache lokal selalu mengikuti akun.
+          applyAccountAppMode(flag);
+        }
       } catch {
         /* abaikan — fallback ke flag build */
       }

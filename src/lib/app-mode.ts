@@ -44,6 +44,18 @@ export function isChatOnly(): boolean {
 }
 
 /**
+ * Terapkan aturan tampilan milik AKUN (kolom `profiles.chat_only`) ke
+ * cache lokal. Dipanggil setiap kali profil dimuat supaya semua akun
+ * memakai aturan yang sama di perangkat mana pun: aturan mengikuti akun,
+ * bukan menempel di HP tertentu (mis. sisa akun lain yang pernah login).
+ */
+export function applyAccountAppMode(chatOnly: boolean) {
+  const next: AppMode = chatOnly ? "chat" : (readEnv() ?? "full");
+  if (readLs() === next) return;
+  setAppModeOverride(next);
+}
+
+/**
  * Simpan override lokal (dev/testing). Kirim event supaya listener UI
  * merender ulang tanpa perlu reload manual.
  */
