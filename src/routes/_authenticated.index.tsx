@@ -367,6 +367,19 @@ export function buildPesan(p: Produk) {
   return `📦 [${tagFor(p.kategori)}] *${nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${harga.toLocaleString("id-ID")}\n📍 ${lokasi}\nKet: ${ket}`;
 }
 
+/**
+ * SSOT link "KIRIM WA" per pesanan.
+ *
+ * Aturan: hanya pesanan berstatus "Belum Dikirim" yang punya link berisi
+ * pesan (wa.me?text=...). Begitu ditandai "Sudah Dikirim", link WAJIB kosong
+ * ("") sehingga tombol tidak dirender — mencegah kirim ulang pesanan yang
+ * sudah dikirim ke pelanggan.
+ */
+export function waHrefFor(p: Produk): string {
+  if (p.status === "Sudah Dikirim") return "";
+  return `https://wa.me/?text=${encodeURIComponent(buildPesan(p))}`;
+}
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1839,7 +1852,7 @@ function Index() {
         >
           {filtered.map((p) => {
             const sent = p.status === "Sudah Dikirim";
-            const waUrl = `https://wa.me/?text=${encodeURIComponent(buildPesan(p))}`;
+            const waUrl = waHrefFor(p);
             const open = openId === p.id;
             const fotoCount = (p.foto ? 1 : 0) + (p.galeri?.length ?? 0);
             const thumb = p.foto ?? p.galeri?.[0];
