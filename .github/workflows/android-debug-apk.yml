@@ -6,13 +6,15 @@ name: Android Debug APK (QA)
 
 on:
   workflow_dispatch:
-    inputs:
   pull_request:
     paths:
       - "android/**"
       - "capacitor.config.ts"
       - "scripts/build-apk.mjs"
       - ".github/workflows/android-debug-apk.yml"
+
+permissions:
+  contents: write
 
 concurrency:
   group: mcm-storage-debug-${{ github.ref }}
