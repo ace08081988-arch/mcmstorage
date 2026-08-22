@@ -1249,7 +1249,10 @@ function Index() {
           }}
         />
 
-        <header className="app-sticky-header">
+        {/* Di mobile header ini duplikat dengan AppHeader (brand + judul) dan
+            aksi keluar/kunci sudah ada di menu avatar — tampilkan hanya md+. */}
+        <header className="app-sticky-header hidden md:block">
+
           <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2 px-ms-4 py-ms-3 sm:px-ms-6">
             <div className="flex min-w-0 items-center gap-ms-2.5">
               <span
