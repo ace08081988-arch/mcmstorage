@@ -5104,3 +5104,83 @@ html[data-scrolling="1"] [class*="backdrop-blur"] {
   contain: layout paint style;
   overscroll-behavior: contain;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Aksesibilitas dasar (berlaku di semua halaman, bukan hanya mode
+   kontras tinggi). Tiga hal: kontras teks sekunder, area sentuh minimum,
+   dan fokus keyboard yang selalu terlihat + tidak tertutup header lengket.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* 1) Kontras — teks sekunder & placeholder sering jatuh di bawah 4.5:1.
+   Token dinaikkan di sini (bukan per-komponen) supaya seluruh aplikasi
+   ikut. Varian transparan seperti `text-muted-foreground/70` ikut naik
+   karena base color-nya lebih gelap/terang. */
+:root {
+  --muted-foreground: oklch(0.472 0.043 257.417);
+}
+.dark {
+  --muted-foreground: oklch(0.775 0.035 256.788);
+}
+/* Placeholder harus tetap terbaca, bukan abu pucat. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+/* Teks non-aktif tetap ≥3:1 supaya statusnya terbaca, bukan hilang. */
+:disabled,
+[aria-disabled="true"] {
+  opacity: 0.62;
+}
+
+/* 2) Area sentuh — kontrol kecil (h-7/h-8/h-9, pill, ikon) mendapat
+   lapisan sentuh transparan setinggi 44px di perangkat sentuh tanpa
+   mengubah tampilan visual sedikit pun. Sengaja hanya melebar vertikal:
+   melebar horizontal membuat tombol bersebelahan (mis. "Lunas" / "0")
+   saling tumpang tindih dan salah tap. Pakai `.tap-exact` untuk opt-out. */
+@media (pointer: coarse) {
+  :where(button, [role="button"], a[href], summary, select):not(.tap-exact):not([data-tap-exact]) {
+    position: relative;
+  }
+  :where(button, [role="button"], a[href], summary, select):not(.tap-exact):not([data-tap-exact])::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: max(100%, 44px);
+    transform: translateY(-50%);
+    /* Transparan: tidak mengubah tampilan, hanya memperluas hit area. */
+  }
+  /* Tautan di dalam paragraf tidak boleh melebar — merusak alur teks
+     dan menabrak baris di atas/bawahnya. */
+  :where(p, li, label, .prose) a[href]::after,
+  a[href].tap-inline::after {
+    content: none;
+  }
+}
+/* Opt-in 44×44 penuh untuk tombol ikon yang berdiri sendiri. */
+@utility tap-safe {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* 3) Fokus keyboard — satu gaya untuk seluruh aplikasi, termasuk elemen
+   yang tidak memakai komponen shadcn. `:focus-visible` hanya aktif untuk
+   keyboard/AT, jadi tap di HP tidak memunculkan ring. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+/* Urutan fokus: elemen yang mendapat fokus tidak boleh tersembunyi di
+   balik header lengket / bottom nav saat browser men-scroll ke sana. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 5rem);
+  scroll-margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+}
+/* Target skip-link (main) tidak boleh menampilkan outline saat dipindahi
+   fokus secara programatik — ring-nya membingungkan, cukup scroll saja. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
