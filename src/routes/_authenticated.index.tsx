@@ -1474,17 +1474,19 @@ function Index() {
             </summary>
             <div className="space-ms-4 border-t border-primary/10 p-ms-4">
               <div className="grid grid-cols-2 items-stretch gap-ms-2.5 sm:grid-cols-3 lg:grid-cols-4">
-                {[
-                  { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                  { to: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
-                  { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
-                  { to: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
-                  { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
-                  { to: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
-                ].map((s) => (
+                {filterHiddenMenuItems([
+                  { url: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                  { url: "/kontak", label: "Pelanggan & Supplier", emoji: "👥", desc: "Tautkan akun pengguna" },
+                  { url: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
+                  { url: "/katalog", label: "Katalog Produk", emoji: "🏷️", desc: "Daftar & harga produk" },
+                  { url: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+                  { url: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font" },
+                  { url: "/download", label: "Unduh Aplikasi", emoji: "⬇️", desc: "APK Ace Storage" },
+                  { url: "/profil", label: "Profil & Akun", emoji: "🙍", desc: "Data akun & keluar" },
+                ]).map((s) => (
                   <Link
-                    key={s.to}
-                    to={s.to}
+                    key={s.url}
+                    to={s.url}
                     preload="intent"
                     className="surface-quiet flex h-full w-full min-w-0 flex-col gap-0.5 px-ms-3 py-ms-3 text-left"
                   >
@@ -1497,6 +1499,7 @@ function Index() {
                     </span>
                   </Link>
                 ))}
+
               </div>
 
 
