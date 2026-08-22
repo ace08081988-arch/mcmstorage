@@ -206,13 +206,17 @@ export function AppHeader() {
       {/* Skip link — target Tab pertama, memudahkan lompat ke konten */}
       <SkipToContent />
       <SidebarTrigger className="h-9 w-9 shrink-0 rounded-lg hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background md:inline-flex hidden" />
-      {/* Mobile: no sidebar trigger here (moved to bottom nav "Menu"), spacer for balance */}
-      <span aria-hidden className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg md:hidden">
-        <span
-          className="h-6 w-6 rounded-md ring-1 ring-primary/30"
-          style={{ background: "color-mix(in oklab, var(--primary) 14%, transparent)" }}
-        />
-      </span>
+      {/* Mobile: tanpa tombol sidebar (sudah pindah ke bottom nav "Menu").
+          Slot ini dipakai brand mark supaya header tidak terlihat kosong /
+          seperti gambar gagal dimuat. */}
+      <Link
+        to="/"
+        aria-label="Beranda"
+        className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/30 bg-primary/10 text-primary transition-colors hover:border-primary/60 md:hidden"
+      >
+        <Store className="h-[18px] w-[18px]" />
+      </Link>
+
 
       {/* Breadcrumb — hidden on very narrow screens, visible from sm up */}
       <nav
