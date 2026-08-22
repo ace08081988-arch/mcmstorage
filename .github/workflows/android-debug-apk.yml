@@ -54,8 +54,29 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
-      - name: Build web + cap sync
-        run: bun run mobile:sync
+      # Panggil vite langsung (bukan `bun run mobile:sync`) supaya hook
+      # `prebuild` (audit SEO + vitest head-audit) tidak ikut jalan dan
+      # menggagalkan build QA yang seharusnya hanya menghasilkan APK.
+      - name: Build web (CAPACITOR_BUILD=1)
+        env:
+          CAPACITOR_BUILD: "1"
+        run: |
+          set -euo pipefail
+          bunx vite build
+          node scripts/prepare-capacitor-web.mjs
+
+      - name: Verifikasi dist (index.html + viewport)
+        run: |
+          set -euo pipefail
+          test -f dist/index.html || { echo "::error::dist/index.html tidak ada"; exit 1; }
+          grep -qi 'name="viewport"' dist/index.html || { echo "::error::meta viewport hilang — WebView akan blank/zoom"; exit 1; }
+          echo "dist OK"
+
+      - name: Sinkron native (cap sync android)
+        run: |
+          set -euo pipefail
+          bunx cap sync android
+          node scripts/sync-native.mjs
 
       - name: Gradle assembleDebug
         working-directory: android
