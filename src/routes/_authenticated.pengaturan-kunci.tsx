@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PatternPad, patternToString } from "@/components/PatternPad";
+import { KeyRound, Grid3x3 } from "lucide-react";
+
 import {
   APP_LOCK_EVENT,
   getLockConfig,
@@ -353,13 +355,8 @@ function PengaturanKunci() {
       <header className="space-y-1">
         <div className="flex items-center justify-between gap-ms-2">
           <h1 className="text-ms-xl font-semibold">Pengaturan Kunci Aplikasi</h1>
-          <Link
-            to="/"
-            className="text-ms-xs text-muted-foreground hover:underline"
-          >
-            ← Beranda
-          </Link>
         </div>
+
         <p className="text-ms-sm text-muted-foreground">
           Atur metode kunci, sidik jari, auto-lock saat idle, dan kunci saat
           aplikasi keluar fokus.
@@ -460,7 +457,9 @@ function PengaturanKunci() {
               setPin2("");
             }}
           >
-            🔢 {cfg?.method === "pin" ? "Ubah PIN" : "Atur PIN"}
+            <KeyRound className="mr-2 h-4 w-4" />
+            {cfg?.method === "pin" ? "Ubah PIN" : "Atur PIN"}
+
           </Button>
           <Button
             variant={editor === "pattern" ? "default" : "outline"}
@@ -471,7 +470,9 @@ function PengaturanKunci() {
               setResetKey((k) => k + 1);
             }}
           >
-            ⬣ {cfg?.method === "pattern" ? "Ubah Pola" : "Atur Pola"}
+            <Grid3x3 className="mr-2 h-4 w-4" />
+            {cfg?.method === "pattern" ? "Ubah Pola" : "Atur Pola"}
+
           </Button>
         </div>
 
