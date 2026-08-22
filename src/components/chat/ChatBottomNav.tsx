@@ -137,6 +137,35 @@ export function ChatBottomNav() {
           </Link>
         );
       })}
+      {/* Tab ke-5: keluar dari area chat. Tap = buka menu utama aplikasi
+          (Beranda/Gudang/Ecer/dll) tanpa harus menekan tombol kembali
+          berkali-kali. Ini menghilangkan "jebakan" area chat di HP. */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        aria-label="Keluar dari chat, buka menu utama aplikasi"
+        className={cn(
+          "group/tab relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 outline-none transition-colors duration-200 min-[400px]:px-1",
+          "focus-visible:ring-2 focus-visible:ring-[var(--wa-green)]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--wa-header)]",
+          "text-[var(--wa-text-muted)] hover:text-[var(--wa-text)]",
+        )}
+      >
+        <span
+          aria-hidden="true"
+          data-nav-icon
+          className="relative grid h-6 w-10 place-items-center rounded-full transition-colors duration-200 min-[400px]:w-12"
+        >
+          <LayoutGrid className="hidden" />
+          <Menu className="h-[22px] w-[22px]" />
+        </span>
+        <span
+          aria-hidden="true"
+          data-nav-label
+          className="w-full min-w-0 truncate text-center text-ms-xs font-normal leading-ms-tight tracking-ms-tight"
+        >
+          Menu
+        </span>
+      </button>
     </nav>
   );
 }
