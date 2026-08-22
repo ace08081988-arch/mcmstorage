@@ -160,6 +160,11 @@ export function UnavailableNotice({
       : actionLabel
         ? [{ label: actionLabel, to, search, params, hash, href, onClick: onAction }]
         : [];
+  const badge = badgeLabel ?? "Tidak tersedia";
+  // Hindari judul kembar kalau halaman mengirim title yang sama dengan lencana.
+  const showTitle = Boolean(title) && !(typeof title === "string" && title.trim() === badge);
+
+
 
   return (
     <div
