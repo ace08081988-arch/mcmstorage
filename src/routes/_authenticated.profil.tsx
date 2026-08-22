@@ -47,8 +47,6 @@ import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { AccessStatusCard } from "@/components/AccessStatusCard";
 import { AccessDiagnostics } from "@/components/AccessDiagnostics";
 import { EmailVerificationStatus } from "@/components/EmailVerificationStatus";
-import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
-import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
 import { Link } from "@tanstack/react-router";
 import { Palette } from "lucide-react";
 
