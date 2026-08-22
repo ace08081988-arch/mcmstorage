@@ -12,6 +12,8 @@ import {
   MonitorSmartphone,
   Command as CommandIcon,
   Sparkles,
+  Store,
+
 } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NotificationBell } from "@/components/NotificationBell";
