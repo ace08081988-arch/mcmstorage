@@ -950,22 +950,24 @@ function HutangPiutangPage() {
                         : ssotEntry.piutang
                       : null;
                     const displaySisa = ssotSisa ?? gSisa;
-                    const expanded = openParties.has(group.key);
+                    const detailId = `${k}:${group.key}`;
+                    const expanded = detailKey === detailId;
                     return (
                       <section
                         key={group.key}
                         data-testid={`party-card-${normalizeParty(group.name)}`}
                         className="overflow-hidden rounded-2xl border bg-card shadow-xs"
                       >
-                        {/* Baris ringkas: hanya nama + sisa. Rincian catatan
-                            baru muncul setelah kartu ditekan. */}
+                        {/* Baris ringkas: hanya nama + sisa. Rincian lengkap
+                            (bayar, tagih, laporan) tampil di drawer terpisah. */}
                         <button
                           type="button"
+                          aria-haspopup="dialog"
                           aria-expanded={expanded}
-                          onClick={() => togglePartyOpen(group.key)}
+                          onClick={() => setDetailKey(expanded ? null : detailId)}
                           className={
                             "grid w-full grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-ms-2 px-ms-3.5 py-ms-3 text-left transition-colors hover:bg-muted/40 " +
-                            (expanded ? "border-b bg-muted/40" : "")
+                            (expanded ? "bg-muted/40" : "")
                           }
                         >
                           <span className="min-w-0">
@@ -982,16 +984,28 @@ function HutangPiutangPage() {
                           >
                             {rupiah(displaySisa)}
                           </span>
-                          <ChevronDown
-                            className={
-                              "h-4 w-4 shrink-0 text-muted-foreground transition-transform " +
-                              (expanded ? "rotate-180" : "")
-                            }
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-muted-foreground"
                             aria-hidden="true"
                           />
                         </button>
-                        {expanded && (
-                        <div className="origin-top animate-fade-in overflow-hidden motion-reduce:animate-none">
+                        <Sheet
+                          open={expanded}
+                          onOpenChange={(o) => setDetailKey(o ? detailId : null)}
+                        >
+                          <SheetContent
+                            side="bottom"
+                            className="flex max-h-[88vh] flex-col gap-0 rounded-t-2xl p-0"
+                          >
+                            <SheetHeader className="border-b px-ms-3.5 py-ms-3 text-left">
+                              <SheetTitle className="truncate text-ms-base">
+                                {group.name}
+                              </SheetTitle>
+                              <SheetDescription className="text-ms-2xs">
+                                Rincian {k} · {group.items.length} catatan
+                              </SheetDescription>
+                            </SheetHeader>
+                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/20 px-ms-3.5 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
                           <div className="min-w-0 sm:flex-1">
                             <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
