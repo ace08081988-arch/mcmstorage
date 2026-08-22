@@ -353,13 +353,8 @@ function PengaturanKunci() {
       <header className="space-y-1">
         <div className="flex items-center justify-between gap-ms-2">
           <h1 className="text-ms-xl font-semibold">Pengaturan Kunci Aplikasi</h1>
-          <Link
-            to="/"
-            className="text-ms-xs text-muted-foreground hover:underline"
-          >
-            ← Beranda
-          </Link>
         </div>
+
         <p className="text-ms-sm text-muted-foreground">
           Atur metode kunci, sidik jari, auto-lock saat idle, dan kunci saat
           aplikasi keluar fokus.
