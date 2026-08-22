@@ -207,6 +207,8 @@ function HutangPiutangPage() {
   const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
   // Rincian per-kontak disembunyikan sampai kartunya ditekan supaya daftar
   // ringkas: hanya nama + sisa hutang yang terlihat saat tertutup.
+  // Status buka/tutup disimpan per akun supaya bertahan saat pindah halaman
+  // atau muat ulang.
   const [openParties, setOpenParties] = useState<Set<string>>(() => new Set());
   const togglePartyOpen = useCallback((key: string) => {
     setOpenParties((prev) => {
@@ -216,6 +218,7 @@ function HutangPiutangPage() {
       return next;
     });
   }, []);
+
 
 
   useEffect(() => {
