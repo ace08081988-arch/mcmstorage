@@ -1501,13 +1501,8 @@ function Index() {
                     </span>
                   </Link>
                 ))}
-                {lainnyaMounted && (
-                  <Suspense fallback={null}>
-                    <DownloadStorageApkShortcut />
-                    <DownloadChatApkShortcut />
-                    <CopyChatApkLinksButton />
-                  </Suspense>
-                )}
+              </div>
+
               </div>
 
               {lainnyaMounted && (
