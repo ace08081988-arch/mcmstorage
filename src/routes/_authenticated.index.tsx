@@ -1558,11 +1558,24 @@ function Index() {
                   ],
                 },
                 ]
-                  .map((g) => ({ ...g, items: filterHiddenMenuItems(g.items) }))
+                  .map((g) => ({
+                    ...g,
+                    items: filterHiddenMenuItems(g.items).filter(matches),
+                  }))
                   .filter((g) => g.items.length > 0);
 
                 if (groups.length === 0) {
-                  return (
+                  return q ? (
+                    <UnavailableNotice
+                      badgeLabel="Tidak ditemukan"
+                      title={`Tidak ada menu cocok “${menuQuery.trim()}”`}
+                      description="Coba kata kunci lain, atau bersihkan pencarian untuk melihat semua menu."
+                      targets={[
+                        { label: "Bersihkan pencarian", onClick: () => setMenuQuery("") },
+                        { label: "Buka Profil & Akun", to: "/profil" },
+                      ]}
+                    />
+                  ) : (
                     <UnavailableNotice
                       description="Semua menu tambahan sedang tidak tersedia untuk akun ini. Kamu tetap bisa mengunduh aplikasi atau membuka profil."
                       targets={[
@@ -1571,7 +1584,6 @@ function Index() {
                       ]}
                     />
                   );
-
                 }
 
                 return groups.map((g) => (
