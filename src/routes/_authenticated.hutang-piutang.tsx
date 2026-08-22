@@ -1122,7 +1122,10 @@ function HutangPiutangPage() {
                     );
                           })}
                         </ul>
+                        </>
+                        )}
                       </section>
+
                     );
                   }}
                 />
