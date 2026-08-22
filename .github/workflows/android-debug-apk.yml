@@ -6,13 +6,15 @@ name: Android Debug APK (QA)
 
 on:
   workflow_dispatch:
-    inputs:
   pull_request:
     paths:
       - "android/**"
       - "capacitor.config.ts"
       - "scripts/build-apk.mjs"
       - ".github/workflows/android-debug-apk.yml"
+
+permissions:
+  contents: write
 
 concurrency:
   group: mcm-storage-debug-${{ github.ref }}
@@ -100,3 +102,29 @@ jobs:
             dist/qa/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
+
+      # Artifact GitHub selalu terunduh sebagai .zip — di HP Android file itu
+      # "tidak bisa dibuka". Karena itu APK yang sama juga dilampirkan ke
+      # GitHub Release supaya bisa diunduh & dipasang langsung dari HP.
+      - name: Publikasikan APK ke GitHub Release (tap langsung dari HP)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VC=$(node scripts/read-app-version.mjs --field versionCode)
+          VN=$(node scripts/read-app-version.mjs --field versionName)
+          TAG="qa-debug-${VC}-${{ github.run_number }}"
+          gh release create "$TAG" dist/qa/*.apk dist/qa/SHA256SUMS.txt \
+            --title "MCM Storage QA Debug $VN ($VC)" \
+            --notes "Build DEBUG untuk QA. Uninstall dulu versi lama sebelum pasang." \
+            --prerelease \
+            --target "${{ github.sha }}"
+          URL=$(gh release view "$TAG" --json assets --jq '.assets[] | select(.name|endswith(".apk")) | .url')
+          {
+            echo ""
+            echo "### ⬇️ Link unduh langsung (tap dari HP)"
+            echo ""
+            echo "$URL"
+          } >> "$GITHUB_STEP_SUMMARY"
+
