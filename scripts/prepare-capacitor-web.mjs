@@ -62,11 +62,28 @@ if (!fs.existsSync(indexPath)) {
   fs.copyFileSync(shell, indexPath);
 }
 
-const html = fs.readFileSync(indexPath, "utf8");
+let html = fs.readFileSync(indexPath, "utf8");
 if (html.trim().length < 50) fail("dist/index.html kosong/tidak valid.");
 if (!/<script[\s>]/i.test(html)) {
   fail("dist/index.html tidak memuat <script> — bundle klien tidak tertaut.");
 }
+
+// Shell SPA bisa terbit tanpa <meta name="viewport"> karena head() baru
+// dipasang setelah hidrasi. Di Android WebView itu berarti frame pertama
+// memakai layout viewport lebar (~980px), sehingga UI tampak mengecil di
+// satu kolom sempit. Sisipkan meta viewport secara idempoten.
+const VIEWPORT_META =
+  '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"/>';
+if (!/<meta[^>]+name=["']viewport["']/i.test(html)) {
+  if (/<head[^>]*>/i.test(html)) {
+    html = html.replace(/<head[^>]*>/i, (m) => `${m}${VIEWPORT_META}`);
+  } else {
+    html = `${VIEWPORT_META}${html}`;
+  }
+  fs.writeFileSync(indexPath, html);
+  console.log("[prepare-capacitor-web] meta viewport disisipkan ke index.html");
+}
+
 if (
   !fs.existsSync(path.join(DEST, "assets")) &&
   !fs.existsSync(path.join(DEST, "_build"))
