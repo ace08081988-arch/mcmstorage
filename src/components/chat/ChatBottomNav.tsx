@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { MessageCircle, Phone, Bell, LayoutGrid, Menu } from "lucide-react";
+import { MessageCircle, Phone, Home, Warehouse, Menu } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { useUnreadStatus } from "@/lib/chat";
@@ -8,7 +8,7 @@ import { useViewportAnchor } from "@/lib/use-viewport-anchor";
 import { cn } from "@/lib/utils";
 
 type Item = {
-  to: "/chat" | "/panggilan" | "/pembaruan" | "/fitur";
+  to: "/chat" | "/panggilan" | "/" | "/gudang";
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
   badge?: number;
