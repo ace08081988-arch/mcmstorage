@@ -53,6 +53,26 @@ type Item = {
 
 type Customer = { id: string; name: string; contact: string | null };
 
+/* ---------------------------------------------------------------------------
+ * Kelas bersama — SSOT spacing / ukuran font / hierarki tombol halaman Kios.
+ * 1) Primary  = CTA_PRIMARY (aksi utama tiap seksi, 1 per seksi)
+ * 2) Secondary= PILL_LINK   (navigasi cepat)
+ * 3) Tertiary = BTN_TERTIARY(pintasan kecil di dalam ringkasan)
+ * ------------------------------------------------------------------------ */
+const SECTION_CARD =
+  "rounded-2xl border border-border/70 bg-card p-ms-4 space-ms-3 shadow-sm";
+const FIELD_LABEL = "text-ms-xs font-medium text-muted-foreground";
+const FIELD_INPUT =
+  "min-h-11 w-full rounded-xl border border-border/70 bg-background px-ms-3 text-ms-sm outline-none focus-visible:border-primary/60";
+const CTA_PRIMARY =
+  "min-h-11 w-full rounded-xl bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-50";
+const PILL_LINK =
+  "inline-flex min-h-9 items-center gap-ms-1.5 rounded-full border border-border/70 bg-card px-ms-3 text-ms-xs font-medium text-foreground transition hover:border-primary/50";
+const BTN_TERTIARY =
+  "inline-flex min-h-8 items-center rounded-lg border border-border/70 px-ms-2 text-ms-2xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground";
+const SUMMARY_BOX =
+  "rounded-xl border border-border/60 bg-muted/40 p-ms-3 text-ms-xs space-ms-1.5";
+
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
