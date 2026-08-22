@@ -19,6 +19,7 @@ import {
   Users,
   Boxes,
   Tags,
+  X,
 } from "lucide-react";
 import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
 import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
