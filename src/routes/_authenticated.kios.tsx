@@ -396,20 +396,21 @@ function KiosPage() {
 
               {rxItem && rxQty > 0 && (
                 <div className={SUMMARY_BOX}>
-                  <div className="flex items-center justify-between gap-ms-2">
-                    <span className="text-muted-foreground">Stok setelah</span>
-                    <b className="tabular-nums">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                    <span className="min-w-0 truncate text-muted-foreground">Stok setelah</span>
+                    <b className="tabular-nums [overflow-wrap:anywhere]">
                       {fmtQty(rxItem.stock_base + rxQty, rxItem.base_unit)}
                     </b>
                   </div>
                   {rxCost > 0 && (
-                    <div className="flex items-center justify-between gap-ms-2">
-                      <span className="text-muted-foreground">Total nilai</span>
-                      <b className="tabular-nums">{rupiah(rxQty * rxCost)}</b>
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-ms-2">
+                      <span className="min-w-0 truncate text-muted-foreground">Total nilai</span>
+                      <b className="tabular-nums [overflow-wrap:anywhere]">{rupiah(rxQty * rxCost)}</b>
                     </div>
                   )}
                 </div>
               )}
+
 
               <button
                 type="button"
