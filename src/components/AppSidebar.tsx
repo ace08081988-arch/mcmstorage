@@ -368,6 +368,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem>; mobilePrimary?: bo
     items: [
       { title: "Beranda", url: "/", icon: Home, desc: "Halaman depan aplikasi" },
       { title: "Profil Akun", url: "/profil", icon: User, desc: "Data akun & foto Anda" },
+      { title: "Pengaturan Ringkas", url: "/pengaturan-ringkas", icon: SlidersHorizontal, desc: "Setelan harian dalam satu layar" },
       { title: "Pengaturan", url: "/pengaturan", icon: Settings, desc: "Semua pengaturan aplikasi" },
       { title: "Pengaturan Tampilan", url: "/pengaturan-tampilan", icon: Palette, desc: "Tema, warna, ukuran huruf" },
       { title: "Aksesibilitas", url: "/pengaturan-aksesibilitas", icon: Accessibility, desc: "Kemudahan baca & gerak" },
