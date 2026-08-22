@@ -72,6 +72,7 @@ import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes
 import { Route as AuthenticatedPengaturanPerformaRouteImport } from './routes/_authenticated.pengaturan-performa'
 import { Route as AuthenticatedPengaturanPesanWaRouteImport } from './routes/_authenticated.pengaturan-pesan-wa'
 import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
+import { Route as AuthenticatedPengaturanRingkasRouteImport } from './routes/_authenticated.pengaturan-ringkas'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated.pengaturan-tampilan'
 import { Route as AuthenticatedPerfRouteImport } from './routes/_authenticated.perf'
@@ -523,6 +524,12 @@ const AuthenticatedPengaturanPrivasiRoute =
   AuthenticatedPengaturanPrivasiRouteImport.update({
     id: '/pengaturan-privasi',
     path: '/pengaturan-privasi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanRingkasRoute =
+  AuthenticatedPengaturanRingkasRouteImport.update({
+    id: '/pengaturan-ringkas',
+    path: '/pengaturan-ringkas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanScrollGuardRoute =
@@ -1219,6 +1226,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
+  '/pengaturan-ringkas': typeof AuthenticatedPengaturanRingkasRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/perf': typeof AuthenticatedPerfRoute
@@ -1390,6 +1398,7 @@ export interface FileRoutesByTo {
   '/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
+  '/pengaturan-ringkas': typeof AuthenticatedPengaturanRingkasRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/perf': typeof AuthenticatedPerfRoute
@@ -1567,6 +1576,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-performa': typeof AuthenticatedPengaturanPerformaRoute
   '/_authenticated/pengaturan-pesan-wa': typeof AuthenticatedPengaturanPesanWaRoute
   '/_authenticated/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
+  '/_authenticated/pengaturan-ringkas': typeof AuthenticatedPengaturanRingkasRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/perf': typeof AuthenticatedPerfRoute
@@ -1745,6 +1755,7 @@ export interface FileRouteTypes {
     | '/pengaturan-performa'
     | '/pengaturan-pesan-wa'
     | '/pengaturan-privasi'
+    | '/pengaturan-ringkas'
     | '/pengaturan-scroll-guard'
     | '/pengaturan-tampilan'
     | '/perf'
@@ -1916,6 +1927,7 @@ export interface FileRouteTypes {
     | '/pengaturan-performa'
     | '/pengaturan-pesan-wa'
     | '/pengaturan-privasi'
+    | '/pengaturan-ringkas'
     | '/pengaturan-scroll-guard'
     | '/pengaturan-tampilan'
     | '/perf'
@@ -2092,6 +2104,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-performa'
     | '/_authenticated/pengaturan-pesan-wa'
     | '/_authenticated/pengaturan-privasi'
+    | '/_authenticated/pengaturan-ringkas'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/pengaturan-tampilan'
     | '/_authenticated/perf'
@@ -2740,6 +2753,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-privasi'
       fullPath: '/pengaturan-privasi'
       preLoaderRoute: typeof AuthenticatedPengaturanPrivasiRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-ringkas': {
+      id: '/_authenticated/pengaturan-ringkas'
+      path: '/pengaturan-ringkas'
+      fullPath: '/pengaturan-ringkas'
+      preLoaderRoute: typeof AuthenticatedPengaturanRingkasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-scroll-guard': {
@@ -3646,6 +3666,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanPerformaRoute: typeof AuthenticatedPengaturanPerformaRoute
   AuthenticatedPengaturanPesanWaRoute: typeof AuthenticatedPengaturanPesanWaRoute
   AuthenticatedPengaturanPrivasiRoute: typeof AuthenticatedPengaturanPrivasiRoute
+  AuthenticatedPengaturanRingkasRoute: typeof AuthenticatedPengaturanRingkasRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
   AuthenticatedPerfRoute: typeof AuthenticatedPerfRoute
@@ -3728,6 +3749,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanPerformaRoute: AuthenticatedPengaturanPerformaRoute,
   AuthenticatedPengaturanPesanWaRoute: AuthenticatedPengaturanPesanWaRoute,
   AuthenticatedPengaturanPrivasiRoute: AuthenticatedPengaturanPrivasiRoute,
+  AuthenticatedPengaturanRingkasRoute: AuthenticatedPengaturanRingkasRoute,
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
   AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,

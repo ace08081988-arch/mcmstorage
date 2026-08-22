@@ -20,6 +20,7 @@ import {
   Search,
   ShieldCheck,
   Smartphone,
+  SlidersHorizontal,
   Gauge,
   Sparkles,
   User,
@@ -62,6 +63,20 @@ type SettingCategory = {
  * lewat sidebar (jika masih di-list di sana), jadi hub ini aditif.
  */
 const CATEGORIES: ReadonlyArray<SettingCategory> = [
+  {
+    key: "cepat",
+    label: "Akses Cepat",
+    hint: "Setelan harian dalam satu layar.",
+    entries: [
+      {
+        title: "Pengaturan Ringkas",
+        description: "Tema, ukuran huruf, kontras, notifikasi, hemat kuota — semua di satu halaman.",
+        to: "/pengaturan-ringkas",
+        icon: SlidersHorizontal,
+        keywords: "ringkas cepat quick tema huruf notifikasi kuota",
+      },
+    ],
+  },
   {
     key: "tampilan",
     label: "Tampilan & Aksesibilitas",
