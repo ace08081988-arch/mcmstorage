@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, X, Clock, UserPlus, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
+import { ArrowLeft, Check, X, Clock, Loader2, CheckCircle2, XCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -272,9 +273,10 @@ function FriendRequestsPage() {
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
             ) : incomingVisible.length === 0 ? (
-              <EmptyState
-                title="Belum ada permintaan masuk"
-                subtitle="Bagikan PIN kamu di menu Undang supaya teman bisa mengirim permintaan."
+              <UnavailableNotice
+                description="Belum ada permintaan masuk. Bagikan PIN kamu supaya teman bisa mengirim permintaan."
+                actionLabel="Buka menu Undang"
+                to="/undang"
               />
             ) : (
               incomingVisible.map((r) => {
@@ -347,9 +349,10 @@ function FriendRequestsPage() {
             ) : isError ? (
               <ErrorRetry onRetry={() => refetch()} />
             ) : outgoingVisible.length === 0 ? (
-              <EmptyState
-                title="Belum ada permintaan terkirim"
-                subtitle="Masukkan PIN teman di menu Undang untuk mengirim permintaan pertemanan."
+              <UnavailableNotice
+                description="Belum ada permintaan terkirim. Masukkan PIN teman untuk mengirim permintaan pertemanan."
+                actionLabel="Buka menu Undang"
+                to="/undang"
               />
             ) : (
               outgoingVisible.map((r) => {
@@ -474,15 +477,6 @@ function ErrorRetry({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed p-8 text-center">
-      <UserPlus className="mb-2 h-6 w-6 text-muted-foreground" />
-      <div className="text-ms-sm font-medium">{title}</div>
-      <p className="mt-1 text-ms-xs text-muted-foreground">{subtitle}</p>
-    </div>
-  );
-}
 
 function StatusChip({
   status,

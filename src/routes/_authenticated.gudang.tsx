@@ -24,6 +24,7 @@ import {
   Search,
 } from "lucide-react";
 import { EmptyState } from "@/components/shell/EmptyState";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 
 
 import { notifyError } from "@/lib/friendly-error";
@@ -2210,17 +2211,14 @@ function StokTab({
   // saat data pertama kali masuk.
   if (items.length === 0)
     return (
-      <EmptyState
-        icon={PackageX}
-        title="Belum ada barang di gudang"
-        description={
-          <>
-            Barang muncul otomatis begitu kamu mencatat pembelian pertama di tab{" "}
-            <b>Beli</b>.
-          </>
-        }
+      <UnavailableNotice
+        title="Tidak tersedia"
+        description="Belum ada barang di gudang. Barang muncul otomatis begitu kamu mencatat pembelian pertama."
+        actionLabel="Catat pembelian"
+        to="/kios"
       />
     );
+
 
 
   return (
