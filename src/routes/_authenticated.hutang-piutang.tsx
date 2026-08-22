@@ -1003,7 +1003,10 @@ function HutangPiutangPage() {
                           />
                         </button>
                         {expanded && (
-                        <>
+                        <div
+                          className="origin-top animate-accordion-down overflow-hidden motion-reduce:animate-none"
+                          style={{ ["--radix-accordion-content-height" as string]: "auto" }}
+                        >
                         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-ms-2 border-b bg-muted/20 px-ms-3.5 py-ms-2.5 sm:flex sm:flex-wrap sm:items-center">
                           <div className="min-w-0 sm:flex-1">
                             <div className="text-ms-2xs leading-snug text-muted-foreground [overflow-wrap:anywhere]">
