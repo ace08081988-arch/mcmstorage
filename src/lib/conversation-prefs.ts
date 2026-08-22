@@ -100,7 +100,7 @@ export function setConvPrefs(
   const k = keyOf(uid, cid);
   const next = { ...safeRead(k), ...patch };
   try {
-    const stored: StoredPrefs = { ...next, __by: TAB_ID, __at: Date.now() };
+    const stored: StoredPrefs = { ...next, __by: tabId(), __at: Date.now() };
     window.localStorage.setItem(k, JSON.stringify(stored));
   } catch {
     /* ignore quota */
@@ -123,7 +123,7 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
         // Abaikan jika penulis adalah tab ini (StorageEvent normalnya tak
         // menyala di tab asal, tapi kita perkeras terhadap kasus edge).
         const meta = readStoredMeta(keyOf(uid, cid));
-        if (meta.by === TAB_ID) {
+        if (meta.by === tabId()) {
           setPrefs(getConvPrefs(uid, cid));
           return;
         }
