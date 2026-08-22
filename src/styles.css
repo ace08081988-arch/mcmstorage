@@ -5152,6 +5152,13 @@ textarea::placeholder {
     transform: translateY(-50%);
     /* Transparan: tidak mengubah tampilan, hanya memperluas hit area. */
   }
+  /* Tautan navigasi/footer sering hanya setinggi teks (±15px). Jadikan
+     kotak sungguhan setinggi 44px supaya bisa ditekan dengan jempol. */
+  :where(nav, footer, [role="navigation"]) a[href]:not(.tap-exact):not([data-tap-exact]) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
   /* Tautan di dalam paragraf tidak boleh melebar — merusak alur teks
      dan menabrak baris di atas/bawahnya. */
   :where(p, .prose) a[href]::after,
