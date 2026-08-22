@@ -15,11 +15,8 @@ type Item = (typeof BOTTOM_NAV_ITEMS)[number] & {
 
 /**
  * Bottom navigation ala WhatsApp untuk area chat.
- * Chat / Panggilan / Pembaruan / Fitur — sticky di bawah, hormati safe-area iOS.
- *
- * Layout pakai grid 4 kolom sama rata supaya label panjang seperti
- * "Panggilan" dan "Pembaruan" tidak saling tumpang tindih di 390/411px.
- * Setiap label di-truncate dan setiap tab memiliki min tap target 44px.
+ * Urutan & label sama persis dengan bar bawah aplikasi:
+ * Beranda / Gudang / Ecer / Chat / Menu — sticky di bawah, hormati safe-area.
  */
 export function ChatBottomNav() {
   const { count: unread, isLoading: unreadLoading } = useUnreadStatus();
@@ -37,10 +34,6 @@ export function ChatBottomNav() {
   const navRef = useRef<HTMLElement | null>(null);
   // Keyboard terbuka -> bar hilang, spacer harus 0 (tanpa dead-space).
   useBottomNavHeightSync(navRef, !keyboardOpen);
-  // Baris bawah berisi tujuan yang paling sering dipakai harian: chat,
-  // panggilan, lalu jalan pintas keluar dari area chat (Beranda & Gudang)
-  // supaya tidak perlu bolak-balik lewat drawer. "Pembaruan" dan "Fitur"
-  // tetap tersedia lewat tombol Menu.
   // Urutan & label identik dengan bar bawah aplikasi (satu sumber:
   // `BOTTOM_NAV_ITEMS`): Beranda → Gudang → Ecer → Chat → Menu.
   // "Panggilan" tetap dapat dibuka lewat tombol Menu (grup Komunikasi).
