@@ -9,7 +9,21 @@
  * Harus dipanggil HANYA dari dalam body `.handler()` server fn (setelah
  * `requireSupabaseAuth`), karena bergantung pada `getRequestHeader`.
  */
-import { getRequestHeader } from "@tanstack/react-start/server";
+
+type HeaderReader = (name: string) => string | null | undefined;
+
+let headerReader: HeaderReader | undefined;
+
+function getServerHeaderReader(): HeaderReader {
+  if (headerReader) return headerReader;
+  headerReader = () => null;
+  void import("@tanstack/react-start/server")
+    .then((m) => {
+      headerReader = m.getRequestHeader as HeaderReader;
+    })
+    .catch(() => {});
+  return headerReader;
+}
 
 export function logAdminDenial(params: {
   fn: string;
@@ -17,6 +31,10 @@ export function logAdminDenial(params: {
   reason?: string;
 }): void {
   try {
+    // Header dibaca sinkron dari request context server; impor statis
+    // `@tanstack/react-start/server` sengaja dihindari supaya modul ini
+    // tidak menyeret bundel server ke graph client.
+    const getRequestHeader = getServerHeaderReader();
     const referer =
       getRequestHeader("referer") ?? getRequestHeader("referrer") ?? null;
     const ua = getRequestHeader("user-agent") ?? null;
