@@ -25,10 +25,18 @@ const keyOf = (uid: string, cid: string) => `mcm.conv-prefs.${uid}.${cid}`;
 
 // ID unik per tab; dipakai untuk menandai penulis perubahan agar tab asal
 // tidak menampilkan toast "sinkron dari perangkat lain" atas aksinya sendiri.
-const TAB_ID =
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+// Dihitung malas: worker Cloudflare melarang generate nilai acak di lingkup
+// modul (global scope), jadi ID baru dibuat saat pertama kali dipakai.
+let _tabId: string | null = null;
+function tabId(): string {
+  if (_tabId) return _tabId;
+  _tabId =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return _tabId;
+}
+
 
 // Dedupe window: sinyal (cid + changes-signature) yang sudah ditoast dalam
 // jendela ini akan diabaikan agar tidak dobel bila StorageEvent terpicu
@@ -92,7 +100,7 @@ export function setConvPrefs(
   const k = keyOf(uid, cid);
   const next = { ...safeRead(k), ...patch };
   try {
-    const stored: StoredPrefs = { ...next, __by: TAB_ID, __at: Date.now() };
+    const stored: StoredPrefs = { ...next, __by: tabId(), __at: Date.now() };
     window.localStorage.setItem(k, JSON.stringify(stored));
   } catch {
     /* ignore quota */
@@ -115,7 +123,7 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
         // Abaikan jika penulis adalah tab ini (StorageEvent normalnya tak
         // menyala di tab asal, tapi kita perkeras terhadap kasus edge).
         const meta = readStoredMeta(keyOf(uid, cid));
-        if (meta.by === TAB_ID) {
+        if (meta.by === tabId()) {
           setPrefs(getConvPrefs(uid, cid));
           return;
         }

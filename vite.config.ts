@@ -115,12 +115,22 @@ export default defineConfig({
         entities: path.resolve(__dirname, "node_modules/entities"),
       },
     },
-    build: {
-      // Rolldown (Vite 8) memecah bundel SSR jadi dua chunk yang saling impor
-      // sehingga `createMiddleware` undefined saat init worker (500 di semua rute).
-      // Mematikan tree-shaking mencegah pemecahan/deconflict yang salah itu.
-      rollupOptions: { treeshake: false },
+    environments: {
+      ssr: {
+        build: {
+          rollupOptions: {
+            output: {
+              // Rolldown memecah bundel SSR jadi banyak chunk yang saling
+              // impor sehingga helper framework (`createMiddleware`,
+              // `createSsrRpc`) undefined saat init worker → 500 di semua
+              // rute. Worker hanya butuh satu modul, jadi paksa satu chunk.
+              manualChunks: () => "index",
+            },
+          },
+        },
+      },
     },
+
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
