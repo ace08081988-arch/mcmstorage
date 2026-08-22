@@ -1242,6 +1242,10 @@ function HutangPiutangPage() {
               payments={payments}
               inPeriod={inPeriod}
               onSendWA={() => void sendFullReportWA()}
+              onAddDebt={() => {
+                setAddPrefill(null);
+                setAddOpen(true);
+              }}
               onRemovePayment={async (id: string) => {
                 if (
                   !(await confirm({
