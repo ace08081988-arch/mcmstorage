@@ -1182,9 +1182,10 @@ function HutangPiutangPage() {
                       </li>
                     );
                           })}
-                        </ul>
-                        </div>
-                        )}
+                         </ul>
+                            </div>
+                          </SheetContent>
+                        </Sheet>
                       </section>
 
                     );
