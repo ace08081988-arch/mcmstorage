@@ -167,14 +167,15 @@ export function UnavailableNotice({
       className={`rounded-2xl border border-dashed border-border/70 bg-card/40 p-ms-4 text-center ${className}`}
     >
       <UnavailableBadge
-        label={badgeLabel ?? (typeof title === "string" && !badgeLabel ? undefined : undefined) ?? "Tidak tersedia"}
+        label={badge}
         {...(icon ? { icon } : {})}
       />
-      {title && (
+      {showTitle && (
         <h3 className="text-premium-heading mt-ms-2 text-ms-sm font-semibold leading-tight text-foreground">
           {title}
         </h3>
       )}
+
       {body && (
         <p className="mx-auto mt-ms-2 max-w-sm text-ms-xs leading-relaxed text-muted-foreground [overflow-wrap:anywhere]">
           {body}
