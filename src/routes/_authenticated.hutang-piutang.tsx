@@ -207,6 +207,8 @@ function HutangPiutangPage() {
   const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
   // Rincian per-kontak disembunyikan sampai kartunya ditekan supaya daftar
   // ringkas: hanya nama + sisa hutang yang terlihat saat tertutup.
+  // Status buka/tutup disimpan per akun supaya bertahan saat pindah halaman
+  // atau muat ulang.
   const [openParties, setOpenParties] = useState<Set<string>>(() => new Set());
   const togglePartyOpen = useCallback((key: string) => {
     setOpenParties((prev) => {
@@ -218,9 +220,35 @@ function HutangPiutangPage() {
   }, []);
 
 
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
+
+  // Muat status kartu terbuka milik akun ini (per-akun, tahan reload).
+  const openPartiesKey = scopedKey("mcm:hutangPiutang:openParties", uid);
+  const openPartiesHydrated = useRef(false);
+  useEffect(() => {
+    openPartiesHydrated.current = false;
+    try {
+      const raw = localStorage.getItem(openPartiesKey);
+      const arr = raw ? (JSON.parse(raw) as unknown) : null;
+      setOpenParties(new Set(Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : []));
+    } catch {
+      setOpenParties(new Set());
+    }
+    openPartiesHydrated.current = true;
+  }, [openPartiesKey]);
+
+  // Simpan setiap perubahan buka/tutup.
+  useEffect(() => {
+    if (!openPartiesHydrated.current) return;
+    try {
+      localStorage.setItem(openPartiesKey, JSON.stringify([...openParties]));
+    } catch {
+      /* private mode — abaikan */
+    }
+  }, [openParties, openPartiesKey]);
 
   const refreshSsot = useCallback(async () => {
     const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
