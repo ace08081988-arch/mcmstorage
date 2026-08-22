@@ -53,7 +53,9 @@ export function ChatBottomNav() {
   // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
   // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
   const activeTo = useMemo(() => {
-    const match = items.find((it) => path === it.to || path.startsWith(`${it.to}/`));
+    const match = items.find((it) =>
+      it.to === "/" ? path === "/" : path === it.to || path.startsWith(`${it.to}/`),
+    );
     return match?.to;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
