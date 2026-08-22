@@ -320,9 +320,10 @@ function KiosPage() {
             .
           </div>
         ) : (
-          <>
+          <div className="grid items-start gap-ms-4 lg:grid-cols-2">
             {/* ================ TERIMA DARI PEGAWAI ================ */}
             <section className={SECTION_CARD}>
+
               <div className="flex min-w-0 items-start gap-ms-2">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
                   <PackagePlus className="h-[18px] w-[18px]" />
