@@ -55,7 +55,7 @@ export const listSignupAttempts = createServerFn({ method: "GET" })
     const status: SignupAttemptStatus =
       statusRaw === "success" || statusRaw === "failed" ? statusRaw : "all";
     const limitRaw = typeof d.limit === "number" ? d.limit : 200;
-    const limit = Math.max(1, Math.min(1000, Math.floor(limitRaw)));
+    const limit = Math.max(1, Math.min(1000, Math.floor(limitRaw));
     return { from: clean(d.from), to: clean(d.to), status, limit };
   })
   .handler(async ({ context, data }): Promise<ListSignupAttemptsResult> => {
@@ -69,7 +69,7 @@ export const listSignupAttempts = createServerFn({ method: "GET" })
       void import('./admin-denial-telemetry.server').then((m) => m.logAdminDenial({
         fn: "signup-attempts:listSignupAttempts",
         userId,
-      })));
+      }));
       return { isAdmin: false, fetchedAt: now, rows: [] };
     }
 

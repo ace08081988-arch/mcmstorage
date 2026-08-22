@@ -451,7 +451,7 @@ async function requireAdmin(context: any) {
   });
   if (error) throw new Error(error.message);
   if (!data) {
-    const { logAdminDenial } = await import("./admin-denial-telemetry");
+    const { logAdminDenial } = await import("./admin-denial-telemetry.server");
     logAdminDenial({ fn: "apk:requireAdmin", userId: context.userId });
     throw new Error("Forbidden: admin diperlukan");
   }
