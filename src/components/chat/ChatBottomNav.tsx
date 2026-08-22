@@ -65,7 +65,7 @@ export function ChatBottomNav() {
       // `var(--app-safe-bottom,env(safe-area-inset-bottom,0px))` untuk notch/home indicator iOS.
       // Latar solid (tanpa transparansi/blur) supaya konten yang lewat di
       // baliknya tidak "menembus" bar dan kontras label tetap konsisten.
-      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-4 items-stretch border-t border-[var(--wa-border)] bg-[var(--wa-header)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
+      className="app-static-bottom-bar fixed inset-x-0 bottom-0 mx-auto grid max-w-2xl grid-cols-5 items-stretch border-t border-[var(--wa-border)] bg-[var(--wa-header)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]"
       style={{
         transition: "opacity 160ms ease-out",
         opacity: keyboardOpen ? 0 : 1,
