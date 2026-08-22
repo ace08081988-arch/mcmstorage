@@ -20,6 +20,7 @@ import {
   Search,
   ShieldCheck,
   Smartphone,
+  SlidersHorizontal,
   Gauge,
   Sparkles,
   User,
