@@ -909,7 +909,7 @@ function HutangPiutangPage() {
                   cacheKey="hutang-parties"
                   items={groupedByParty}
                   getKey={(group) => group.key}
-                  estimateSize={260}
+                  estimateSize={96}
                   threshold={6}
                   gap={16}
                   renderItem={(group) => {
