@@ -6,6 +6,7 @@ import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { PackagePlus, Send, CheckCircle2, Search } from "lucide-react";
 import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
+import { UnavailableNotice } from "@/components/shell/UnavailableNotice";
 import { filterHiddenMenuItems } from "@/lib/hidden-menu-routes";
 
 
