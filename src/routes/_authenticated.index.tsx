@@ -1852,7 +1852,7 @@ function Index() {
         >
           {filtered.map((p) => {
             const sent = p.status === "Sudah Dikirim";
-            const waUrl = `https://wa.me/?text=${encodeURIComponent(buildPesan(p))}`;
+            const waUrl = waHrefFor(p);
             const open = openId === p.id;
             const fotoCount = (p.foto ? 1 : 0) + (p.galeri?.length ?? 0);
             const thumb = p.foto ?? p.galeri?.[0];
