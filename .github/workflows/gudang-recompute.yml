@@ -83,7 +83,7 @@ jobs:
       BENCH_PROFILE: ${{ github.event.inputs.profile == 'true' && '1' || '' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -95,7 +95,7 @@ jobs:
 
       - name: Restore benchmark trend history
         id: trend-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: benchmarks/conflict-wide-fields.trend.jsonl
           key: bench-trend-conflict-wide-fields-${{ github.ref }}-${{ github.run_id }}
@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload compare artifact (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-compare-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -174,7 +174,7 @@ jobs:
 
       - name: Upload histogram artifact (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-histogram-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -185,7 +185,7 @@ jobs:
 
       - name: Upload benchmark trend artifact (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-benchmark-trend-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -197,7 +197,7 @@ jobs:
 
       - name: Upload flakiness breakdown artifact (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-flakiness-breakdown-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -208,7 +208,7 @@ jobs:
 
       - name: Upload benchmark artifact (always)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-benchmark-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -228,7 +228,7 @@ jobs:
 
       - name: Upload profile artifact (only when profile emitted)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-profile-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
@@ -239,7 +239,7 @@ jobs:
 
       - name: Upload stress diagnostic artifacts (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: gudang-stress-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: test-artifacts/**

@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with: { bun-version: latest }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with: { python-version: "3.11" }
       - run: bun install --frozen-lockfile
       - run: |
@@ -44,7 +44,7 @@ jobs:
         run: kill $(cat /tmp/dev.pid) || true
       - name: Upload report + screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: responsive-audit
           path: audit-out
