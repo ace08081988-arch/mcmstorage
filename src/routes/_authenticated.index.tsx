@@ -1493,7 +1493,40 @@ function Index() {
               </span>
             </summary>
             <div className="space-ms-4 border-t border-primary/10 p-ms-4">
+              {/* Cari menu — memfilter semua kategori sekaligus. */}
+              <div className="relative">
+                <Search
+                  aria-hidden
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type="search"
+                  inputMode="search"
+                  value={menuQuery}
+                  onChange={(e) => setMenuQuery(e.target.value)}
+                  placeholder="Cari menu… (mis. profil, katalog)"
+                  aria-label="Cari menu lainnya"
+                  className="h-11 rounded-xl pl-9 pr-9"
+                />
+                {menuQuery.trim().length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setMenuQuery("")}
+                    aria-label="Bersihkan pencarian"
+                    className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground hover:bg-muted"
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                )}
+              </div>
+
               {(() => {
+                const q = menuQuery.trim().toLowerCase();
+                const matches = (s: { label: string; desc: string; url: string }) =>
+                  !q ||
+                  s.label.toLowerCase().includes(q) ||
+                  s.desc.toLowerCase().includes(q) ||
+                  s.url.toLowerCase().includes(q);
                 const groups = [
                 {
                   group: "Unduh",
