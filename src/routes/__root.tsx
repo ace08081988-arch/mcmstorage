@@ -472,6 +472,10 @@ function RootComponent() {
       import("@/lib/chat-mode-branding").then(({ applyChatModeBranding }) => applyChatModeBranding()).catch(() => {});
     };
     window.addEventListener("mcm:app-mode-change", onAppModeChange);
+    // Penanda hidrasi untuk boot watchdog APK (lihat
+    // scripts/prepare-capacitor-web.mjs). Tanpa atribut ini, watchdog
+    // menganggap aplikasi gagal dimuat dan menampilkan overlay diagnosa.
+    try { document.documentElement.setAttribute("data-ace-hydrated", "1"); } catch { /* noop */ }
     // Recovery bundle basi + auto-update SW pasca deploy baru.
     import("@/lib/build-cache-buster").then(({ installBuildCacheBuster }) => installBuildCacheBuster()).catch(() => {});
     import("@/lib/sw-auto-update").then(({ installSwAutoUpdate }) => installSwAutoUpdate()).catch(() => {});
