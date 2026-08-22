@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Warehouse, PackageSearch, MessageCircle, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { useSidebar } from "@/components/ui/sidebar";
+import { BOTTOM_NAV_ITEMS, activeBottomNavTo } from "@/lib/bottom-nav-items";
 import { useUnreadStatus } from "@/lib/chat";
 import { useBottomNavHeightSync } from "@/lib/use-bottom-nav-height";
 import { useViewportAnchor } from "@/lib/use-viewport-anchor";
@@ -15,10 +16,7 @@ import { cn } from "@/lib/utils";
  * Palet Noir & Gold: latar hitam pekat, aksen emas (primary), safe-area
  * bawah untuk iOS/Android gesture bar.
  */
-type Item = {
-  to: "/" | "/gudang" | "/ecer" | "/chat";
-  label: string;
-  Icon: React.ComponentType<{ className?: string }>;
+type Item = (typeof BOTTOM_NAV_ITEMS)[number] & {
   badge?: number;
   badgeLoading?: boolean;
 };
@@ -42,14 +40,7 @@ export function MobileBottomNav() {
   // sendiri (ChatBottomNav) dengan sub-tab yang tidak tersedia di sini.
   // Sembunyikan bottom nav global agar tidak menutupi sub-tab tersebut.
   // Semua hook dipanggil sebelum early-return (React error #310 kalau tidak).
-  const activeTo = useMemo(() => {
-    // "/" cocokkan persis, rute lain gunakan prefix segmen.
-    if (path === "/") return "/" as const;
-    const hit = (["/gudang", "/ecer", "/chat"] as const).find(
-      (to) => path === to || path.startsWith(`${to}/`),
-    );
-    return hit;
-  }, [path]);
+  const activeTo = useMemo(() => activeBottomNavTo(path), [path]);
 
   const hideOnChatFamily =
     path === "/chat" ||
@@ -65,12 +56,9 @@ export function MobileBottomNav() {
   useBottomNavHeightSync(navRef, !hideOnChatFamily && !keyboardOpen);
   if (hideOnChatFamily) return null;
 
-  const items: Item[] = [
-    { to: "/", label: "Beranda", Icon: Home },
-    { to: "/gudang", label: "Gudang", Icon: Warehouse },
-    { to: "/ecer", label: "Ecer", Icon: PackageSearch },
-    { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread, badgeLoading: unreadLoading },
-  ];
+  const items: Item[] = BOTTOM_NAV_ITEMS.map((it) =>
+    it.to === "/chat" ? { ...it, badge: unread, badgeLoading: unreadLoading } : { ...it },
+  );
 
   // Index tab aktif untuk menggerakkan indikator "pill" bergeser mulus.
   // 5 slot total (4 link + tombol Menu). Bila rute saat ini tidak
