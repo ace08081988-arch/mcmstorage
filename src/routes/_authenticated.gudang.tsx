@@ -19,7 +19,10 @@ import {
   AlertTriangle,
   PackageX,
   Sparkles,
+  ImageIcon,
+  Info,
 } from "lucide-react";
+
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
 import { assertStorageAccess } from "@/lib/storage-access";
