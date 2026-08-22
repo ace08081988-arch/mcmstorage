@@ -21,7 +21,10 @@ import {
   Sparkles,
   ImageIcon,
   Info,
+  Search,
 } from "lucide-react";
+import { EmptyState } from "@/components/shell/EmptyState";
+
 
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
@@ -2207,10 +2210,18 @@ function StokTab({
   // saat data pertama kali masuk.
   if (items.length === 0)
     return (
-      <div className="rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
-        Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
-      </div>
+      <EmptyState
+        icon={PackageX}
+        title="Belum ada barang di gudang"
+        description={
+          <>
+            Barang muncul otomatis begitu kamu mencatat pembelian pertama di tab{" "}
+            <b>Beli</b>.
+          </>
+        }
+      />
     );
+
 
   return (
     <>
@@ -2302,10 +2313,29 @@ function StokTab({
     })()}
 
     {filtered.length === 0 && (
-      <div className="mt-3 rounded-lg border border-dashed p-ms-6 text-center text-ms-sm text-muted-foreground">
-        Tidak ada barang cocok dengan pencarian.
-      </div>
+      <EmptyState
+        className="mt-3"
+        icon={Search}
+        title="Tidak ada barang yang cocok"
+        description={
+          query.trim()
+            ? `Tidak ditemukan hasil untuk "${query.trim()}". Coba kata kunci lain atau hapus filter.`
+            : "Coba ubah kata kunci pencarian."
+        }
+        actions={
+          query.trim() ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="inline-flex min-h-9 items-center rounded-full border px-ms-3 text-ms-xs font-medium hover:bg-accent"
+            >
+              Hapus pencarian
+            </button>
+          ) : undefined
+        }
+      />
     )}
+
 
     {/* Daftar dikelompokkan per kategori */}
     <div className="mt-3 space-ms-3">

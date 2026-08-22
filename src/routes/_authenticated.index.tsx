@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } fro
 import { toast } from "sonner";
 import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
+import { PackagePlus, Send, CheckCircle2, Search } from "lucide-react";
+import { EmptyState, ListSkeleton } from "@/components/shell/EmptyState";
+
 import { MidnightScope } from "@/lib/midnight-preview";
 const LiveProductGallery = lazy(() =>
   import("@/components/LiveProductGallery").then((m) => ({ default: m.LiveProductGallery })),
@@ -1230,11 +1233,15 @@ function Index() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-ms-sm text-muted-foreground">
-        Memuat…
+      <div className="min-h-screen bg-background px-ms-3 py-ms-4 sm:px-ms-6">
+        <div className="mx-auto w-full max-w-6xl space-ms-3">
+          <div className="h-8 w-40 animate-pulse rounded-full bg-muted/60" />
+          <ListSkeleton rows={5} label="Memuat daftar pesanan…" />
+        </div>
       </div>
     );
   }
+
 
   if (!activeCat) {
     return (
@@ -2289,33 +2296,66 @@ function Index() {
         </ul>
 
         {filtered.length === 0 && (
-          <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-ms-sm text-muted-foreground">
-              {scopedItems.length === 0
-                ? `Belum ada pesanan di kategori "${activeCat}".`
-                : "Tidak ada pesanan untuk filter ini."}
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-ms-2">
-              <button
-                onClick={addProduk}
-                className="rounded-md bg-primary px-ms-3 py-1.5 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
-              >
-                + Tambah produk
-              </button>
-              <button
-                onClick={() => {
-                  setActiveCat(null);
-                  setSelectMode(false);
-                  setSelected(new Set());
-                  setOpenId(null);
-                }}
-                className="rounded-md border px-ms-3 py-1.5 text-ms-xs font-medium hover:bg-accent"
-              >
-                Kelola kategori
-              </button>
-            </div>
-          </div>
+          <EmptyState
+            icon={
+              scopedItems.length === 0
+                ? PackagePlus
+                : filter === "Sudah Dikirim"
+                  ? Send
+                  : filter === "Belum Dikirim"
+                    ? CheckCircle2
+                    : Search
+            }
+            title={
+              scopedItems.length === 0
+                ? `Belum ada pesanan di "${activeCat}"`
+                : filter === "Sudah Dikirim"
+                  ? "Belum ada pesanan terkirim"
+                  : filter === "Belum Dikirim"
+                    ? "Semua pesanan sudah dikirim"
+                    : "Tidak ada pesanan untuk filter ini"
+            }
+            description={
+              scopedItems.length === 0
+                ? "Tambah produk pertama untuk kategori ini, lalu kirim ke pelanggan lewat WA."
+                : filter === "Sudah Dikirim"
+                  ? "Pesanan akan muncul di sini setelah kamu menandainya Sudah Dikirim."
+                  : filter === "Belum Dikirim"
+                    ? "Tidak ada yang menunggu dikirim. Kerja bagus!"
+                    : "Coba ubah filter status kirim untuk melihat pesanan lain."
+            }
+            actions={
+              <>
+                {scopedItems.length > 0 && filter !== "semua" && (
+                  <button
+                    onClick={() => setFilter("semua")}
+                    className="inline-flex min-h-9 items-center rounded-full border px-ms-3 text-ms-xs font-medium hover:bg-accent"
+                  >
+                    Lihat semua status
+                  </button>
+                )}
+                <button
+                  onClick={addProduk}
+                  className="inline-flex min-h-9 items-center rounded-full bg-primary px-ms-3 text-ms-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  Tambah produk
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveCat(null);
+                    setSelectMode(false);
+                    setSelected(new Set());
+                    setOpenId(null);
+                  }}
+                  className="inline-flex min-h-9 items-center rounded-full border px-ms-3 text-ms-xs font-medium hover:bg-accent"
+                >
+                  Kelola kategori
+                </button>
+              </>
+            }
+          />
         )}
+
         {selectMode && <div className="h-20" />}
       </main>
       </div>
