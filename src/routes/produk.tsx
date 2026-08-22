@@ -129,7 +129,7 @@ function ProdukPage() {
   return (
     <div className="min-h-app-vh bg-background">
       <PublicHeader />
-      <main id="konten-utama" tabIndex={-1} className="app-safe-x mx-auto max-w-6xl px-ms-4 py-10">
+      <main id="konten-utama" tabIndex={-1} className="app-safe-x app-gutter sm:app-gutter-lg mx-auto max-w-6xl py-10">
         {/* Hero: satu kolom terpusat di HP, dua kolom di ≥lg supaya layar
             desktop tidak menyisakan pita kosong lebar di kiri-kanan. */}
         <section className="lux-plate px-ms-5 py-ms-6 shadow-[0_24px_50px_-30px_rgba(0,0,0,0.6)] sm:px-ms-6 lg:px-ms-8 lg:py-ms-8">

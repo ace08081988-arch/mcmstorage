@@ -242,7 +242,7 @@ function PublicKatalogPage() {
   const shop = data.shop;
 
   return (
-    <main className="app-safe-x mx-auto w-full max-w-5xl px-4 py-6 pb-28">
+    <main className="app-safe-x app-gutter sm:app-gutter-lg mx-auto w-full max-w-5xl py-6 pb-28">
       <header className="lux-plate mb-5 rounded-2xl p-5">
         <p className="lux-eyebrow">Katalog produk</p>
         <h1 className="text-2xl font-semibold tracking-tight">

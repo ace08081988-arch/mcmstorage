@@ -406,7 +406,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PublicHeader />
-      <main id="konten-utama" tabIndex={-1} className="app-safe-x flex flex-1 items-center justify-center px-ms-4 py-10">
+      <main id="konten-utama" tabIndex={-1} className="app-safe-x app-gutter sm:app-gutter-lg flex flex-1 items-center justify-center py-10">
       <div className="w-full max-w-sm space-ms-6 rounded-2xl border bg-card p-ms-6 shadow-sm">
         <ApkDownloadBanner />
         <div className="text-center">
