@@ -21,7 +21,10 @@ import {
   Sparkles,
   ImageIcon,
   Info,
+  Search,
 } from "lucide-react";
+import { EmptyState } from "@/components/shell/EmptyState";
+
 
 import { notifyError } from "@/lib/friendly-error";
 import { ensureFreshSession } from "@/lib/ensure-session";
