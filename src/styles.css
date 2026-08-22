@@ -692,6 +692,7 @@ html:not(.dark) .summary-tone-info    { --tone: color-mix(in oklab, var(--info) 
 .py-ms-3\.5 { padding-block: var(--ms-space-3_5); }
 .gap-ms-1\.5 { gap: var(--ms-space-1_5); }
 .gap-ms-2\.5 { gap: var(--ms-space-2_5); }
+.space-ms-1\.5 > * + * { margin-top: var(--ms-space-1_5); }
 
 .pt-ms-1\.5 { padding-top: var(--ms-space-1_5); }
 .pt-ms-2    { padding-top: var(--ms-space-2); }
