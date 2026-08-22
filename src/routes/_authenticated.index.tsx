@@ -1503,7 +1503,6 @@ function Index() {
                 ))}
               </div>
 
-              </div>
 
               {lainnyaMounted && (
                 <Suspense
