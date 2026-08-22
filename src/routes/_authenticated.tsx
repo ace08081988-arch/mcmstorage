@@ -143,7 +143,7 @@ function AuthLock() {
       >
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
-          {immersive || chatListFull ? null : <AppHeader />}
+          {immersive ? null : <AppHeader />}
           <div
             id="konten-utama"
             tabIndex={-1}
