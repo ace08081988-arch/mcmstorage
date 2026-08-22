@@ -1495,9 +1495,16 @@ function PaymentsReport({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed py-12 text-center text-ms-sm text-muted-foreground">
-          Belum ada pembayaran pada periode ini.
-        </div>
+        <EmptyState
+          icon={Wallet}
+          title="Belum ada pembayaran"
+          description="Tidak ada pembayaran tercatat pada periode ini. Tambah transaksi hutang/piutang lebih dulu, lalu catat pembayarannya."
+          actions={
+            <Button size="sm" className="rounded-xl" onClick={onAddDebt}>
+              <Plus className="mr-1 h-4 w-4" /> Tambah transaksi
+            </Button>
+          }
+        />
       ) : (
         <VirtualizedList
           cacheKey="hutang-days"
