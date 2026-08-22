@@ -680,7 +680,7 @@ function ApkCard({
                 <dd className="min-w-0 truncate text-right font-mono">
                   {apk.versionName ?? "?"}
                   {apk.versionCode !== null && (
-                    <span className="ml-1 text-muted-foreground/70">
+                    <span className="ml-1 text-muted-foreground">
                       (build {apk.versionCode})
                     </span>
                   )}

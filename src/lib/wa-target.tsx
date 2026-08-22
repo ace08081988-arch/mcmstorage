@@ -322,7 +322,7 @@ export function WhatsAppTargetHost() {
               {url}
             </code>
           ) : (
-            <code className="mt-1 block truncate font-mono text-[10.5px] text-muted-foreground/70">
+            <code className="mt-1 block truncate font-mono text-[10.5px] text-muted-foreground">
               {truncateMid(url)}
             </code>
           )}

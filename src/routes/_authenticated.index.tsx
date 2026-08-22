@@ -172,7 +172,7 @@ function SortableCategoryRow({
         type="button"
         aria-label={`Geser untuk ubah urutan kategori ${name}`}
         title="Tahan lalu geser untuk ubah urutan"
-        className="shrink-0 touch-none cursor-grab rounded-md p-1.5 text-muted-foreground/70 hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
+        className="shrink-0 touch-none cursor-grab rounded-md p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -1363,7 +1363,7 @@ function Index() {
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
                   placeholder="Sembako, Pakaian, 1 gram…"
-                  className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+                  className="h-11 w-full min-w-0 rounded-xl border border-primary/20 bg-background px-ms-3 text-[0.84375rem] text-foreground placeholder:text-muted-foreground outline-none transition-colors focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
                 />
                 <button
                   type="submit"

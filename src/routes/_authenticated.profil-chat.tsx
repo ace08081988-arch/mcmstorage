@@ -244,7 +244,7 @@ function ProfilChatPage() {
                 {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Pilih versi
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
         ) : (
           <div className="flex items-center gap-ms-4 rounded-xl border bg-muted/40 px-ms-4 py-ms-3 text-muted-foreground">
@@ -281,7 +281,7 @@ function ProfilChatPage() {
                 <div className="truncate text-ms-base">{r.title}</div>
                 <div className="truncate text-ms-sm text-muted-foreground">{r.desc}</div>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
             </div>
           );
           if (r.soon || !r.to) {

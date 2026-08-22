@@ -1660,7 +1660,7 @@ function SearchablePartySelect({
                 <span>
                   {totalFound} kontak ditemukan
                   {recent.length > 0 && rest.length > 0 && (
-                    <span className="ml-1 text-muted-foreground/70">
+                    <span className="ml-1 text-muted-foreground">
                       ({recent.length} terakhir, {rest.length} lainnya)
                     </span>
                   )}

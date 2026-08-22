@@ -104,7 +104,7 @@ function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: 
   return (
     <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-ms-2 py-ms-2">
       <EcerLabel className="flex min-w-0 items-center gap-ms-1.5 leading-none">
-        <span className="shrink-0 text-muted-foreground/70">{icon}</span>
+        <span className="shrink-0 text-muted-foreground">{icon}</span>
         <span className="truncate">{label}</span>
       </EcerLabel>
       <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-right text-ms-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">

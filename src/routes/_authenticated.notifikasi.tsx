@@ -865,7 +865,7 @@ function RecentNotificationsCard({
                   <div className="truncate text-ms-xs text-muted-foreground" title={it.body}>
                     {it.body}
                   </div>
-                  <div className="mt-0.5 text-ms-2xs uppercase tracking-wider text-muted-foreground/70">
+                  <div className="mt-0.5 text-ms-2xs uppercase tracking-wider text-muted-foreground">
                     {meta.label}
                   </div>
                 </div>

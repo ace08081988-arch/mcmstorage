@@ -1349,7 +1349,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
                   <MapPin className="h-2.5 w-2.5" /> Maps
                 </a>
               ) : (
-                <span className="ml-auto text-muted-foreground/70">tanpa lokasi</span>
+                <span className="ml-auto text-muted-foreground">tanpa lokasi</span>
               )}
             </li>
           );
