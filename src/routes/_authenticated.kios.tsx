@@ -5,6 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureFreshSession } from "@/lib/ensure-session";
 import { NumericDraftInput } from "@/components/NumericDraftInput";
 import { notifyError } from "@/lib/friendly-error";
+import { PageHeader } from "@/components/shell/PageHeader";
+import { PageContainer } from "@/components/shell/PageContainer";
+import {
+  Store,
+  History,
+  Wallet,
+  PackagePlus,
+  HandCoins,
+  AlertTriangle,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 
 /**
  * Kios Terpadu — satu layar untuk:
@@ -383,19 +395,24 @@ function KiosPage() {
                 type="button"
                 onClick={submitTerima}
                 disabled={rxBusy || !rxItem || rxQty <= 0}
-                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-50"
               >
-                {rxBusy ? "Menyimpan…" : "📥 Terima & Tambah Stok"}
+                {rxBusy ? "Menyimpan…" : "Terima & Tambah Stok"}
               </button>
             </section>
 
             {/* ================ JUAL KE PELANGGAN ================ */}
-            <section className="rounded-lg border bg-card p-3 space-y-3">
-              <div>
-                <h2 className="text-sm font-semibold">💰 Jual ke Pelanggan</h2>
-                <p className="text-xs text-muted-foreground">
-                  Stok berkurang otomatis. Sisa yang belum dibayar otomatis jadi piutang.
-                </p>
+            <section className="rounded-2xl border border-border/70 bg-card p-ms-4 space-ms-3 shadow-sm">
+              <div className="flex min-w-0 items-start gap-ms-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-primary/35 bg-primary/12 text-primary">
+                  <HandCoins className="h-[18px] w-[18px]" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-ms-sm font-semibold text-foreground">Jual ke Pelanggan</h2>
+                  <p className="text-ms-xs text-muted-foreground">
+                    Stok berkurang otomatis. Sisa yang belum dibayar otomatis jadi piutang.
+                  </p>
+                </div>
               </div>
 
               <label className="block space-y-1">
@@ -452,8 +469,8 @@ function KiosPage() {
               </div>
 
               {sxItem && sxQty > sxItem.stock_base && (
-                <div className="rounded bg-destructive/10 p-2 text-xs text-destructive">
-                  ⚠️ Stok kurang. Tersedia {fmtQty(sxItem.stock_base, sxItem.base_unit)}.
+                <div className="flex items-center gap-ms-1.5 rounded-xl bg-destructive/10 p-ms-2 text-ms-xs text-destructive">
+                  <AlertTriangle className="h-4 w-4 shrink-0" /> Stok kurang. Tersedia {fmtQty(sxItem.stock_base, sxItem.base_unit)}.
                 </div>
               )}
 
@@ -483,15 +500,15 @@ function KiosPage() {
                       >
                         <div className="font-medium">{c.name}</div>
                         {c.contact && (
-                          <div className="text-[10px] text-muted-foreground">📞 {c.contact}</div>
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground"><Phone className="h-3 w-3" />{c.contact}</div>
                         )}
                       </button>
                     ))}
                   </div>
                 )}
                 {sxCustName.trim() && !matchedCustomer && (
-                  <div className="text-[10px] text-muted-foreground">
-                    ✨ Pelanggan baru — akan disimpan otomatis ke buku alamat.
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Sparkles className="h-3 w-3 text-primary" /> Pelanggan baru — akan disimpan otomatis ke buku alamat.
                   </div>
                 )}
               </div>
@@ -579,18 +596,18 @@ function KiosPage() {
                   overpay ||
                   (sxItem ? sxQty > sxItem.stock_base : false)
                 }
-                className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                className="min-h-11 w-full rounded-xl bg-primary px-ms-3 text-ms-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 disabled:opacity-50"
               >
                 {sxBusy
                   ? "Menyimpan…"
                   : remaining > 0
-                    ? `💰 Simpan (Piutang ${rupiah(remaining)})`
-                    : "💰 Simpan (Lunas)"}
+                    ? `Simpan (Piutang ${rupiah(remaining)})`
+                    : "Simpan (Lunas)"}
               </button>
             </section>
           </>
         )}
-      </main>
+      </PageContainer>
     </div>
   );
 }
