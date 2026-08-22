@@ -205,50 +205,38 @@ function HutangPiutangPage() {
    * membaca SSOT, bukan hasil penjumlahan daftar manual.
    */
   const [ssot, setSsot] = useState<{ piutang: number; hutang: number } | null>(null);
-  // Rincian per-kontak disembunyikan sampai kartunya ditekan supaya daftar
-  // ringkas: hanya nama + sisa hutang yang terlihat saat tertutup.
-  // Status buka/tutup disimpan per akun supaya bertahan saat pindah halaman
-  // atau muat ulang.
-  const [openParties, setOpenParties] = useState<Set<string>>(() => new Set());
-  const togglePartyOpen = useCallback((key: string) => {
-    setOpenParties((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
-
-
+  // Rincian per-kontak dibuka di drawer terpisah supaya daftar tetap ringkas:
+  // kartu hanya menampilkan nama + sisa. Kontak yang sedang dibuka disimpan
+  // per akun supaya bertahan saat pindah halaman atau muat ulang.
+  const [detailKey, setDetailKey] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
 
-  // Muat status kartu terbuka milik akun ini (per-akun, tahan reload).
-  const openPartiesKey = scopedKey("mcm:hutangPiutang:openParties", uid);
-  const openPartiesHydrated = useRef(false);
+  const detailStoreKey = scopedKey("mcm:hutangPiutang:detailParty", uid);
+  const detailHydrated = useRef(false);
   useEffect(() => {
-    openPartiesHydrated.current = false;
+    detailHydrated.current = false;
     try {
-      const raw = localStorage.getItem(openPartiesKey);
-      const arr = raw ? (JSON.parse(raw) as unknown) : null;
-      setOpenParties(new Set(Array.isArray(arr) ? arr.filter((v): v is string => typeof v === "string") : []));
+      const raw = localStorage.getItem(detailStoreKey);
+      setDetailKey(raw && raw.length > 0 ? raw : null);
     } catch {
-      setOpenParties(new Set());
+      setDetailKey(null);
     }
-    openPartiesHydrated.current = true;
-  }, [openPartiesKey]);
+    detailHydrated.current = true;
+  }, [detailStoreKey]);
 
-  // Simpan setiap perubahan buka/tutup.
   useEffect(() => {
-    if (!openPartiesHydrated.current) return;
+    if (!detailHydrated.current) return;
     try {
-      localStorage.setItem(openPartiesKey, JSON.stringify([...openParties]));
+      if (detailKey) localStorage.setItem(detailStoreKey, detailKey);
+      else localStorage.removeItem(detailStoreKey);
     } catch {
       /* private mode — abaikan */
     }
-  }, [openParties, openPartiesKey]);
+  }, [detailKey, detailStoreKey]);
+
 
   const refreshSsot = useCallback(async () => {
     const [p, h] = await Promise.all([fetchPiutangSummary(), fetchHutangSummary()]);
