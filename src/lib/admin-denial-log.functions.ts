@@ -36,7 +36,7 @@ export const listAdminDenialEvents = createServerFn({ method: "GET" })
       return s.length === 0 ? null : s.slice(0, 200);
     };
     const limitRaw = typeof d.limit === "number" ? d.limit : 200;
-    const limit = Math.max(1, Math.min(500, Math.floor(limitRaw));
+    const limit = Math.max(1, Math.min(500, Math.floor(limitRaw)));
     return {
       fn: clean(d.fn),
       userId: clean(d.userId),
