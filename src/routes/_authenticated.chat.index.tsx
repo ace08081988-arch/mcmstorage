@@ -1400,8 +1400,9 @@ function ConvRow({
   );
 
   const rowClass =
-    "flex min-h-14 items-center gap-ms-3 py-2 pl-ms-3 pr-9 transition-colors hover:bg-[var(--wa-surface-2)]/50 active:bg-[var(--wa-surface-2)]/70 " +
+    "app-list-row flex min-h-14 items-center gap-ms-3 py-2 pl-ms-3 pr-9 transition-colors hover:bg-[var(--wa-surface-2)]/50 active:bg-[var(--wa-surface-2)]/70 " +
     (selecting ? "cursor-pointer select-none" : "");
+
 
   if (selecting) {
     return (
