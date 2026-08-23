@@ -164,21 +164,23 @@ export function AddContactFab() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Tambah kontak PIN Ace"
-        // Ukuran 44px di layar kecil (memenuhi tap-target minimum tanpa
-        // menutupi label "Pembaruan"/"Panggilan" pada 360-390px), 48px
-        // mulai 400px. Posisi bottom = tinggi nav (`--chat-nav-h`, sudah
-        // termasuk safe-area-inset-bottom) + gap konstan 0.75rem — jadi
-        // FAB selalu duduk rapi di atas nav tanpa menghitung safe-area
-        // dua kali. Fallback menambahkan safe-area agar tetap aman bila
-        // container tidak menyetel variabelnya.
-        className="app-hit-area fixed app-fab-right z-[var(--z-fab)] grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95 min-[400px]:h-14 min-[400px]:w-14"
+        title="Tambah kontak"
+        // Posisi dikunci lewat `right`/`bottom` inline sederhana: sebagian
+        // WebView Android mengabaikan `right` bila calc-nya memakai
+        // env() bersarang di dalam var() fallback — akibatnya FAB pernah
+        // melompat ke tepi kiri layar. Label teks ditambahkan supaya arti
+        // tombol "+" jelas (bukan ikon tanpa konteks).
+        className="app-hit-area fixed z-[var(--z-fab)] inline-flex h-12 items-center gap-ms-2 rounded-full bg-primary pl-4 pr-5 text-ms-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95"
         style={{
+          right: "calc(env(safe-area-inset-right, 0px) + 1rem)",
           bottom:
-            "calc(max(var(--chat-nav-h, 0px), var(--app-bottom-bar-space, 0px), var(--app-safe-bottom,env(safe-area-inset-bottom,0px))) + var(--app-keyboard-inset, 0px) + var(--app-fab-gap, 1rem))",
+            "calc(max(var(--chat-nav-h, 0px), var(--app-bottom-bar-space, 0px), env(safe-area-inset-bottom, 0px)) + var(--app-keyboard-inset, 0px) + 1rem)",
         }}
       >
-        <Plus className="h-5 w-5 min-[400px]:h-6 min-[400px]:w-6" />
+        <Plus className="h-5 w-5 shrink-0" />
+        <span>Kontak</span>
       </button>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="chat-field-scope max-w-md">
