@@ -134,26 +134,42 @@
      tap target ikut membesar. */
   --ms-tap:      max(2.75rem, 44px);
   --ms-radius-card: calc(var(--radius) + 4px);
+  /* Gutter horizontal halaman — SATU sumber untuk semua kontainer & header.
+     Nilainya menyusut bertahap di layar sempit supaya konten tidak
+     kehabisan lebar di 320–360px, dan otomatis di-max() dengan cutout
+     (lihat utility `app-safe-x`). */
+  --ms-gutter: var(--ms-space-4);
+  --ms-gutter-lg: var(--ms-space-6);
 }
 
-/* Tipografi responsif bertahap — anchor 411px = skala 1.
+/* Tipografi & gutter responsif bertahap — anchor 411px = skala 1.
    Nilai dijaga konservatif (maks −10%) agar tidak ada teks < 10px
    efektif pada preset font "sm". */
 @media (max-width: 400px) {
   :root { --ms-type-scale: 0.97; --ms-display-scale: 0.97; --ms-lead-bump: 0.02; }
 }
 @media (max-width: 360px) {
-  :root { --ms-type-scale: 0.94; --ms-display-scale: 0.94; --ms-lead-bump: 0.03; }
+  :root {
+    --ms-type-scale: 0.94; --ms-display-scale: 0.94; --ms-lead-bump: 0.03;
+    --ms-gutter: 0.875rem; --ms-gutter-lg: 1.25rem;
+  }
 }
 @media (max-width: 340px) {
-  :root { --ms-type-scale: 0.92; --ms-display-scale: 0.9; --ms-lead-bump: 0.04; }
+  :root {
+    --ms-type-scale: 0.92; --ms-display-scale: 0.9; --ms-lead-bump: 0.04;
+    --ms-gutter: 0.75rem; --ms-gutter-lg: 1rem;
+  }
 }
 @media (min-width: 768px) {
-  :root { --ms-type-scale: 1.02; --ms-display-scale: 1.06; --ms-lead-bump: 0; }
+  :root {
+    --ms-type-scale: 1.02; --ms-display-scale: 1.06; --ms-lead-bump: 0;
+    --ms-gutter: var(--ms-space-6); --ms-gutter-lg: var(--ms-space-8);
+  }
 }
 @media (min-width: 1280px) {
   :root { --ms-type-scale: 1.04; --ms-display-scale: 1.12; --ms-lead-bump: 0; }
 }
+
 
 :root {
   --background: oklch(1 0 0);
@@ -2574,11 +2590,11 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
 
 /* Gutter horizontal halaman — aman dipakai bersama `app-safe-x`. */
 @utility app-gutter {
-  --app-gutter-x: var(--ms-space-4);
+  --app-gutter-x: var(--ms-gutter);
 }
 
 @utility app-gutter-lg {
-  --app-gutter-x: var(--ms-space-6);
+  --app-gutter-x: var(--ms-gutter-lg);
 }
 
 /* Header sticky: tinggi konten tetap, hanya ruang notch yang ditambahkan,
