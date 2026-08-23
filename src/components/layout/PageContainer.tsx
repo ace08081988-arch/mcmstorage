@@ -41,7 +41,7 @@ export const PageContainer = React.forwardRef<HTMLElement, PageContainerProps>(
       <Comp
         ref={ref}
         className={cn(
-          "mx-auto w-full px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6",
+          "mx-auto w-full app-gutter app-safe-x py-ms-4 sm:py-ms-6",
           widthMap[width],
           gapMap[gap],
           bottomSafe && "pb-24",
