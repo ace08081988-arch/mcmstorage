@@ -170,7 +170,7 @@ export function AddContactFab() {
         // env() bersarang di dalam var() fallback — akibatnya FAB pernah
         // melompat ke tepi kiri layar. Label teks ditambahkan supaya arti
         // tombol "+" jelas (bukan ikon tanpa konteks).
-        className="app-hit-area fixed z-[var(--z-fab)] inline-flex h-12 items-center gap-ms-2 rounded-full bg-primary pl-4 pr-5 text-ms-sm font-semibold text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95"
+        className="app-hit-area fixed z-fab inline-flex h-12 w-auto max-w-[calc(100vw-2rem)] shrink-0 items-center justify-center gap-ms-2 self-end rounded-full bg-primary pl-4 pr-5 text-ms-sm font-semibold whitespace-nowrap text-primary-foreground shadow-md shadow-primary/25 transition active:scale-95"
         style={{
           right: "calc(env(safe-area-inset-right, 0px) + 1rem)",
           bottom:
