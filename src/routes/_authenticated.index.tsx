@@ -104,15 +104,6 @@ import { canonical, socialMeta } from "@/lib/seo-meta";
 // Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
 // Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
 // stepper + form kategori) tidak menyeret JS ini di initial bundle.
-const ReadyEcerSection = lazy(() =>
-  import("@/components/ReadyEcerSection").then((m) => ({ default: m.ReadyEcerSection })),
-);
-const ReadyRequestSection = lazy(() =>
-  import("@/components/ReadyRequestSection").then((m) => ({ default: m.ReadyRequestSection })),
-);
-const ReadySelfPrepSection = lazy(() =>
-  import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
-);
 
 // Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
 // Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
@@ -1638,9 +1629,25 @@ function Index() {
                     </div>
                   }
                 >
-                  <ReadyEcerSection />
-                  <ReadyRequestSection />
-                  <ReadySelfPrepSection />
+                  <Link
+                    to="/siap-kirim"
+                    preload="intent"
+                    className="surface-quiet group/tile flex w-full items-center gap-ms-3 px-ms-3 py-ms-3 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-premium-heading truncate text-ms-xs font-semibold leading-tight text-foreground">
+                        Siap Kirim
+                      </span>
+                      <span className="truncate text-ms-2xs leading-tight text-muted-foreground">
+                        Produk ecer & paket request siap kirim
+                      </span>
+                    </span>
+                    <ChevronRight
+                      aria-hidden
+                      className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/tile:translate-x-0.5"
+                    />
+                  </Link>
+
                   <LainnyaMountSentinel />
                 </Suspense>
               )}
