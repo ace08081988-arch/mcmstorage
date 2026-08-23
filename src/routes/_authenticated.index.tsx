@@ -104,15 +104,6 @@ import { canonical, socialMeta } from "@/lib/seo-meta";
 // Bagian "Lainnya" hanya dipakai setelah user membuka <details>.
 // Dipecah jadi chunk terpisah lewat React.lazy agar landing inti (hero
 // stepper + form kategori) tidak menyeret JS ini di initial bundle.
-const ReadyEcerSection = lazy(() =>
-  import("@/components/ReadyEcerSection").then((m) => ({ default: m.ReadyEcerSection })),
-);
-const ReadyRequestSection = lazy(() =>
-  import("@/components/ReadyRequestSection").then((m) => ({ default: m.ReadyRequestSection })),
-);
-const ReadySelfPrepSection = lazy(() =>
-  import("@/components/ReadySelfPrepSection").then((m) => ({ default: m.ReadySelfPrepSection })),
-);
 
 // Mark saat modul landing pertama kali dievaluasi (proxy untuk "nav start").
 // Dipakai sebagai anchor untuk mengukur waktu sampai konten inti terlihat.
