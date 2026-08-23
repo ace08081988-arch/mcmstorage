@@ -405,7 +405,7 @@ function PenyimpananPage() {
   };
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader title="Penyimpanan dan Data" subtitle="Penggunaan lokal & unduhan otomatis" icon={HardDrive} />
       <div className="space-ms-4 px-ms-4 pt-2">
         <Card>

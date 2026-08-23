@@ -416,7 +416,7 @@ function PembaruanPage() {
         id="pembaruan-main"
         ref={mainRef}
         tabIndex={-1}
-        className="flex-1 overflow-y-auto pb-[var(--chat-nav-h)] outline-none"
+        className="app-safe-x flex-1 overflow-y-auto pb-[var(--chat-nav-h)] outline-none"
       >
       {/* Status */}
       <section id="pembaruan-sec-status" className="scroll-mt-4 px-ms-4" aria-labelledby="pembaruan-status-h">

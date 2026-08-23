@@ -316,7 +316,7 @@ function RiwayatKiosPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-3 p-3 pb-24">
+      <main className="app-safe-x app-gutter mx-auto max-w-3xl space-y-3 py-3 pb-24">
         {/* Ringkasan */}
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div className="rounded-lg border bg-card p-3">

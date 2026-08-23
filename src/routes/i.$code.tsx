@@ -113,7 +113,7 @@ function InviteLandingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-ms-4 py-10">
+    <main className="app-safe-x app-gutter mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background py-10">
       <div className="w-full rounded-2xl border bg-card p-ms-6 shadow-sm">
         <h1 className="text-center text-ms-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Undangan Ace Chat

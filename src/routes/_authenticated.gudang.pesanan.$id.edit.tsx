@@ -103,7 +103,7 @@ function PesananEditPage() {
           <h1 className="text-ms-base font-bold">✏️ Edit Pesanan</h1>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl space-ms-3 p-ms-3">
+      <main className="app-safe-x app-gutter mx-auto max-w-3xl space-ms-3 py-ms-3">
         {loading ? (
           <div className="text-ms-sm text-muted-foreground">Memuat…</div>
         ) : !order ? (

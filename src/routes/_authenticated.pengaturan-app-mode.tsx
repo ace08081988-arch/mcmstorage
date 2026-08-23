@@ -65,7 +65,7 @@ function AppModePage() {
   };
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-10">
       <SettingsHeader
         title="Mode Aplikasi"
         subtitle="Sidebar Lengkap vs Chat-only — data & akun tetap sama"

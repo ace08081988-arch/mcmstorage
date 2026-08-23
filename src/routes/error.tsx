@@ -80,7 +80,7 @@ function ErrorPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="mx-auto flex max-w-md flex-col gap-ms-4 p-ms-6">
+      <main className="app-safe-x app-gutter mx-auto flex max-w-md flex-col gap-ms-4 py-ms-6">
         <div className="text-ms-4xl">⚠️</div>
         <h1 className="text-ms-xl font-bold">{heading}</h1>
 

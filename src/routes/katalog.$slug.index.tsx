@@ -229,7 +229,7 @@ function PublicKatalogPage() {
 
   if (!data.found || !data.shop) {
     return (
-      <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 px-4 text-center">
+      <main className="app-safe-x app-gutter mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 text-center">
         <PackageSearch className="h-8 w-8 text-muted-foreground" aria-hidden />
         <h1 className="text-xl font-semibold">Katalog tidak tersedia</h1>
         <p className="text-sm text-muted-foreground">

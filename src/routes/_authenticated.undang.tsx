@@ -168,7 +168,7 @@ function UndangPage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-2xl bg-background pb-24">
+    <main className="app-safe-x mx-auto min-h-screen max-w-2xl bg-background pb-24">
       <header className="sticky top-0 z-10 flex items-center gap-ms-3 border-b bg-background px-ms-4 py-ms-3">
         <button
           type="button"

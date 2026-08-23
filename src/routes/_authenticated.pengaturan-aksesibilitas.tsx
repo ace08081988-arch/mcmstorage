@@ -156,7 +156,7 @@ function PengaturanAksesibilitasPage() {
   }, [dirty, leaveOpen]);
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-32">
       <SettingsHeader
         title="Aksesibilitas"
         subtitle="Skala teks, kontras, dan animasi"

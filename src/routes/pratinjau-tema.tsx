@@ -161,7 +161,7 @@ function ThemePreviewPage() {
 
   return (
     <SidebarProvider>
-      <main data-theme-preview className="min-h-screen w-full bg-background text-foreground">
+      <main data-theme-preview className="app-safe-x min-h-screen w-full bg-background text-foreground">
         <div className="mx-auto flex max-w-4xl flex-col gap-ms-4 p-ms-4 pb-24">
           <header className="flex items-start justify-between gap-ms-3">
             <div>
