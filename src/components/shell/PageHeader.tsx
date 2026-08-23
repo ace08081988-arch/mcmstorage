@@ -46,9 +46,9 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <header
-      className={`app-sticky-header app-safe-top app-safe-x md:hidden ${className ?? ""}`}
+      className={`app-sticky-header app-safe-top app-gutter app-safe-x md:hidden ${className ?? ""}`}
     >
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-ms-2 px-ms-4 py-ms-3">
+      <div className="mx-auto flex max-w-3xl items-center justify-between gap-ms-2 py-ms-3">
         <div className="flex min-w-0 items-center gap-ms-2">
           {backTo === "/" ? null : (
             <Link
