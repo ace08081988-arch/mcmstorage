@@ -495,7 +495,7 @@ function ChatListPage() {
       // 200ms mendekati kurva animasi keyboard Android/iOS tanpa
       // membuatnya terasa lambat. `motion-reduce:transition-none`
       // menghormati preferensi pengguna.
-      className="mx-auto flex min-h-[70vh] max-w-2xl flex-col bg-background pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
+      className="app-safe-x mx-auto flex min-h-[70vh] max-w-2xl flex-col bg-background pb-[var(--chat-nav-h)] [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))] transition-[height,min-height] duration-200 ease-out motion-reduce:transition-none"
       style={
         kbInset > 0
           ? {

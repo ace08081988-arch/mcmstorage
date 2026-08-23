@@ -140,7 +140,7 @@ function FiturPage() {
         }
       />
 
-      <main className="flex-1 overflow-y-auto px-ms-4 pt-3 pb-[var(--chat-nav-h)]">
+      <main className="app-safe-x app-gutter flex-1 overflow-y-auto pt-3 pb-[var(--chat-nav-h)]">
         {/* Stat cards */}
         <div className="grid grid-cols-3 gap-ms-2">
           <StatCard

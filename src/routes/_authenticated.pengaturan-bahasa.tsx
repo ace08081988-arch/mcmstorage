@@ -20,7 +20,7 @@ function PengaturanBahasaPage() {
   const { prefs, set } = useAppPrefs();
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader title="Bahasa Aplikasi" subtitle="Pilih bahasa yang paling nyaman" icon={Languages} />
       <div className="px-ms-4 pt-2">
         <Card>

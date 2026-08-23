@@ -1301,7 +1301,7 @@ function Index() {
           </div>
         </header>
 
-        <main className="relative mx-auto w-full max-w-md space-y-8 px-ms-4 pt-7 pb-14 sm:max-w-2xl sm:px-ms-6 sm:pt-10">
+        <main className="app-safe-x app-gutter sm:app-gutter-lg relative mx-auto w-full max-w-md space-y-8 pt-7 pb-14 sm:max-w-2xl sm:pt-10">
           {/* Hero: alur kerja aplikasi */}
           <section className="surface-editorial overflow-hidden p-ms-5 sm:p-ms-6">
             <span className="eyebrow">
@@ -1895,7 +1895,7 @@ function Index() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl px-ms-3 py-ms-3 sm:px-ms-6">
+        <main className="app-safe-x app-gutter sm:app-gutter-lg mx-auto w-full max-w-6xl py-ms-3">
         <Suspense fallback={null}>
           <SecurityScanReminder />
           <SecurityFindingsBanner />

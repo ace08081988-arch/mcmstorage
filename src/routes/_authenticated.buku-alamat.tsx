@@ -358,7 +358,7 @@ function BukuAlamatPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-3xl px-ms-4 py-ms-4 sm:px-ms-6 sm:py-ms-6 space-ms-4 sm:space-ms-5">
+      <main className="app-safe-x app-gutter sm:app-gutter-lg mx-auto w-full max-w-3xl py-ms-4 sm:py-ms-6 space-ms-4 sm:space-ms-5">
         <section
           aria-label="Ringkasan kontak"
           className="relative overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-ms-4 shadow-sm"

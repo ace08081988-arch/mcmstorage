@@ -41,7 +41,7 @@ function DaftarPage() {
   );
 
   return (
-    <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col bg-background">
+    <main className="app-safe-x mx-auto flex min-h-app-vh max-w-2xl flex-col bg-background">
       <ChatSectionHeader title="Daftar" />
 
       <div className="px-ms-4 py-ms-3">

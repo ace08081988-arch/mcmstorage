@@ -122,7 +122,7 @@ export const Route = createFileRoute("/katalog/$slug/$itemId")({
     };
   },
   errorComponent: ({ error }) => (
-    <main className="mx-auto max-w-xl px-4 py-16 text-center">
+    <main className="app-safe-x app-gutter mx-auto max-w-xl py-16 text-center">
       <h1 className="text-xl font-semibold">Gagal memuat produk</h1>
       <p role="alert" className="mt-2 text-sm text-muted-foreground">
         {error.message}
@@ -164,7 +164,7 @@ function orderText(shopName: string, it: PublicCatalogItemDetail, url: string) {
 
 function MissingProduct() {
   return (
-    <main className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 px-4 text-center">
+    <main className="app-safe-x app-gutter mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-3 text-center">
       <PackageSearch className="h-8 w-8 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-semibold">Produk tidak ditemukan</h1>
       <p className="text-sm text-muted-foreground">
@@ -192,7 +192,7 @@ function PublicItemPage() {
   const pageUrl = `https://mcmstorage.app/katalog/${slug}/${itemId}`;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6">
+    <main className="app-safe-x app-gutter mx-auto w-full max-w-3xl py-6">
       <Link
         to="/katalog/$slug"
         params={{ slug }}

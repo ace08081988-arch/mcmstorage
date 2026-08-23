@@ -234,7 +234,7 @@ function PanggilanPage() {
     { key: "video", label: "Video" },
   ];
   return (
-    <main className="mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
+    <main className="app-safe-x mx-auto flex min-h-app-vh max-w-2xl flex-col wa-surface [--chat-nav-h:calc(var(--ms-tap)+1.25rem+var(--app-safe-bottom,env(safe-area-inset-bottom,0px)))]">
       <ChatSectionHeader
         title="Panggilan"
         actions={

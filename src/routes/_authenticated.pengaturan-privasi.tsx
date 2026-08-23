@@ -117,7 +117,7 @@ function PrivasiPage() {
   };
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-10">
       <SettingsHeader
         title="Privasi"
         subtitle="Atur siapa yang dapat melihat status Anda"

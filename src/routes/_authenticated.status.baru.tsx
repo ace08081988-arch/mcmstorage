@@ -136,7 +136,7 @@ function BuatStatusPage() {
         </Button>
         <h1 className="text-ms-lg font-semibold">Buat Status</h1>
       </header>
-      <main className="flex-1 space-ms-4 p-ms-4">
+      <main className="app-safe-x app-gutter flex-1 space-ms-4 py-ms-4">
         <div className="flex gap-ms-2">
           <Button
             variant={mode === "media" ? "default" : "outline"}

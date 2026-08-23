@@ -306,7 +306,7 @@ function AuthCallbackPage() {
   }[status];
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-ms-4 py-10">
+    <main className="app-safe-x app-gutter flex min-h-screen items-center justify-center bg-background py-10">
       <section className="w-full max-w-md">
         {/* Status banner */}
         <div className={`rounded-t-2xl border border-b-0 p-ms-4 flex items-center gap-ms-3 ${banner.bgClass}`}>

@@ -168,7 +168,7 @@ function DomainSettingsPage() {
   };
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-10">
       <SettingsHeader title="Pengaturan Domain" subtitle="Checklist DNS untuk custom domain" icon={GlobeIcon} />
       <div className="space-ms-4 px-ms-4 pt-2">
         <Card>

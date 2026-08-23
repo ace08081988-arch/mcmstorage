@@ -236,7 +236,7 @@ function KontakPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-ms-3 py-ms-4 sm:px-ms-6">
+      <main className="app-safe-x app-gutter sm:app-gutter-lg mx-auto max-w-3xl py-ms-4">
         <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="customer">Pelanggan</TabsTrigger>

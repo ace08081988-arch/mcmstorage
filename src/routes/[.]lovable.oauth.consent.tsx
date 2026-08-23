@@ -49,7 +49,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   },
   component: Consent,
   errorComponent: ({ error }) => (
-    <main className="mx-auto max-w-md p-6 text-sm">
+    <main className="app-safe-x app-gutter mx-auto max-w-md py-6 text-sm">
       Gagal memuat permintaan otorisasi:{" "}
       <span className="font-medium">
         {String((error as Error)?.message ?? error)}
@@ -89,7 +89,7 @@ function Consent() {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6">
+    <main className="app-safe-x app-gutter mx-auto max-w-md py-6">
       <div className="rounded-2xl border bg-card p-6 shadow-sm">
         <h1 className="text-lg font-semibold tracking-tight">
           Hubungkan {clientName} ke akun Ace Storage Anda

@@ -121,7 +121,7 @@ function WebVitalsPage() {
   }
   if (!isAdmin) {
     return (
-      <main className="mx-auto max-w-md p-6 text-center">
+      <main className="app-safe-x app-gutter mx-auto max-w-md py-6 text-center">
         <ShieldAlert className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden />
         <h1 className="mt-2 text-lg font-semibold">Akses ditolak</h1>
         <p className="text-sm text-muted-foreground">Halaman ini khusus admin.</p>
@@ -130,7 +130,7 @@ function WebVitalsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-5">
+    <main className="app-safe-x app-gutter mx-auto w-full max-w-4xl py-5">
       <Link
         to="/"
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

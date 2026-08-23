@@ -326,7 +326,7 @@ function DetailPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-3 p-3 pb-24">
+      <main className="app-safe-x app-gutter mx-auto max-w-3xl space-y-3 py-3 pb-24">
         {loading ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : notFound || !detail ? (

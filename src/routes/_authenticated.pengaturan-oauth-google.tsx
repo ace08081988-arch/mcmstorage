@@ -435,14 +435,14 @@ function OAuthGooglePage() {
 
   if (adminLoading) {
     return (
-      <main className="mx-auto min-h-dvh max-w-2xl bg-background px-ms-4 pt-10 text-ms-sm text-muted-foreground">
+      <main className="app-safe-x app-gutter mx-auto min-h-dvh max-w-2xl bg-background pt-10 text-ms-sm text-muted-foreground">
         Memeriksa akses admin…
       </main>
     );
   }
   if (!isAdmin) {
     return (
-      <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+      <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-8">
         <SettingsHeader title="OAuth Google (BYOK)" subtitle="Panduan admin" icon={KeyRound} />
         <Card className="mx-4 mt-2 border-destructive/40">
           <CardContent className="flex items-start gap-ms-3 py-ms-4 text-ms-sm">
@@ -457,7 +457,7 @@ function OAuthGooglePage() {
   }
 
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+    <main className="app-safe-x mx-auto min-h-dvh max-w-2xl bg-background pb-8">
       <SettingsHeader
         title="OAuth Google (BYOK)"
         subtitle="Ganti kredensial bawaan agar layar consent tampil sebagai Ace Storage"
