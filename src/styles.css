@@ -5119,6 +5119,29 @@ html[data-scrolling="1"] [class*="backdrop-blur"] {
   overscroll-behavior: contain;
 }
 
+/* ── Baris daftar panjang (percakapan, stok, riwayat) ────────────────
+   `content-visibility: auto` membuat baris di luar viewport dilewati
+   saat layout & paint — biaya scroll jadi ~konstan berapa pun panjang
+   daftarnya. `contain-intrinsic-size` menjaga tinggi scrollbar stabil
+   supaya tidak ada lompatan posisi saat baris masuk/keluar layar. */
+@utility app-list-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.5rem;
+}
+
+/* Saat jari sedang menggulir di perangkat sentuh, transisi CSS pada
+   ratusan elemen memaksa recalculate style tiap frame. Dimatikan
+   sementara (atribut dipasang/dilepas oleh `src/lib/scroll-perf.ts`). */
+@media (pointer: coarse) {
+  html[data-scrolling="1"] [class*="transition"] {
+    transition: none !important;
+  }
+  html[data-scrolling="1"] .app-list-row:hover {
+    background-color: transparent;
+  }
+}
+
+
 /* ══════════════════════════════════════════════════════════════════════
    Aksesibilitas dasar (berlaku di semua halaman, bukan hanya mode
    kontras tinggi). Tiga hal: kontras teks sekunder, area sentuh minimum,
