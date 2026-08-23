@@ -2590,11 +2590,11 @@ body:has([data-radix-dialog-overlay], [data-radix-alert-dialog-overlay])
 
 /* Gutter horizontal halaman — aman dipakai bersama `app-safe-x`. */
 @utility app-gutter {
-  --app-gutter-x: var(--ms-space-4);
+  --app-gutter-x: var(--ms-gutter);
 }
 
 @utility app-gutter-lg {
-  --app-gutter-x: var(--ms-space-6);
+  --app-gutter-x: var(--ms-gutter-lg);
 }
 
 /* Header sticky: tinggi konten tetap, hanya ruang notch yang ditambahkan,
