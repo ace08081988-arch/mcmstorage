@@ -26,7 +26,14 @@ export const getRouter = () => {
     // halaman terasa instan (terutama di WebView Android yang lambat).
     defaultPreload: "intent",
     defaultPreloadDelay: 60,
-    defaultPreloadStaleTime: 0,
+    // Hasil preload dipakai ulang saat navigasi benar-benar terjadi
+    // (0 = loader dijalankan dua kali → halaman terasa "berat" saat pindah).
+    defaultPreloadStaleTime: 30_000,
+    // Spinner hanya muncul kalau transisi memang lama; di bawah ambang ini
+    // halaman langsung berganti tanpa kedipan skeleton.
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 300,
+
   });
 
   return router;
