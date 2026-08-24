@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Resolve inputs
         id: cfg
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const isDispatch = context.eventName === 'repository_dispatch';
@@ -45,7 +45,7 @@ jobs:
 
       - name: Resolve SHA for commit status (fallback ke HEAD main)
         id: shafix
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             let sha = '${{ steps.cfg.outputs.sha }}';
@@ -111,7 +111,7 @@ jobs:
 
       - name: Report to GitHub
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const ok = '${{ steps.probe.outputs.ok }}' === '1';
@@ -193,7 +193,7 @@ jobs:
 
       - name: Set commit status (deploy/healthcheck)
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const ok = '${{ steps.probe.outputs.ok }}' === '1';

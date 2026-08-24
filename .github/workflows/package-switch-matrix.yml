@@ -61,10 +61,10 @@ jobs:
             runtime: "bun"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
 
@@ -86,7 +86,7 @@ jobs:
           echo "lockhash=${{ hashFiles('bun.lock', 'bun.lockb', 'package.json') }}" >> "$GITHUB_OUTPUT"
 
       - name: Cache Bun global store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: bun-store-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
@@ -96,7 +96,7 @@ jobs:
 
       - name: Cache node_modules (per runtime × node)
         id: nm-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           # Jangan share antar runtime/versi Node: prebuilt binaries (esbuild,
@@ -108,7 +108,7 @@ jobs:
           # dihindari. Jika miss → install ulang bersih (cache miss ≠ error).
 
       - name: Cache Vitest transform (per runtime × node)
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             node_modules/.vite
@@ -187,7 +187,7 @@ jobs:
 
       - name: Upload snapshot diff artifact (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: snapshot-diffs-node${{ matrix.node }}-${{ matrix.runtime }}
           path: |

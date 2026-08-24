@@ -48,7 +48,7 @@ jobs:
       TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
       TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-chat-pin-mcm
           path: playwright-report
@@ -139,7 +139,7 @@ jobs:
       # untuk mereplay langkah demi langkah regresi format PIN.
       - name: Upload Playwright traces & videos (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces-chat-pin-mcm
           path: |
