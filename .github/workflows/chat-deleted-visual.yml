@@ -19,14 +19,14 @@ jobs:
       BASE_URL: http://localhost:5173
       CI: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - name: Cache Bun global store
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-store-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
@@ -35,7 +35,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-node-modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: node_modules
           key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: cache-playwright
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
@@ -85,7 +85,7 @@ jobs:
 
       - name: Upload generated baselines (bila ada yang baru)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chat-deleted-visual-baselines
           path: tests/visual/**/*-snapshots/**
@@ -104,7 +104,7 @@ jobs:
 
       - name: Upload Playwright report + diffs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chat-deleted-visual-report
           path: |
