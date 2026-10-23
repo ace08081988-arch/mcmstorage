@@ -1,0 +1,33 @@
+name: Explicit Data API grants
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "src/**"
+      - "scripts/audit-data-api-grants.py"
+      - "scripts/data-api-audit-requirements.txt"
+      - "scripts/data-api-tests/**"
+      - "docs/qa/data-api-grants-2026-10-23.json"
+      - ".github/workflows/data-api-grants.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-acl-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r scripts/data-api-audit-requirements.txt
+      - run: python scripts/audit-data-api-grants.py --check --self-test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci --prefix scripts/data-api-tests --ignore-scripts --no-audit --no-fund
+      - run: node scripts/data-api-tests/storage-focused.mjs "$PWD"
